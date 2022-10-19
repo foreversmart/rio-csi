@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -50,6 +51,10 @@ func (r *LVMVolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	l := log.FromContext(ctx)
 	l.Info(req.Name, req.Namespace, req.String())
 	// TODO(user): your logic here
+
+	l.Info("hello")
+
+	fmt.Println("hello fmt")
 
 	return ctrl.Result{}, nil
 }
