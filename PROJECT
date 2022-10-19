@@ -1,0 +1,16 @@
+domain: rio-csi.qiniu.io
+layout:
+- go.kubebuilder.io/v3
+projectName: rio-csi
+repo: qiniu.io/rio-csi
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: rio-csi.qiniu.io
+  group: qvm
+  kind: LVMVolume
+  path: qiniu.io/rio-csi/api/v1
+  version: v1
+version: "3"
