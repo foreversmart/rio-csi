@@ -23,17 +23,17 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// LVMVolumeSpec defines the desired state of LVMVolume
-type LVMVolumeSpec struct {
+// VolumeSpec defines the desired state of Volume
+type VolumeSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of LVMVolume. Edit lvmvolume_types.go to remove/update
+	// Foo is an example field of Volume. Edit volume_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
-// LVMVolumeStatus defines the observed state of LVMVolume
-type LVMVolumeStatus struct {
+// VolumeStatus defines the observed state of Volume
+type VolumeStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -41,24 +41,24 @@ type LVMVolumeStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// LVMVolume is the Schema for the lvmvolumes API
-type LVMVolume struct {
+// Volume is the Schema for the volumes API
+type Volume struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LVMVolumeSpec   `json:"spec,omitempty"`
-	Status LVMVolumeStatus `json:"status,omitempty"`
+	Spec   VolumeSpec   `json:"spec,omitempty"`
+	Status VolumeStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// LVMVolumeList contains a list of LVMVolume
-type LVMVolumeList struct {
+// VolumeList contains a list of Volume
+type VolumeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LVMVolume `json:"items"`
+	Items           []Volume `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&LVMVolume{}, &LVMVolumeList{})
+	SchemeBuilder.Register(&Volume{}, &VolumeList{})
 }

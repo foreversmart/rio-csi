@@ -1,20 +1,20 @@
-# permissions for end users to edit lvmvolumes.
+# permissions for end users to edit volumes.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: lvmvolume-editor-role
+    app.kubernetes.io/instance: volume-editor-role
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: rio-csi
     app.kubernetes.io/part-of: rio-csi
     app.kubernetes.io/managed-by: kustomize
-  name: lvmvolume-editor-role
+  name: volume-editor-role
 rules:
 - apiGroups:
-  - qvm.rio-csi.qiniu.io
+  - rio.qiniu.io
   resources:
-  - lvmvolumes
+  - volumes
   verbs:
   - create
   - delete
@@ -24,8 +24,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - qvm.rio-csi.qiniu.io
+  - rio.qiniu.io
   resources:
-  - lvmvolumes/status
+  - volumes/status
   verbs:
   - get

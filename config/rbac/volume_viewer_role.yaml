@@ -1,27 +1,27 @@
-# permissions for end users to view lvmvolumes.
+# permissions for end users to view volumes.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: lvmvolume-viewer-role
+    app.kubernetes.io/instance: volume-viewer-role
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: rio-csi
     app.kubernetes.io/part-of: rio-csi
     app.kubernetes.io/managed-by: kustomize
-  name: lvmvolume-viewer-role
+  name: volume-viewer-role
 rules:
 - apiGroups:
-  - qvm.rio-csi.qiniu.io
+  - rio.qiniu.io
   resources:
-  - lvmvolumes
+  - volumes
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - qvm.rio-csi.qiniu.io
+  - rio.qiniu.io
   resources:
-  - lvmvolumes/status
+  - volumes/status
   verbs:
   - get

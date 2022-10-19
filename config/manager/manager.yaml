@@ -4,18 +4,18 @@ metadata:
   labels:
     control-plane: controller-manager
     app.kubernetes.io/name: namespace
-    app.kubernetes.io/instance: system
+    app.kubernetes.io/instance: riocsi
     app.kubernetes.io/component: manager
     app.kubernetes.io/created-by: rio-csi
     app.kubernetes.io/part-of: rio-csi
     app.kubernetes.io/managed-by: kustomize
-  name: system
+  name: riocsi
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
-  namespace: system
+  namespace: riocsi
   labels:
     control-plane: controller-manager
     app.kubernetes.io/name: deployment
@@ -70,7 +70,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: docker.qiniu.io:32500/controller:latest
+        image: controller:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

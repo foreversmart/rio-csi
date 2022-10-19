@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: lvmvolumes.qvm.rio-csi.qiniu.io
+  name: volumes.rio.qiniu.io
 spec:
-  group: qvm.rio-csi.qiniu.io
+  group: rio.qiniu.io
   names:
-    kind: LVMVolume
-    listKind: LVMVolumeList
-    plural: lvmvolumes
-    singular: lvmvolume
+    kind: Volume
+    listKind: VolumeList
+    plural: volumes
+    singular: volume
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: LVMVolume is the Schema for the lvmvolumes API
+        description: Volume is the Schema for the volumes API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,15 +33,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: LVMVolumeSpec defines the desired state of LVMVolume
+            description: VolumeSpec defines the desired state of Volume
             properties:
               foo:
-                description: Foo is an example field of LVMVolume. Edit lvmvolume_types.go
+                description: Foo is an example field of Volume. Edit volume_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: LVMVolumeStatus defines the observed state of LVMVolume
+            description: VolumeStatus defines the observed state of Volume
             type: object
         type: object
     served: true

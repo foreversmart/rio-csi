@@ -6,9 +6,9 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - qvm.rio-csi.qiniu.io
+  - rio.qiniu.io
   resources:
-  - lvmvolumes
+  - volumes
   verbs:
   - create
   - delete
@@ -18,19 +18,16 @@ rules:
   - update
   - watch
 - apiGroups:
-  - qvm.rio-csi.qiniu.io
+  - rio.qiniu.io
   resources:
-  - lvmvolumes/finalizers
+  - volumes/finalizers
   verbs:
   - update
 - apiGroups:
-  - qvm.rio-csi.qiniu.io
+  - rio.qiniu.io
   resources:
-  - lvmvolumes/status
+  - volumes/status
   verbs:
   - get
   - patch
   - update
-- apiGroups: ["coordination.k8s.io"]
-  resources: ["leases"]
-  verbs: ["get", "watch", "list", "delete", "update", "create"]

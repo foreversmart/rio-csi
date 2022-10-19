@@ -18,50 +18,45 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	qvmv1 "qiniu.io/rio-csi/api/v1"
+	riov1 "qiniu.io/rio-csi/api/v1"
 )
 
-// LVMVolumeReconciler reconciles a LVMVolume object
-type LVMVolumeReconciler struct {
+// VolumeReconciler reconciles a Volume object
+type VolumeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=qvm.rio-csi.qiniu.io,resources=lvmvolumes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=qvm.rio-csi.qiniu.io,resources=lvmvolumes/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=qvm.rio-csi.qiniu.io,resources=lvmvolumes/finalizers,verbs=update
+//+kubebuilder:rbac:groups=rio.qiniu.io,resources=volumes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rio.qiniu.io,resources=volumes/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=rio.qiniu.io,resources=volumes/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the LVMVolume object against the actual cluster state, and then
+// the Volume object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
-func (r *LVMVolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	l := log.FromContext(ctx)
-	l.Info(req.Name, req.Namespace, req.String())
+func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = log.FromContext(ctx)
+
 	// TODO(user): your logic here
-
-	l.Info("hello")
-
-	fmt.Println("hello fmt")
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *LVMVolumeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *VolumeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&qvmv1.LVMVolume{}).
+		For(&riov1.Volume{}).
 		Complete(r)
 }
