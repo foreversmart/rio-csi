@@ -1,0 +1,12 @@
+apiVersion: qvm.rio-csi.qiniu.io/v1
+kind: LVMVolume
+metadata:
+  labels:
+    app.kubernetes.io/name: lvmvolume
+    app.kubernetes.io/instance: lvmvolume-sample
+    app.kubernetes.io/part-of: rio-csi
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: rio-csi
+  name: lvmvolume-sample
+spec:
+  # TODO(user): Add fields here
