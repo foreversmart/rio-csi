@@ -46,6 +46,15 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+.PHONY: clientset
+clientset:
+	@client-gen --fake-clientset=true  \
+	--input v1 \
+	--input-base qiniu.io/rio-csi/api \
+	--output-package qiniu.io/rio-csi/generated \
+	--trim-path-prefix qiniu.io/rio-csi \
+	--go-header-file ./hack/boilerplate.go.txt -v 7
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...

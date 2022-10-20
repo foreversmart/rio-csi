@@ -25,23 +25,78 @@ import (
 
 // VolumeSpec defines the desired state of Volume
 type VolumeSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// OwnerNodeID is the Node ID where the volume group is present which is where
+	// the volume has been provisioned.
+	// OwnerNodeID can not be edited after the volume has been provisioned.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
+	OwnerNodeID string `json:"ownerNodeID"`
 
-	// Foo is an example field of Volume. Edit volume_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// VolGroup specifies the name of the volume group where the volume has been created.
+	// +kubebuilder:validation:Required
+	VolGroup string `json:"volGroup"`
+
+	// VgPattern specifies the regex to choose volume groups where volume
+	// needs to be created.
+	// +kubebuilder:validation:Required
+	VgPattern string `json:"vgPattern"`
+
+	// Capacity of the volume
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Capacity string `json:"capacity"`
+
+	// Shared specifies whether the volume can be shared among multiple pods.
+	// If it is not set to "yes", then the LVM LocalPV Driver will not allow
+	// the volumes to be mounted by more than one pods.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=yes;no
+	Shared string `json:"shared,omitempty"`
+
+	// ThinProvision specifies whether logical volumes can be thinly provisioned.
+	// If it is set to "yes", then the LVM LocalPV Driver will create
+	// thinProvision i.e. logical volumes that are larger than the available extents.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=yes;no
+	ThinProvision string `json:"thinProvision,omitempty"`
 }
 
 // VolumeStatus defines the observed state of Volume
 type VolumeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// State specifies the current state of the volume provisioning request.
+	// The state "Pending" means that the volume creation request has not
+	// processed yet. The state "Ready" means that the volume has been created
+	// and it is ready for the use. "Failed" means that volume provisioning
+	// has been failed and will not be retried by node agent controller.
+	// +kubebuilder:validation:Enum=Pending;Ready;Failed
+	State string `json:"state,omitempty"`
+
+	// Error denotes the error occurred during provisioning/expanding a volume.
+	// Error field should only be set when State becomes Failed.
+	Error *VolumeError `json:"error,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// VolumeError specifies the error occurred during volume provisioning.
+type VolumeError struct {
+	Code    VolumeErrorCode `json:"code,omitempty"`
+	Message string          `json:"message,omitempty"`
+}
+
+// VolumeErrorCode represents the error code to represent
+// specific class of errors.
+type VolumeErrorCode string
+
+// +genclient
 
 // Volume is the Schema for the volumes API
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Namespaced,shortName=vol
+// +kubebuilder:printcolumn:name="VolGroup",type=string,JSONPath=`.spec.volGroup`,description="volume group where the volume is created"
+// +kubebuilder:printcolumn:name="Node",type=string,JSONPath=`.spec.ownerNodeID`,description="Node where the volume is created"
+// +kubebuilder:printcolumn:name="Size",type=string,JSONPath=`.spec.capacity`,description="Size of the volume"
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.state`,description="Status of the volume"
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`,description="Age of the volume"
 type Volume struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -50,9 +105,8 @@ type Volume struct {
 	Status VolumeStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
 // VolumeList contains a list of Volume
+// +kubebuilder:object:root=true
 type VolumeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -62,3 +116,11 @@ type VolumeList struct {
 func init() {
 	SchemeBuilder.Register(&Volume{}, &VolumeList{})
 }
+
+const (
+	// Internal represents system internal error.
+	Internal VolumeErrorCode = "Internal"
+	// InsufficientCapacity represent lvm vg doesn't
+	// have enough capacity to fit the lv request.
+	InsufficientCapacity VolumeErrorCode = "InsufficientCapacity"
+)

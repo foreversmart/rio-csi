@@ -12,10 +12,33 @@ spec:
     kind: Volume
     listKind: VolumeList
     plural: volumes
+    shortNames:
+    - vol
     singular: volume
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: volume group where the volume is created
+      jsonPath: .spec.volGroup
+      name: VolGroup
+      type: string
+    - description: Node where the volume is created
+      jsonPath: .spec.ownerNodeID
+      name: Node
+      type: string
+    - description: Size of the volume
+      jsonPath: .spec.capacity
+      name: Size
+      type: string
+    - description: Status of the volume
+      jsonPath: .status.state
+      name: Status
+      type: string
+    - description: Age of the volume
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: Volume is the Schema for the volumes API
@@ -35,13 +58,73 @@ spec:
           spec:
             description: VolumeSpec defines the desired state of Volume
             properties:
-              foo:
-                description: Foo is an example field of Volume. Edit volume_types.go
-                  to remove/update
+              capacity:
+                description: Capacity of the volume
+                minLength: 1
                 type: string
+              ownerNodeID:
+                description: OwnerNodeID is the Node ID where the volume group is
+                  present which is where the volume has been provisioned. OwnerNodeID
+                  can not be edited after the volume has been provisioned.
+                minLength: 1
+                type: string
+              shared:
+                description: Shared specifies whether the volume can be shared among
+                  multiple pods. If it is not set to "yes", then the LVM LocalPV Driver
+                  will not allow the volumes to be mounted by more than one pods.
+                enum:
+                - "yes"
+                - "no"
+                type: string
+              thinProvision:
+                description: ThinProvision specifies whether logical volumes can be
+                  thinly provisioned. If it is set to "yes", then the LVM LocalPV
+                  Driver will create thinProvision i.e. logical volumes that are larger
+                  than the available extents.
+                enum:
+                - "yes"
+                - "no"
+                type: string
+              vgPattern:
+                description: VgPattern specifies the regex to choose volume groups
+                  where volume needs to be created.
+                type: string
+              volGroup:
+                description: VolGroup specifies the name of the volume group where
+                  the volume has been created.
+                type: string
+            required:
+            - capacity
+            - ownerNodeID
+            - vgPattern
+            - volGroup
             type: object
           status:
             description: VolumeStatus defines the observed state of Volume
+            properties:
+              error:
+                description: Error denotes the error occurred during provisioning/expanding
+                  a volume. Error field should only be set when State becomes Failed.
+                properties:
+                  code:
+                    description: VolumeErrorCode represents the error code to represent
+                      specific class of errors.
+                    type: string
+                  message:
+                    type: string
+                type: object
+              state:
+                description: State specifies the current state of the volume provisioning
+                  request. The state "Pending" means that the volume creation request
+                  has not processed yet. The state "Ready" means that the volume has
+                  been created and it is ready for the use. "Failed" means that volume
+                  provisioning has been failed and will not be retried by node agent
+                  controller.
+                enum:
+                - Pending
+                - Ready
+                - Failed
+                type: string
             type: object
         type: object
     served: true
