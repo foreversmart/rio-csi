@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	riov1 "qiniu.io/rio-csi/api/rio/v1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -31,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	riov1 "qiniu.io/rio-csi/api/v1"
 	"qiniu.io/rio-csi/controllers"
 	//+kubebuilder:scaffold:imports
 )

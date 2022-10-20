@@ -49,7 +49,7 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 .PHONY: clientset
 clientset:
 	@client-gen --fake-clientset=true  \
-	--input v1 \
+	--input rio/v1 \
 	--input-base qiniu.io/rio-csi/api \
 	--output-package qiniu.io/rio-csi/generated \
 	--trim-path-prefix qiniu.io/rio-csi \

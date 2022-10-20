@@ -24,8 +24,8 @@ import (
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/testing"
 	clientset "qiniu.io/rio-csi/generated/internalclientset"
-	v1internalversion "qiniu.io/rio-csi/generated/internalclientset/typed/v1/internalversion"
-	fakev1internalversion "qiniu.io/rio-csi/generated/internalclientset/typed/v1/internalversion/fake"
+	riov1 "qiniu.io/rio-csi/generated/internalclientset/typed/rio/v1"
+	fakeriov1 "qiniu.io/rio-csi/generated/internalclientset/typed/rio/v1/fake"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.
@@ -78,7 +78,7 @@ var (
 	_ testing.FakeClient  = &Clientset{}
 )
 
-// V1 retrieves the V1Client
-func (c *Clientset) V1() v1internalversion.V1Interface {
-	return &fakev1internalversion.FakeV1{Fake: &c.Fake}
+// RioV1 retrieves the RioV1Client
+func (c *Clientset) RioV1() riov1.RioV1Interface {
+	return &fakeriov1.FakeRioV1{Fake: &c.Fake}
 }

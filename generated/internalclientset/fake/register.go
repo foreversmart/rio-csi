@@ -23,14 +23,14 @@ import (
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	v1internalversion "qiniu.io/rio-csi/api/v1"
+	riov1 "qiniu.io/rio-csi/api/rio/v1"
 )
 
 var scheme = runtime.NewScheme()
 var codecs = serializer.NewCodecFactory(scheme)
 
 var localSchemeBuilder = runtime.SchemeBuilder{
-	v1internalversion.AddToScheme,
+	riov1.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

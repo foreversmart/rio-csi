@@ -24,24 +24,24 @@ import (
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
-	v1internalversion "qiniu.io/rio-csi/generated/internalclientset/typed/v1/internalversion"
+	riov1 "qiniu.io/rio-csi/generated/internalclientset/typed/rio/v1"
 )
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	V1() v1internalversion.V1Interface
+	RioV1() riov1.RioV1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	v1 *v1internalversion.V1Client
+	rioV1 *riov1.RioV1Client
 }
 
-// V1 retrieves the V1Client
-func (c *Clientset) V1() v1internalversion.V1Interface {
-	return c.v1
+// RioV1 retrieves the RioV1Client
+func (c *Clientset) RioV1() riov1.RioV1Interface {
+	return c.rioV1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -88,7 +88,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.v1, err = v1internalversion.NewForConfigAndClient(&configShallowCopy, httpClient)
+	cs.rioV1, err = riov1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.v1 = v1internalversion.New(c)
+	cs.rioV1 = riov1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
