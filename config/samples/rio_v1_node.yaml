@@ -1,0 +1,12 @@
+apiVersion: rio.qiniu.io/v1
+kind: Node
+metadata:
+  labels:
+    app.kubernetes.io/name: node
+    app.kubernetes.io/instance: node-sample
+    app.kubernetes.io/part-of: rio-csi
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: rio-csi
+  name: node-sample
+spec:
+  # TODO(user): Add fields here

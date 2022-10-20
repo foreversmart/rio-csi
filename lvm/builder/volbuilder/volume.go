@@ -17,27 +17,27 @@ limitations under the License.
 package volbuilder
 
 import (
-	apis "qiniu.io/rio-csi/apis/qiniu.io/qvm/v1alpha1"
+	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/lvm/common/errors"
 )
 
-// Builder is the builder object for LVMVolume
+// Builder is the builder object for Volume
 type Builder struct {
-	volume *LVMVolume
+	volume *Volume
 	errs   []error
 }
 
-// LVMVolume is a wrapper over
-// LVMVolume API instance
-type LVMVolume struct {
-	// LVMVolume object
-	Object *apis.LVMVolume
+// Volume is a wrapper over
+// Volume API instance
+type Volume struct {
+	// Volume object
+	Object *apis.Volume
 }
 
 // From returns a new instance of
 // lvm volume
-func From(vol *apis.LVMVolume) *LVMVolume {
-	return &LVMVolume{
+func From(vol *apis.Volume) *Volume {
+	return &Volume{
 		Object: vol,
 	}
 }
@@ -45,15 +45,15 @@ func From(vol *apis.LVMVolume) *LVMVolume {
 // NewBuilder returns new instance of Builder
 func NewBuilder() *Builder {
 	return &Builder{
-		volume: &LVMVolume{
-			Object: &apis.LVMVolume{},
+		volume: &Volume{
+			Object: &apis.Volume{},
 		},
 	}
 }
 
 // BuildFrom returns new instance of Builder
 // from the provided api instance
-func BuildFrom(volume *apis.LVMVolume) *Builder {
+func BuildFrom(volume *apis.Volume) *Builder {
 	if volume == nil {
 		b := NewBuilder()
 		b.errs = append(
@@ -63,13 +63,13 @@ func BuildFrom(volume *apis.LVMVolume) *Builder {
 		return b
 	}
 	return &Builder{
-		volume: &LVMVolume{
+		volume: &Volume{
 			Object: volume,
 		},
 	}
 }
 
-// WithNamespace sets the namespace of  LVMVolume
+// WithNamespace sets the namespace of  Volume
 func (b *Builder) WithNamespace(namespace string) *Builder {
 	if namespace == "" {
 		b.errs = append(
@@ -84,7 +84,7 @@ func (b *Builder) WithNamespace(namespace string) *Builder {
 	return b
 }
 
-// WithName sets the name of LVMVolume
+// WithName sets the name of Volume
 func (b *Builder) WithName(name string) *Builder {
 	if name == "" {
 		b.errs = append(
@@ -115,13 +115,13 @@ func (b *Builder) WithCapacity(capacity string) *Builder {
 	return b
 }
 
-// WithOwnerNode sets owner node for the LVMVolume where the volume should be provisioned
+// WithOwnerNode sets owner node for the Volume where the volume should be provisioned
 func (b *Builder) WithOwnerNode(host string) *Builder {
 	b.volume.Object.Spec.OwnerNodeID = host
 	return b
 }
 
-// WithVolumeStatus sets LVMVolume status
+// WithVolumeStatus sets Volume status
 func (b *Builder) WithVolumeStatus(status string) *Builder {
 	b.volume.Object.Status.State = status
 	return b
@@ -207,8 +207,8 @@ func (b *Builder) WithFinalizer(finalizer []string) *Builder {
 	return b
 }
 
-// Build returns LVMVolume API object
-func (b *Builder) Build() (*apis.LVMVolume, error) {
+// Build returns Volume API object
+func (b *Builder) Build() (*apis.Volume, error) {
 	if len(b.errs) > 0 {
 		return nil, errors.Errorf("%+v", b.errs)
 	}

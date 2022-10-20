@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"math"
 	"os"
-	apis "qiniu.io/rio-csi/apis/qiniu.io/qvm/v1alpha1"
+	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/lvm/device/iolimit"
 	"strconv"
 
@@ -33,7 +33,7 @@ import (
 )
 
 // MountInfo contains the volume related info
-// for all types of volumes in LVMVolume
+// for all types of volumes in Volume
 type MountInfo struct {
 	// FSType of a volume will specify the
 	// format type - ext4(default), xfs of PV
@@ -79,7 +79,7 @@ func FormatAndMountVol(devicePath string, mountInfo *MountInfo) error {
 }
 
 // UmountVolume unmounts the volume and the corresponding mount path is removed
-func UmountVolume(vol *apis.LVMVolume, targetPath string,
+func UmountVolume(vol *apis.Volume, targetPath string,
 ) error {
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
@@ -128,7 +128,7 @@ func UmountVolume(vol *apis.LVMVolume, targetPath string,
 	return nil
 }
 
-func verifyMountRequest(vol *apis.LVMVolume, mountpath string) (bool, error) {
+func verifyMountRequest(vol *apis.Volume, mountpath string) (bool, error) {
 	if len(mountpath) == 0 {
 		return false, status.Error(codes.InvalidArgument, "verifyMount: mount path missing in request")
 	}
@@ -181,7 +181,7 @@ func verifyMountRequest(vol *apis.LVMVolume, mountpath string) (bool, error) {
 }
 
 // MountVolume mounts the disk to the specified path
-func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVInfo *PodLVInfo) error {
+func MountVolume(vol *apis.Volume, mount *MountInfo, podLVInfo *PodLVInfo) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	mounted, err := verifyMountRequest(vol, mount.MountPath)
 	if err != nil {
@@ -218,7 +218,7 @@ func MountVolume(vol *apis.LVMVolume, mount *MountInfo, podLVInfo *PodLVInfo) er
 }
 
 // MountFilesystem mounts the disk to the specified path
-func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodLVInfo) error {
+func MountFilesystem(vol *apis.Volume, mount *MountInfo, podinfo *PodLVInfo) error {
 	if err := os.MkdirAll(mount.MountPath, 0755); err != nil {
 		return status.Errorf(codes.Internal, "Could not create dir {%q}, err: %v", mount.MountPath, err)
 	}
@@ -227,7 +227,7 @@ func MountFilesystem(vol *apis.LVMVolume, mount *MountInfo, podinfo *PodLVInfo) 
 }
 
 // MountBlock mounts the block disk to the specified path
-func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo) error {
+func MountBlock(vol *apis.Volume, mountinfo *MountInfo, podLVInfo *PodLVInfo) error {
 	target := mountinfo.MountPath
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	devicePath := DevPath + volume
@@ -262,13 +262,13 @@ func MountBlock(vol *apis.LVMVolume, mountinfo *MountInfo, podLVInfo *PodLVInfo)
 	return nil
 }
 
-func setIOLimits(vol *apis.LVMVolume, podLVInfo *PodLVInfo, devicePath string) error {
+func setIOLimits(vol *apis.Volume, podLVInfo *PodLVInfo, devicePath string) error {
 	if podLVInfo == nil {
 		return errors.New("PodLVInfo is missing. Skipping setting IOLimits")
 	}
 	capacityBytes, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
 	if err != nil {
-		klog.Warning("error parsing LVMVolume.Spec.Capacity. Skipping setting IOLimits", err)
+		klog.Warning("error parsing Volume.Spec.Capacity. Skipping setting IOLimits", err)
 		return err
 	}
 	capacityGB := uint64(math.Ceil(float64(capacityBytes) / (1024 * 1024 * 1024)))

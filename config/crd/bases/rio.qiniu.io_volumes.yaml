@@ -62,6 +62,8 @@ spec:
                 description: Capacity of the volume
                 minLength: 1
                 type: string
+              foo:
+                type: string
               ownerNodeID:
                 description: OwnerNodeID is the Node ID where the volume group is
                   present which is where the volume has been provisioned. OwnerNodeID
@@ -95,6 +97,7 @@ spec:
                 type: string
             required:
             - capacity
+            - foo
             - ownerNodeID
             - vgPattern
             - volGroup

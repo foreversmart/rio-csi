@@ -18,7 +18,7 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"os"
-	apis "qiniu.io/rio-csi/apis/qiniu.io/qvm/v1alpha1"
+	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/lvm/builder/volbuilder"
 	"strconv"
@@ -38,13 +38,13 @@ const (
 	LvmNamespaceKey string = "LVM_NAMESPACE"
 	// GoogleAnalyticsKey This environment variable is set via env
 	GoogleAnalyticsKey string = "OPENEBS_IO_ENABLE_ANALYTICS"
-	// LVMFinalizer for the LVMVolume CR
+	// LVMFinalizer for the Volume CR
 	LVMFinalizer string = "lvm.openebs.io/finalizer"
 	// VolGroupKey is key for LVM group name
 	VolGroupKey string = "openebs.io/volgroup"
 	// LVMVolKey for the LVMSnapshot CR to store Persistence Volume name
 	LVMVolKey string = "openebs.io/persistent-volume"
-	// LVMNodeKey will be used to insert Label in LVMVolume CR
+	// LVMNodeKey will be used to insert Label in Volume CR
 	LVMNodeKey string = "kubernetes.io/nodename"
 	// LVMTopologyKey is supported topology key for the lvm driver
 	LVMTopologyKey string = "openebs.io/nodename"
@@ -85,11 +85,11 @@ func init() {
 	GoogleAnalyticsEnabled = os.Getenv(GoogleAnalyticsKey)
 }
 
-// ProvisionVolume creates a LVMVolume CR,
+// ProvisionVolume creates a Volume CR,
 // watcher for volume is present in CSI agent
-func ProvisionVolume(vol *apis.LVMVolume) (*apis.LVMVolume, error) {
+func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 	options := metav1.CreateOptions{}
-	res, err := client.DefaultClient.ClientSet.QvmV1alpha1().LVMVolumes(LvmNamespace).Create(context.Background(), vol, options)
+	res, err := client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Create(context.Background(), vol, options)
 	if err == nil {
 		klog.Infof("provisioned volume %s", vol.Name)
 	}
@@ -110,7 +110,7 @@ func DeleteVolume(volumeID string) (err error) {
 		PropagationPolicy: &deletePropagation,
 	}
 
-	err = client.DefaultClient.ClientSet.QvmV1alpha1().LVMVolumes(LvmNamespace).Delete(context.Background(), volumeID, options)
+	err = client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Delete(context.Background(), volumeID, options)
 	if err == nil {
 		klog.Infof("deprovisioned volume %s", volumeID)
 	}
@@ -118,16 +118,16 @@ func DeleteVolume(volumeID string) (err error) {
 	return
 }
 
-// GetLVMVolume fetches the given LVMVolume
-func GetLVMVolume(volumeID string) (*apis.LVMVolume, error) {
+// GetVolume fetches the given Volume
+func GetVolume(volumeID string) (*apis.Volume, error) {
 	getOptions := metav1.GetOptions{}
-	vol, err := client.DefaultClient.ClientSet.QvmV1alpha1().LVMVolumes(LvmNamespace).Get(context.Background(), volumeID, getOptions)
+	vol, err := client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Get(context.Background(), volumeID, getOptions)
 	return vol, err
 }
 
-// WaitForLVMVolumeProcessed waits till the lvm volume becomes
+// WaitForVolumeProcessed waits till the lvm volume becomes
 // ready or failed (i.e reaches to terminal state).
-func WaitForLVMVolumeProcessed(ctx context.Context, volumeID string) (*apis.LVMVolume, error) {
+func WaitForVolumeProcessed(ctx context.Context, volumeID string) (*apis.Volume, error) {
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 	for {
@@ -136,7 +136,7 @@ func WaitForLVMVolumeProcessed(ctx context.Context, volumeID string) (*apis.LVMV
 			return nil, status.FromContextError(ctx.Err()).Err()
 		case <-timer.C:
 		}
-		vol, err := GetLVMVolume(volumeID)
+		vol, err := GetVolume(volumeID)
 		if err != nil {
 			return nil, status.Errorf(codes.Aborted,
 				"lvm: wait failed, not able to get the volume %s %s", volumeID, err.Error())
@@ -149,8 +149,8 @@ func WaitForLVMVolumeProcessed(ctx context.Context, volumeID string) (*apis.LVMV
 	}
 }
 
-// WaitForLVMVolumeDestroy waits till the lvm volume gets deleted.
-func WaitForLVMVolumeDestroy(ctx context.Context, volumeID string) error {
+// WaitForVolumeDestroy waits till the lvm volume gets deleted.
+func WaitForVolumeDestroy(ctx context.Context, volumeID string) error {
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 	for {
@@ -159,7 +159,7 @@ func WaitForLVMVolumeDestroy(ctx context.Context, volumeID string) error {
 			return status.FromContextError(ctx.Err()).Err()
 		case <-timer.C:
 		}
-		_, err := GetLVMVolume(volumeID)
+		_, err := GetVolume(volumeID)
 		if err != nil {
 			if k8serror.IsNotFound(err) {
 				return nil
@@ -171,11 +171,11 @@ func WaitForLVMVolumeDestroy(ctx context.Context, volumeID string) error {
 	}
 }
 
-// GetLVMVolumeState returns LVMVolume OwnerNode and State for
+// GetVolumeState returns Volume OwnerNode and State for
 // the given volume. CreateVolume request may call it again and
 // again until volume is "Ready".
-func GetLVMVolumeState(volID string) (string, string, error) {
-	vol, err := GetLVMVolume(volID)
+func GetVolumeState(volID string) (string, string, error) {
+	vol, err := GetVolume(volID)
 
 	if err != nil {
 		return "", "", err
@@ -184,8 +184,8 @@ func GetLVMVolumeState(volID string) (string, string, error) {
 	return vol.Spec.OwnerNodeID, vol.Status.State, nil
 }
 
-// UpdateVolInfo updates LVMVolume CR with node id and finalizer
-func UpdateVolInfo(vol *apis.LVMVolume, state string) error {
+// UpdateVolInfo updates Volume CR with node id and finalizer
+func UpdateVolInfo(vol *apis.Volume, state string) error {
 	if vol.Finalizers != nil {
 		return nil
 	}
@@ -205,36 +205,36 @@ func UpdateVolInfo(vol *apis.LVMVolume, state string) error {
 		return err
 	}
 
-	_, err = client.DefaultClient.ClientSet.QvmV1alpha1().LVMVolumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	_, err = client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 
 	return err
 }
 
-// UpdateVolGroup updates LVMVolume CR with volGroup name.
-func UpdateVolGroup(vol *apis.LVMVolume, vgName string) (*apis.LVMVolume, error) {
+// UpdateVolGroup updates Volume CR with volGroup name.
+func UpdateVolGroup(vol *apis.Volume, vgName string) (*apis.Volume, error) {
 	newVol, err := volbuilder.BuildFrom(vol).
 		WithVolGroup(vgName).Build()
 	if err != nil {
 		return nil, err
 	}
 
-	return client.DefaultClient.ClientSet.QvmV1alpha1().LVMVolumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	return client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 }
 
-// RemoveVolFinalizer adds finalizer to LVMVolume CR
-func RemoveVolFinalizer(vol *apis.LVMVolume) error {
+// RemoveVolFinalizer adds finalizer to Volume CR
+func RemoveVolFinalizer(vol *apis.Volume) error {
 	vol.Finalizers = nil
 
-	_, err := client.DefaultClient.ClientSet.QvmV1alpha1().LVMVolumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	_, err := client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
 
 // ResizeVolume resizes the lvm volume
-func ResizeVolume(vol *apis.LVMVolume, newSize int64) error {
+func ResizeVolume(vol *apis.Volume, newSize int64) error {
 
 	vol.Spec.Capacity = strconv.FormatInt(int64(newSize), 10)
 
-	_, err := client.DefaultClient.ClientSet.QvmV1alpha1().LVMVolumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	_, err := client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
 

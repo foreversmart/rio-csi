@@ -39,7 +39,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	size := getRoundedCapacity(req.GetCapacityRange().RequiredBytes)
 	capacity := strconv.FormatInt(size, 10)
 
-	vol, err := lvm.GetLVMVolume(volName)
+	vol, err := lvm.GetVolume(volName)
 	if err != nil {
 		if !k8serror.IsNotFound(err) {
 			return nil, status.Errorf(codes.Aborted,
@@ -84,7 +84,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 		// Wait Volume ready
 		if vol.Status.State == lvm.LVMStatusPending {
-			if vol, err = lvm.WaitForLVMVolumeProcessed(ctx, vol.GetName()); err != nil {
+			if vol, err = lvm.WaitForVolumeProcessed(ctx, vol.GetName()); err != nil {
 				return nil, err
 			}
 		}

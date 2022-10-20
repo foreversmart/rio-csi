@@ -22,7 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	apis "qiniu.io/rio-csi/apis/qiniu.io/qvm/v1alpha1"
+	apis "qiniu.io/rio-csi/api/rio/v1"
 	"strconv"
 	"strings"
 
@@ -211,7 +211,7 @@ func newExecError(output []byte, err error) error {
 }
 
 // builldLVMCreateArgs returns lvcreate command for the volume
-func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
+func buildLVMCreateArgs(vol *apis.Volume) []string {
 	var LVMVolArg []string
 
 	volume := vol.Name
@@ -249,7 +249,7 @@ func buildLVMCreateArgs(vol *apis.LVMVolume) []string {
 }
 
 // builldLVMDestroyArgs returns lvmremove command for the volume
-func buildLVMDestroyArgs(vol *apis.LVMVolume) []string {
+func buildLVMDestroyArgs(vol *apis.Volume) []string {
 	var LVMVolArg []string
 
 	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
@@ -260,7 +260,7 @@ func buildLVMDestroyArgs(vol *apis.LVMVolume) []string {
 }
 
 // CreateVolume creates the lvm volume
-func CreateVolume(vol *apis.LVMVolume) error {
+func CreateVolume(vol *apis.Volume) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
 	volExists, err := CheckVolumeExists(vol)
@@ -289,7 +289,7 @@ func CreateVolume(vol *apis.LVMVolume) error {
 }
 
 // DestroyVolume deletes the lvm volume
-func DestroyVolume(vol *apis.LVMVolume) error {
+func DestroyVolume(vol *apis.Volume) error {
 	if vol.Spec.VolGroup == "" {
 		klog.Infof("volGroup not set for lvm volume %v, skipping its deletion", vol.Name)
 		return nil
@@ -328,7 +328,7 @@ func DestroyVolume(vol *apis.LVMVolume) error {
 }
 
 // CheckVolumeExists validates if lvm volume exists
-func CheckVolumeExists(vol *apis.LVMVolume) (bool, error) {
+func CheckVolumeExists(vol *apis.Volume) (bool, error) {
 	devPath, err := GetVolumeDevPath(vol)
 	if err != nil {
 		return false, err
@@ -343,7 +343,7 @@ func CheckVolumeExists(vol *apis.LVMVolume) (bool, error) {
 }
 
 // GetVolumeDevPath returns devpath for the given volume
-func GetVolumeDevPath(vol *apis.LVMVolume) (string, error) {
+func GetVolumeDevPath(vol *apis.Volume) (string, error) {
 	// LVM doubles the hiphen for the mapper device name
 	// and uses single hiphen to separate volume group from volume
 	vg := strings.Replace(vol.Spec.VolGroup, "-", "--", -1)
@@ -355,7 +355,7 @@ func GetVolumeDevPath(vol *apis.LVMVolume) (string, error) {
 }
 
 // builldVolumeResizeArgs returns resize command for the lvm volume
-func buildVolumeResizeArgs(vol *apis.LVMVolume, resizefs bool) []string {
+func buildVolumeResizeArgs(vol *apis.Volume, resizefs bool) []string {
 	var LVMVolArg []string
 
 	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
@@ -377,11 +377,11 @@ func buildVolumeResizeArgs(vol *apis.LVMVolume, resizefs bool) []string {
 //     same size will not return any errors
 //  2. Triggering `lvextend <dev_path> -L <size>` more than one time will
 //     cause errors
-func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
+func ResizeLVMVolume(vol *apis.Volume, resizefs bool) error {
 
 	// In case if resizefs is not enabled then check current size
 	// before exapnding LVM volume(If volume is already expanded then
-	// it might be error prone). This also makes ResizeLVMVolume func
+	// it might be error prone). This also makes ResizeVolume func
 	// idempotent
 	if !resizefs {
 		desiredVolSize, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
@@ -417,11 +417,11 @@ func ResizeLVMVolume(vol *apis.LVMVolume, resizefs bool) error {
 }
 
 // getLVSize will return current LVM volume size in bytes
-func getLVSize(vol *apis.LVMVolume) (uint64, error) {
-	lvmVolumeName := vol.Spec.VolGroup + "/" + vol.Name
+func getLVSize(vol *apis.Volume) (uint64, error) {
+	VolumeName := vol.Spec.VolGroup + "/" + vol.Name
 
 	args := []string{
-		lvmVolumeName,
+		VolumeName,
 		"--noheadings",
 		"-o", "lv_size",
 		"--units", "b",
@@ -434,7 +434,7 @@ func getLVSize(vol *apis.LVMVolume) (uint64, error) {
 		return 0, errors.Wrapf(
 			err,
 			"could not get size of volume %v output: %s",
-			lvmVolumeName,
+			VolumeName,
 			string(raw),
 		)
 	}
@@ -645,11 +645,11 @@ func ReloadLVMMetadataCache() error {
 	return nil
 }
 
-// ListLVMVolumeGroup invokes `vgs` to list all the available volume
+// ListVolumeGroup invokes `vgs` to list all the available volume
 // groups in the node.
 //
 // In case reloadCache is false, we skip refreshing lvm metadata cache.
-func ListLVMVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
+func ListVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
 	if reloadCache {
 		if err := ReloadLVMMetadataCache(); err != nil {
 			return nil, err
@@ -1061,8 +1061,8 @@ func getThinPoolSize(vgname, volsize string) string {
 }
 
 // removeVolumeFilesystem will erases the filesystem signature from lvm volume
-func removeVolumeFilesystem(lvmVolume *apis.LVMVolume) error {
-	devicePath := filepath.Join(DevPath, lvmVolume.Spec.VolGroup, lvmVolume.Name)
+func removeVolumeFilesystem(Volume *apis.Volume) error {
+	devicePath := filepath.Join(DevPath, Volume.Spec.VolGroup, Volume.Name)
 
 	// wipefs erases the filesystem signature from the lvm volume
 	// -a    wipe all magic strings

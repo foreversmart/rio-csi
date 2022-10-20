@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"path/filepath"
-	riov1 "qiniu.io/rio-csi/api/rio/v1"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -30,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	riov1 "qiniu.io/rio-csi/api/v1"
 	//+kubebuilder:scaffold:imports
 )
 
