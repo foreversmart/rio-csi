@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,16 +39,95 @@ type NodeStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +resource:path=lvmnode
 
 // Node is the Schema for the nodes API
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Namespaced,shortName=rionode
 type Node struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NodeSpec   `json:"spec,omitempty"`
-	Status NodeStatus `json:"status,omitempty"`
+	VolumeGroups []VolumeGroup `json:"volumeGroups"`
+}
+
+// VolumeGroup specifies attributes of a given vg exists on node.
+type VolumeGroup struct {
+	// Name of the lvm volume group.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// UUID denotes a unique identity of a lvm volume group.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	UUID string `json:"uuid"`
+
+	// Size specifies the total size of volume group.
+	// +kubebuilder:validation:Required
+	Size resource.Quantity `json:"size"`
+	// Free specifies the available capacity of volume group.
+	// +kubebuilder:validation:Required
+	Free resource.Quantity `json:"free"`
+
+	// LVCount denotes total number of logical volumes in
+	// volume group.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=0
+	LVCount int32 `json:"lvCount"`
+	// PVCount denotes total number of physical volumes
+	// constituting the volume group.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=0
+	PVCount int32 `json:"pvCount"`
+
+	// MaxLV denotes maximum number of logical volumes allowed
+	// in volume group or 0 if unlimited.
+	MaxLV int32 `json:"maxLv"`
+
+	// MaxPV denotes maximum number of physical volumes allowed
+	// in volume group or 0 if unlimited.
+	MaxPV int32 `json:"maxPv"`
+
+	// SnapCount denotes number of snapshots in volume group.
+	SnapCount int32 `json:"snapCount"`
+
+	// MissingPVCount denotes number of physical volumes in
+	// volume group which are missing.
+	MissingPVCount int32 `json:"missingPvCount"`
+
+	// MetadataCount denotes number of metadata areas on the
+	// volume group.
+	MetadataCount int32 `json:"metadataCount"`
+
+	// MetadataUsedCount denotes number of used metadata areas in
+	// volume group
+	MetadataUsedCount int32 `json:"metadataUsedCount"`
+
+	// MetadataFree specifies the available metadata area space
+	// for the volume group
+	MetadataFree resource.Quantity `json:"metadataFree"`
+
+	// MetadataSize specifies size of smallest metadata area
+	// for the volume group
+	MetadataSize resource.Quantity `json:"metadataSize"`
+
+	// Permission indicates the volume group permission
+	// which can be writable or read-only.
+	// Permission has the following mapping between
+	// int and string for its value:
+	// [-1: "", 0: "writeable", 1: "read-only"]
+	Permission int `json:"permissions"`
+
+	// AllocationPolicy indicates the volume group allocation
+	// policy.
+	// AllocationPolicy has the following mapping between
+	// int and string for its value:
+	// [-1: "", 0: "normal", 1: "contiguous", 2: "cling", 3: "anywhere", 4: "inherited"]
+	AllocationPolicy int `json:"allocationPolicy"`
 }
 
 //+kubebuilder:object:root=true
