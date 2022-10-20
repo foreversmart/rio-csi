@@ -48,8 +48,9 @@ type VolumeReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	l := log.FromContext(ctx)
 
+	l.Info("hello" + req.Name + "||||" + req.Namespace)
 	// TODO(user): your logic here
 
 	return ctrl.Result{}, nil

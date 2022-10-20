@@ -70,7 +70,8 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: docker.qiniu.io:32500/controller:latest
+        imagePullPolicy: Always
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
