@@ -13,7 +13,7 @@ kind: ServiceAccount
 metadata:
   name: csi-provisioner
   # replace with non-default namespace name
-  namespace: default
+  namespace: riocsi
 
 ---
 kind: ClusterRole

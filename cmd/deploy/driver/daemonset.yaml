@@ -17,6 +17,7 @@ spec:
     spec:
       # debug only(connect to dlv 2345 port)
       #hostNetwork: true
+      hostNetwork: true
       containers:
         - name: csi-driver-registrar
           image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
