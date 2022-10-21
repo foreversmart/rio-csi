@@ -5,6 +5,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: csi-driver-registrar
+  namespace: riocsi
 spec:
   selector:
     matchLabels:
@@ -72,7 +73,7 @@ spec:
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry
-            type: Directory
+            type: DirectoryOrCreate
         # rio csi driver will create a shared mount point in this directory
         - name: pods-mount-dir
           hostPath:

@@ -6,6 +6,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: csi-provisioner
+  namespace: riocsi
 spec:
   replicas: 3
   selector:
@@ -28,48 +29,31 @@ spec:
             - "--enable-leader-election"
           env:
             - name: CSI_ENDPOINT
-              value: /csi/csi.sock
+              value: /var/lib/csi/sockets/pluginproxy/rio/csi.sock
           volumeMounts:
             - name: socket-dir
-              mountPath: /csi
+              mountPath: /var/lib/csi/sockets/pluginproxy/rio
         - name: csi-nfs
           securityContext:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
-          image: ytpay/csi-nfs:v1.0.4
+          image: docker.qiniu.io:32500/controller:latest
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
-            - "--nfs-server=$(NFS_SERVER)"
-            - "--nfs-server-share-point=$(NFS_SERVER_SHARE_POINT)"
-            - "--nfs-local-mount-point=$(NFS_LOCAL_MOUNT_POINT)"
-            - "--nfs-local-mount-options=$(NFS_LOCAL_MOUNT_OPTIONS)"
             - "--enable-identity-server"
             - "--enable-controller-server"
-          lifecycle:
-            preStop:
-              exec:
-                command: ["bash","-c","umount ${NFS_LOCAL_MOUNT}"]
           env:
             - name: NODE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
-              value: unix:///csi/csi.sock
-            - name: NFS_LOCAL_MOUNT_POINT
-              value: /nfs
-            - name: NFS_LOCAL_MOUNT_OPTIONS
-              value: "rw,vers=4,soft,timeo=10,retry=3"
-            # replace with real nfs server config
-            - name: NFS_SERVER
-              value: 172.16.10.50
-            - name: NFS_SERVER_SHARE_POINT
-              value: /mnt/freenas/kubernetes
+              value: unix:///var/lib/csi/sockets/pluginproxy/rio/csi.sock
           volumeMounts:
             - name: socket-dir
-              mountPath: /csi
+              mountPath: /var/lib/csi/sockets/pluginproxy/rio
       volumes:
         - name: socket-dir
           emptyDir: {}
