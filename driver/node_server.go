@@ -10,7 +10,7 @@ import (
 )
 
 type nodeServer struct {
-	Driver *archetype
+	Driver *RioCSI
 	// Users add fields as needed.
 	//
 	// In the NFS CSI implementation, we need to mount the nfs server to the local,

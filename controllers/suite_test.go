@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	riov1 "qiniu.io/rio-csi/api/v1"
+	riov1 "qiniu.io/rio-csi/api/rio/v1"
 	//+kubebuilder:scaffold:imports
 )
 

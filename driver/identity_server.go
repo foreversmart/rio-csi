@@ -9,7 +9,7 @@ import (
 )
 
 type IdentityServer struct {
-	Driver *archetype
+	Driver *RioCSI
 }
 
 func (ids *IdentityServer) GetPluginInfo(_ context.Context, _ *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {

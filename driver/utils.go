@@ -13,20 +13,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-func NewIdentityServer(d *archetype) *IdentityServer {
+func NewIdentityServer(d *RioCSI) *IdentityServer {
 	return &IdentityServer{
 		Driver: d,
 	}
 }
 
-func NewControllerServer(d *archetype) *ControllerServer {
+func NewControllerServer(d *RioCSI) *ControllerServer {
 	return &ControllerServer{
 		Driver:  d,
 		mounter: mount.New(""),
 	}
 }
 
-func NewNodeServer(n *archetype) *nodeServer {
+func NewNodeServer(n *RioCSI) *nodeServer {
 	return &nodeServer{
 		Driver:  n,
 		mounter: mount.New(""),

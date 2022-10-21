@@ -89,7 +89,7 @@ func init() {
 // watcher for volume is present in CSI agent
 func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 	options := metav1.CreateOptions{}
-	res, err := client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Create(context.Background(), vol, options)
+	res, err := client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Create(context.Background(), vol, options)
 	if err == nil {
 		klog.Infof("provisioned volume %s", vol.Name)
 	}
@@ -110,7 +110,7 @@ func DeleteVolume(volumeID string) (err error) {
 		PropagationPolicy: &deletePropagation,
 	}
 
-	err = client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Delete(context.Background(), volumeID, options)
+	err = client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Delete(context.Background(), volumeID, options)
 	if err == nil {
 		klog.Infof("deprovisioned volume %s", volumeID)
 	}
@@ -121,7 +121,7 @@ func DeleteVolume(volumeID string) (err error) {
 // GetVolume fetches the given Volume
 func GetVolume(volumeID string) (*apis.Volume, error) {
 	getOptions := metav1.GetOptions{}
-	vol, err := client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Get(context.Background(), volumeID, getOptions)
+	vol, err := client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Get(context.Background(), volumeID, getOptions)
 	return vol, err
 }
 
@@ -205,7 +205,7 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 		return err
 	}
 
-	_, err = client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 
 	return err
 }
@@ -218,14 +218,14 @@ func UpdateVolGroup(vol *apis.Volume, vgName string) (*apis.Volume, error) {
 		return nil, err
 	}
 
-	return client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	return client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 }
 
 // RemoveVolFinalizer adds finalizer to Volume CR
 func RemoveVolFinalizer(vol *apis.Volume) error {
 	vol.Finalizers = nil
 
-	_, err := client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
 
@@ -234,7 +234,7 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 
 	vol.Spec.Capacity = strconv.FormatInt(int64(newSize), 10)
 
-	_, err := client.DefaultClient.ClientSet.QvmV1alpha1().Volumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
 

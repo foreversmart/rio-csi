@@ -1,0 +1,80 @@
+# This YAML file contains driver-registrar & csi driver nodeplugin API objects
+# that are necessary to run CSI nodeplugin for nfs
+
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: csi-driver-registrar
+spec:
+  selector:
+    matchLabels:
+      app: csi-driver-registrar
+  template:
+    metadata:
+      labels:
+        app: csi-driver-registrar
+    spec:
+      # debug only(connect to dlv 2345 port)
+      #hostNetwork: true
+      containers:
+        - name: csi-driver-registrar
+          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(CSI_ENDPOINT)"
+            - "--kubelet-registration-path=/var/lib/kubelet/plugins/rio-csi/csi.sock"
+          env:
+            - name: CSI_ENDPOINT
+              value: /csi/csi.sock
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+        - name: rio-csi
+          image: docker.qiniu.io:32500/controller:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["bash","-c","rm -rf /registration/rio-csi /registration/rio-csi-reg.sock"]
+          args :
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--enable-identity-server"
+            - "--enable-node-server"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+            # nfs ci driver will create a shared mount point in this directory
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+      volumes:
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/rio-csi
+            type: DirectoryOrCreate
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+        # rio csi driver will create a shared mount point in this directory
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: Directory
