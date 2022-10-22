@@ -17,6 +17,7 @@ spec:
     spec:
       # debug only(connect to dlv 2345 port)
       #hostNetwork: true
+      serviceAccount: riocsi-node-sa
       hostNetwork: true
       containers:
         - name: csi-driver-registrar
@@ -80,3 +81,50 @@ spec:
           hostPath:
             path: /var/lib/kubelet/pods
             type: Directory
+---
+
+########################################
+###########                 ############
+###########   Node plugin   ############
+###########                 ############
+########################################
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: riocsi-node-sa
+  namespace: riocsi
+
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: riocsi-driver-registrar-role
+rules:
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes", "nodes", "services"]
+    verbs: ["get", "list"]
+  - apiGroups: ["local.openebs.io"]
+    resources: ["lvmvolumes", "lvmsnapshots", "lvmnodes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: riocsi-driver-registrar-binding
+subjects:
+  - kind: ServiceAccount
+    name: riocsi-node-sa
+    namespace: riocsi
+roleRef:
+  kind: ClusterRole
+  name: riocsi-driver-registrar-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
