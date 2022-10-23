@@ -33,7 +33,7 @@ func NewCSIDriver(name, version, nodeID, endpoint string, enableIdentityServer, 
 		nodeID:                 nodeID,
 		version:                version,
 		endpoint:               endpoint,
-		enableIdentityServer:   enableControllerServer,
+		enableIdentityServer:   enableIdentityServer,
 		enableControllerServer: enableControllerServer,
 		enableNodeServer:       enableNodeServer,
 	}
@@ -61,6 +61,7 @@ func (n *RioCSI) Run() {
 		logrus.Info("Enable gRPC Server: IdentityServer")
 		identityServer = NewIdentityServer(n)
 	}
+
 	if n.enableControllerServer {
 		logrus.Info("Enable gRPC Server: ControllerServer")
 		controllerServer = NewControllerServer(n)
