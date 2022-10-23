@@ -36,7 +36,8 @@ vet: ## Run go vet against code.
 
 .PHONY: build
 build:  fmt vet ## Build manager binary.
-	go build -o bin/rio-csi main.go
+	#CGO_ENABLED=0 go build -o bin/rio-csi main.go
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/rio-csi main.go
 
 .PHONY: run
 run: fmt vet ## Run a controller from your host.
