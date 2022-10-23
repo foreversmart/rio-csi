@@ -5,6 +5,5 @@ RUN apk add --no-cache ca-certificates libc6-compat
 
 WORKDIR /
 COPY bin/rio-csi bin/rio-csi
-USER 65532:65532
 
 ENTRYPOINT ["/bin/rio-csi"]
