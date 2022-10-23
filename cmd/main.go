@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 	"qiniu.io/rio-csi/driver"
 	"runtime"
-	"time"
 )
 
 var (
@@ -60,7 +59,6 @@ func init() {
 }
 
 func main() {
-	time.Sleep(time.Second * 20000)
 	Execute()
 }
 
