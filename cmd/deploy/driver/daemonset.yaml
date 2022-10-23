@@ -48,6 +48,8 @@ spec:
                 command: ["bash","-c","rm -rf /registration/rio-csi /registration/rio-csi-reg.sock"]
           args :
             - "--nodeid=$(NODE_ID)"
+            - "--name=rio-csi"
+            - "--version=v1.0"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--enable-identity-server"
             - "--enable-node-server"

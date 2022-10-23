@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"qiniu.io/rio-csi/driver"
-	"runtime"
 )
 
 var (
@@ -84,7 +82,10 @@ func setRootCMD() {
 	rootCmd.PersistentFlags().StringVar(&name, "name", "rio-csi", "CSI Driver Name")
 	_ = rootCmd.PersistentFlags().MarkHidden("name")
 
-	rootCmd.SetVersionTemplate(fmt.Sprintf(versionTpl, name, Version, runtime.GOOS+"/"+runtime.GOARCH, BuildDate, CommitID))
+	rootCmd.PersistentFlags().StringVar(&Version, "version", "v1.0", "CSI Driver Version")
+	_ = rootCmd.PersistentFlags().MarkHidden("version")
+
+	//rootCmd.SetVersionTemplate(fmt.Sprintf(versionTpl, name, Version, runtime.GOOS+"/"+runtime.GOARCH, BuildDate, CommitID))
 }
 
 func initLog() {
