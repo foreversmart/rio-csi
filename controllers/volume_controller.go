@@ -37,6 +37,7 @@ import (
 type VolumeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	NodeID string
 }
 
 //+kubebuilder:rbac:groups=rio.qiniu.io,resources=volumes,verbs=get;list;watch;create;update;patch;delete
@@ -57,6 +58,7 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	l := log.FromContext(ctx)
 	var vol riov1.Volume
 	l.Info("hello" + req.Name + "||||" + req.Namespace)
+
 	// TODO(user): your logic here
 	err := r.Get(ctx, client.ObjectKey{
 		Namespace: req.Namespace,
@@ -67,6 +69,11 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
+	}
+
+	if r.NodeID != vol.Spec.OwnerNodeID {
+		l.Error(fmt.Errorf("nodeid: %s, vol node id %s is not same", r.NodeID, vol.Spec.OwnerNodeID), "vol is not on this node")
+		return ctrl.Result{}, nil
 	}
 
 	err = r.syncVol(ctx, &vol)

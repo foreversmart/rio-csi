@@ -67,17 +67,23 @@ spec:
         #   type: RuntimeDefault
       containers:
       - command:
-        - /manager
+        - bin/manager
         args:
-        - --leader-elect
+        - "--leader-elect"
+        - "--node_id=$(NODE_ID)"
+        env:
+          - name: NODE_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
         image: docker.qiniu.io:32500/controller:latest
         imagePullPolicy: Always
         name: manager
         securityContext:
-          allowPrivilegeEscalation: false
+          privileged: true
           capabilities:
-            drop:
-              - "ALL"
+            add: ["SYS_ADMIN"]
+          allowPrivilegeEscalation: true
         livenessProbe:
           httpGet:
             path: /healthz
@@ -99,5 +105,22 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+        volumeMounts:
+          - name: device-dir
+            mountPath: /dev
+          - name: pods-mount-dir
+            mountPath: /var/lib/kubelet/
+            # needed so that any mounts setup inside this container are
+            # propagated back to the host machine.
+            mountPropagation: "Bidirectional"
+      volumes:
+        - name: device-dir
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/
+            type: Directory
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
