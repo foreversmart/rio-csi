@@ -69,6 +69,11 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	err = r.syncVol(ctx, &vol)
+	if err != nil {
+		l.Error(err, "sync vol error")
+	}
+
 	return ctrl.Result{}, nil
 }
 
