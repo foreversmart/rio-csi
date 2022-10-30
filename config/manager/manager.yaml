@@ -68,7 +68,6 @@ spec:
       - command:
         - bin/manager
         args:
-        - "--leader-elect"
         - "--node_id=$(NODE_ID)"
         env:
           - name: NODE_ID
