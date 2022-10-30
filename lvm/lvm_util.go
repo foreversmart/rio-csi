@@ -273,6 +273,7 @@ func CreateVolume(vol *apis.Volume) error {
 	}
 
 	args := buildLVMCreateArgs(vol)
+	klog.Info("lvm: create args:", args)
 	cmd := exec.Command(LVCreate, args...)
 	out, err := cmd.CombinedOutput()
 
