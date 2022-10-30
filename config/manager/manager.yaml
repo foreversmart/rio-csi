@@ -74,6 +74,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          - name: RIO_CSI_NAMESPACE
+            value: riocsi
         image: docker.qiniu.io:32500/controller:latest
         imagePullPolicy: Always
         name: manager

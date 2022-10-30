@@ -32,10 +32,10 @@ import (
 )
 
 const (
-	// LvmNamespaceKey is the environment variable to get openebs namespace
+	// RioNamespaceKey is the environment variable to get openebs namespace
 	//
 	// This environment variable is set via kubernetes downward API
-	LvmNamespaceKey string = "LVM_NAMESPACE"
+	RioNamespaceKey string = "RIO_CSI_NAMESPACE"
 	// GoogleAnalyticsKey This environment variable is set via env
 	GoogleAnalyticsKey string = "OPENEBS_IO_ENABLE_ANALYTICS"
 	// LVMFinalizer for the Volume CR
@@ -61,8 +61,8 @@ const (
 )
 
 var (
-	// LvmNamespace is openebs system namespace
-	LvmNamespace string
+	// RioNamespace is openebs system namespace
+	RioNamespace string
 
 	// NodeID is the NodeID of the node on which the pod is present
 	NodeID string
@@ -73,12 +73,12 @@ var (
 
 func init() {
 
-	LvmNamespace = os.Getenv(LvmNamespaceKey)
-	if LvmNamespace == "" && os.Getenv("OPENEBS_NODE_DRIVER") != "" {
+	RioNamespace = os.Getenv(RioNamespaceKey)
+	if RioNamespace == "" {
 		klog.Fatalf("LVM_NAMESPACE environment variable not set")
 	}
-	NodeID = os.Getenv("OPENEBS_NODE_ID")
-	if NodeID == "" && os.Getenv("OPENEBS_NODE_DRIVER") != "" {
+	NodeID = os.Getenv("NODE_ID")
+	if NodeID == "" {
 		klog.Fatalf("NodeID environment variable not set")
 	}
 
@@ -89,7 +89,7 @@ func init() {
 // watcher for volume is present in CSI agent
 func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 	options := metav1.CreateOptions{}
-	res, err := client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Create(context.Background(), vol, options)
+	res, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Create(context.Background(), vol, options)
 	if err == nil {
 		klog.Infof("provisioned volume %s", vol.Name)
 	}
@@ -110,7 +110,7 @@ func DeleteVolume(volumeID string) (err error) {
 		PropagationPolicy: &deletePropagation,
 	}
 
-	err = client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Delete(context.Background(), volumeID, options)
+	err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Delete(context.Background(), volumeID, options)
 	if err == nil {
 		klog.Infof("deprovisioned volume %s", volumeID)
 	}
@@ -121,7 +121,7 @@ func DeleteVolume(volumeID string) (err error) {
 // GetVolume fetches the given Volume
 func GetVolume(volumeID string) (*apis.Volume, error) {
 	getOptions := metav1.GetOptions{}
-	vol, err := client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Get(context.Background(), volumeID, getOptions)
+	vol, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Get(context.Background(), volumeID, getOptions)
 	return vol, err
 }
 
@@ -205,7 +205,7 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 		return err
 	}
 
-	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 
 	return err
 }
@@ -218,14 +218,14 @@ func UpdateVolGroup(vol *apis.Volume, vgName string) (*apis.Volume, error) {
 		return nil, err
 	}
 
-	return client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	return client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 }
 
 // RemoveVolFinalizer adds finalizer to Volume CR
 func RemoveVolFinalizer(vol *apis.Volume) error {
 	vol.Finalizers = nil
 
-	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
 
@@ -234,13 +234,13 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 
 	vol.Spec.Capacity = strconv.FormatInt(int64(newSize), 10)
 
-	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(LvmNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
 
 // ProvisionSnapshot creates a LVMSnapshot CR
 //func ProvisionSnapshot(snap *apis.LVMSnapshot) error {
-//	_, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Create(snap)
+//	_, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Create(snap)
 //	if err == nil {
 //		klog.Infof("provosioned snapshot %s", snap.Name)
 //	}
@@ -249,7 +249,7 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 
 // DeleteSnapshot deletes the LVMSnapshot CR
 //func DeleteSnapshot(snapName string) error {
-//	err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Delete(snapName)
+//	err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Delete(snapName)
 //	if err == nil {
 //		klog.Infof("deprovisioned snapshot %s", snapName)
 //	}
@@ -260,7 +260,7 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 //// GetLVMSnapshot fetches the given LVM snapshot
 //func GetLVMSnapshot(snapID string) (*apis.LVMSnapshot, error) {
 //	getOptions := metav1.GetOptions{}
-//	snap, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Get(snapID, getOptions)
+//	snap, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Get(snapID, getOptions)
 //	return snap, err
 //}
 //
@@ -269,14 +269,14 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 //	listOptions := metav1.ListOptions{
 //		LabelSelector: LVMVolKey + "=" + volumeID,
 //	}
-//	snapList, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).List(listOptions)
+//	snapList, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).List(listOptions)
 //	return snapList, err
 //}
 //
 //// GetLVMSnapshotStatus returns the status of LVMSnapshot
 //func GetLVMSnapshotStatus(snapID string) (string, error) {
 //	getOptions := metav1.GetOptions{}
-//	snap, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Get(snapID, getOptions)
+//	snap, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Get(snapID, getOptions)
 //	if err != nil {
 //		klog.Errorf("Get snapshot failed %s err: %s", snap.Name, err.Error())
 //		return "", err
@@ -306,7 +306,7 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 //		return err
 //	}
 //
-//	_, err = snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Update(newSnap)
+//	_, err = snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Update(newSnap)
 //	return err
 //}
 //
@@ -314,6 +314,6 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 //func RemoveSnapFinalizer(snap *apis.LVMSnapshot) error {
 //	snap.Finalizers = nil
 //
-//	_, err := snapbuilder.NewKubeclient().WithNamespace(LvmNamespace).Update(snap)
+//	_, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Update(snap)
 //	return err
 //}
