@@ -52,8 +52,8 @@ func main() {
 	var metricsAddr string
 	var probeAddr string
 	var nodeID string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":9080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":9081", "The address the probe endpoint binds to.")
+	flag.StringVar(&metricsAddr, "metrics-bind-address", ":9180", "The address the metric endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", ":9181", "The address the probe endpoint binds to.")
 	flag.StringVar(&nodeID, "node_id", "", "pass node id into pod")
 	opts := zap.Options{
 		Development: true,
