@@ -172,7 +172,7 @@ func WaitForVolumeDestroy(ctx context.Context, volumeID string) error {
 }
 
 // GetVolumeState returns Volume OwnerNode and State for
-// the given volume. CreateVolume request may call it again and
+// the given volume. CreateLVMVolume request may call it again and
 // again until volume is "Ready".
 func GetVolumeState(volID string) (string, string, error) {
 	vol, err := GetVolume(volID)

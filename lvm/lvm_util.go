@@ -248,19 +248,8 @@ func buildLVMCreateArgs(vol *apis.Volume) []string {
 	return LVMVolArg
 }
 
-// builldLVMDestroyArgs returns lvmremove command for the volume
-func buildLVMDestroyArgs(vol *apis.Volume) []string {
-	var LVMVolArg []string
-
-	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
-
-	LVMVolArg = append(LVMVolArg, "-y", dev)
-
-	return LVMVolArg
-}
-
-// CreateVolume creates the lvm volume
-func CreateVolume(vol *apis.Volume) error {
+// CreateLVMVolume creates the lvm volume
+func CreateLVMVolume(vol *apis.Volume) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 
 	volExists, err := CheckVolumeExists(vol)
@@ -289,8 +278,8 @@ func CreateVolume(vol *apis.Volume) error {
 	return nil
 }
 
-// DestroyVolume deletes the lvm volume
-func DestroyVolume(vol *apis.Volume) error {
+// DeleteLVMVolume deletes the lvm volume
+func DeleteLVMVolume(vol *apis.Volume) error {
 	if vol.Spec.VolGroup == "" {
 		klog.Infof("volGroup not set for lvm volume %v, skipping its deletion", vol.Name)
 		return nil
@@ -312,7 +301,7 @@ func DestroyVolume(vol *apis.Volume) error {
 		return err
 	}
 
-	args := buildLVMDestroyArgs(vol)
+	args := buildLVMDeleteArgs(vol)
 	cmd := exec.Command(LVRemove, args...)
 	out, err := cmd.CombinedOutput()
 
@@ -326,6 +315,17 @@ func DestroyVolume(vol *apis.Volume) error {
 	klog.Infof("lvm: destroyed volume %s", volume)
 
 	return nil
+}
+
+// buildLVMDeleteArgs returns lvmremove command for the volume
+func buildLVMDeleteArgs(vol *apis.Volume) []string {
+	var LVMVolArg []string
+
+	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
+
+	LVMVolArg = append(LVMVolArg, "-y", dev)
+
+	return LVMVolArg
 }
 
 // CheckVolumeExists validates if lvm volume exists

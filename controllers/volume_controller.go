@@ -90,7 +90,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	// :remove
 	// LVM Volume should be deleted. Check if deletion timestamp is set
 	if r.isDeletionCandidate(vol) {
-		err = lvm.DestroyVolume(vol)
+		err = lvm.DeleteLVMVolume(vol)
 		if err == nil {
 			err = lvm.RemoveVolFinalizer(vol)
 		}
@@ -111,7 +111,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	// if there is already a volGroup field set for lvmvolume resource,
 	// we'll first try to create a volume in that volume group.
 	if vol.Spec.VolGroup != "" {
-		err = lvm.CreateVolume(vol)
+		err = lvm.CreateLVMVolume(vol)
 		if err == nil {
 			return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
 		}
@@ -134,13 +134,13 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 				l.Error(nil, fmt.Sprintf("failed to update volGroup to %v: %v", vg.Name, err))
 				return err
 			}
-			if err = lvm.CreateVolume(vol); err == nil {
+			if err = lvm.CreateLVMVolume(vol); err == nil {
 				return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
 			}
 		}
 	}
 
-	// In case no vg available or lvm.CreateVolume fails for all vgs, mark
+	// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
 	// the volume provisioning failed so that controller can reschedule it.
 	vol.Status.Error = r.transformLVMError(err)
 	return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)

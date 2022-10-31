@@ -10,6 +10,7 @@ import (
 	"k8s.io/utils/mount"
 	"qiniu.io/rio-csi/lvm"
 	"qiniu.io/rio-csi/lvm/builder/volbuilder"
+	"qiniu.io/rio-csi/lvm/common/errors"
 	"strconv"
 	"strings"
 )
@@ -27,7 +28,7 @@ type ControllerServer struct {
 }
 
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	logrus.Debugf("running CreateVolume...")
+	logrus.Debugf("running CreateLVMVolume...")
 
 	params, err := NewVolumeParams(req.GetParameters())
 	if err != nil {
@@ -109,7 +110,35 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 	logrus.Debugf("running DeleteVolume...")
-	return nil, status.Error(codes.Unimplemented, "Unimplemented DeleteVolume")
+	var err error
+	if err = cs.validateDeleteVolumeReq(req); err != nil {
+		return nil, err
+	}
+
+	volumeID := strings.ToLower(req.GetVolumeId())
+	logrus.Infof("received request to delete volume %q", volumeID)
+	vol, err := lvm.GetVolume(volumeID)
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrapf(err, "failed to get volume for {%s}", volumeID)
+	}
+
+	// if volume is not already triggered for deletion, delete the volume.
+	// otherwise, just wait for the existing deletion operation to complete.
+	if vol.GetDeletionTimestamp() == nil {
+		if err = lvm.DeleteVolume(volumeID); err != nil {
+			return nil, errors.Wrapf(err,
+				"failed to handle delete volume request for {%s}", volumeID)
+		}
+	}
+
+	if err = lvm.WaitForVolumeDestroy(ctx, volumeID); err != nil {
+		return nil, err
+	}
+
+	return &csi.DeleteVolumeResponse{}, nil
 }
 
 func (cs *ControllerServer) ControllerPublishVolume(_ context.Context, _ *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
@@ -140,9 +169,9 @@ func (cs *ControllerServer) GetCapacity(_ context.Context, _ *csi.GetCapacityReq
 // ControllerGetCapabilities implements the default GRPC callout.
 // Default supports all capabilities
 func (cs *ControllerServer) ControllerGetCapabilities(_ context.Context, _ *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
-	logrus.Infof("Using default ControllerGetCapabilities")
+	logrus.Infof("get ControllerGetCapabilities")
 	return &csi.ControllerGetCapabilitiesResponse{
-		Capabilities: cs.Driver.cscap,
+		Capabilities: cs.Driver.serviceCapabilities,
 	}, nil
 }
 
