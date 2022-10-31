@@ -16,8 +16,8 @@ type RioCSI struct {
 	enableControllerServer bool
 	enableNodeServer       bool
 
-	cap   []*csi.VolumeCapability_AccessMode
-	cscap []*csi.ControllerServiceCapability
+	accessModes         []*csi.VolumeCapability_AccessMode
+	serviceCapabilities []*csi.ControllerServiceCapability
 }
 
 func NewCSIDriver(name, version, nodeID, endpoint string, enableIdentityServer, enableControllerServer, enableNodeServer bool) *RioCSI {
@@ -46,7 +46,9 @@ func NewCSIDriver(name, version, nodeID, endpoint string, enableIdentityServer, 
 	// Add service capabilities for CSI here
 	n.AddControllerServiceCapabilities([]csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
+		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		//csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
+		//csi.ControllerServiceCapability_RPC_GET_CAPACITY,
 	})
 
 	return n
@@ -87,7 +89,7 @@ func (n *RioCSI) AddVolumeCapabilityAccessModes(vc []csi.VolumeCapability_Access
 		logrus.Infof("Enabling volume access mode: %v", c.String())
 		vca = append(vca, &csi.VolumeCapability_AccessMode{Mode: c})
 	}
-	n.cap = vca
+	n.accessModes = vca
 }
 
 func (n *RioCSI) AddControllerServiceCapabilities(cl []csi.ControllerServiceCapability_RPC_Type) {
@@ -96,5 +98,5 @@ func (n *RioCSI) AddControllerServiceCapabilities(cl []csi.ControllerServiceCapa
 		logrus.Infof("Enabling controller service capability: %v", c.String())
 		csc = append(csc, NewControllerServiceCapability(c))
 	}
-	n.cscap = csc
+	n.serviceCapabilities = csc
 }
