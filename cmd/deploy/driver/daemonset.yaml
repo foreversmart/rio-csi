@@ -60,6 +60,8 @@ spec:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
+            - name: RIO_CSI_NAMESPACE
+              value: riocsi
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
