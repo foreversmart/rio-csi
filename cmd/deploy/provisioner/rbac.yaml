@@ -65,7 +65,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
-    namespace: default
+    namespace: riocsi
 roleRef:
   kind: ClusterRole
   name: riocsi-provisioner
