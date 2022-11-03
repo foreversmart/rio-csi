@@ -65,6 +65,7 @@ spec:
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--enable-identity-server"
             - "--enable-node-server"
+            - "--enable-controller-server"
           env:
             - name: NODE_ID
               valueFrom:
