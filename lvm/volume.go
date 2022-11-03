@@ -76,7 +76,7 @@ func init() {
 
 	RioNamespace = os.Getenv(RioNamespaceKey)
 	if RioNamespace == "" {
-		klog.Fatalf("LVM_NAMESPACE environment variable not set")
+		klog.Fatalf("NAMESPACE environment variable not set")
 	}
 	NodeID = os.Getenv("NODE_ID")
 	if NodeID == "" {

@@ -56,6 +56,8 @@ spec:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/rio/csi.sock
+            - name: RIO_CSI_NAMESPACE
+              value: riocsi
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/rio
