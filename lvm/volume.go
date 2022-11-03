@@ -16,6 +16,7 @@ package lvm
 
 import (
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
@@ -38,8 +39,8 @@ const (
 	RioNamespaceKey string = "RIO_CSI_NAMESPACE"
 	// GoogleAnalyticsKey This environment variable is set via env
 	GoogleAnalyticsKey string = "OPENEBS_IO_ENABLE_ANALYTICS"
-	// LVMFinalizer for the Volume CR
-	LVMFinalizer string = "lvm.openebs.io/finalizer"
+	// RioFinalizer for the Volume CR
+	RioFinalizer string = "rio.qiniu.io/finalizer"
 	// VolGroupKey is key for LVM group name
 	VolGroupKey string = "openebs.io/volgroup"
 	// LVMVolKey for the LVMSnapshot CR to store Persistence Volume name
@@ -194,7 +195,7 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 	labels := map[string]string{LVMNodeKey: NodeID}
 	switch state {
 	case LVMStatusReady:
-		finalizers = append(finalizers, LVMFinalizer)
+		finalizers = append(finalizers, RioFinalizer)
 	}
 	newVol, err := volbuilder.BuildFrom(vol).
 		WithFinalizer(finalizers).
@@ -204,6 +205,8 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("update volume", newVol)
 
 	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 
@@ -286,7 +289,7 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 //
 //// UpdateSnapInfo updates LVMSnapshot CR with node id and finalizer
 //func UpdateSnapInfo(snap *apis.LVMSnapshot) error {
-//	finalizers := []string{LVMFinalizer}
+//	finalizers := []string{RioFinalizer}
 //	labels := map[string]string{
 //		LVMNodeKey: NodeID,
 //	}

@@ -25,8 +25,6 @@ import (
 
 // VolumeSpec defines the desired state of Volume
 type VolumeSpec struct {
-	FOO string `json:"foo"`
-
 	// OwnerNodeID is the Node ID where the volume group is present which is where
 	// the volume has been provisioned.
 	// OwnerNodeID can not be edited after the volume has been provisioned.
