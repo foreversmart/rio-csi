@@ -16,7 +16,6 @@ package lvm
 
 import (
 	"context"
-	"fmt"
 	"github.com/pkg/errors"
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
@@ -90,7 +89,22 @@ func init() {
 // watcher for volume is present in CSI agent
 func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 	options := metav1.CreateOptions{}
-	res, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Create(context.Background(), vol, options)
+	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Create(context.Background(), vol, options)
+	if err != nil {
+		return nil, err
+	}
+
+	if err == nil {
+		klog.Infof("provisioned volume %s", vol.Name)
+	}
+
+	return UpdateVolumeStatus(vol)
+}
+
+// UpdateVolumeStatus update volume status
+func UpdateVolumeStatus(vol *apis.Volume) (*apis.Volume, error) {
+	options := metav1.UpdateOptions{}
+	res, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).UpdateStatus(context.Background(), vol, options)
 	if err == nil {
 		klog.Infof("provisioned volume %s statue %s", vol.Name, vol.Status.State)
 	}
@@ -206,9 +220,12 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 		return err
 	}
 
-	fmt.Println("update volume", newVol)
-
 	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).UpdateStatus(context.Background(), newVol, metav1.UpdateOptions{})
 
 	return err
 }
