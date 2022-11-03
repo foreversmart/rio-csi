@@ -35,6 +35,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, status.Errorf(codes.InvalidArgument,
 			"failed to parse csi volume params: %v", err)
 	}
+	logrus.Info("create volume parameters:", req.GetParameters())
 
 	volName := strings.ToLower(req.GetName())
 	size := getRoundedCapacity(req.GetCapacityRange().RequiredBytes)
@@ -55,6 +56,8 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			"volume %s already present", volName)
 	}
 
+	// TODO Schedule Node
+	node := "xs2298"
 	contentSource := req.GetVolumeContentSource()
 	if contentSource != nil && contentSource.GetSnapshot() != nil {
 		return nil, status.Error(codes.Unimplemented, "")
@@ -69,7 +72,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			WithName(volName).
 			WithCapacity(capacity).
 			WithVgPattern(params.VgPattern.String()).
-			WithOwnerNode("spec").
+			WithOwnerNode(node).
 			WithVolumeStatus(lvm.LVMStatusPending).
 			WithShared(params.Shared).
 			WithThinProvision(params.ThinProvision).Build()

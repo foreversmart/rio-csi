@@ -92,7 +92,7 @@ func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 	options := metav1.CreateOptions{}
 	res, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Create(context.Background(), vol, options)
 	if err == nil {
-		klog.Infof("provisioned volume %s", vol.Name)
+		klog.Infof("provisioned volume %s statue %s", vol.Name, vol.Status.State)
 	}
 
 	return res, err
