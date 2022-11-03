@@ -26,14 +26,19 @@ spec:
           args:
             - "--v=5"
             - "--csi-address=$(CSI_ENDPOINT)"
-            - "--enable-leader-election"
+            - "--feature-gates=Topology=true"
+            - "--strict-topology"
+            - "--leader-election"
+            - "--extra-create-metadata=true"
+            - "--enable-capacity=true"
+            - "--default-fstype=ext4"
           env:
             - name: CSI_ENDPOINT
-              value: /var/lib/csi/sockets/pluginproxy/rio/csi.sock
+              value: /var/lib/csi/sockets/rio/csi.sock
           volumeMounts:
             - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/rio
-        - name: csi-nfs
+              mountPath: /var/lib/csi/sockets/rio
+        - name: rio-csi
           securityContext:
             privileged: true
             capabilities:
@@ -50,10 +55,10 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
-              value: unix:///var/lib/csi/sockets/pluginproxy/rio/csi.sock
+              value: unix:///var/lib/csi/sockets/rio/csi.sock
           volumeMounts:
             - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/rio
+              mountPath: /var/lib/csi/sockets/rio
       volumes:
         - name: socket-dir
           emptyDir: {}

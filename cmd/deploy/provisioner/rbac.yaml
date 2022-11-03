@@ -19,7 +19,7 @@ metadata:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: external-provisioner-runner
+  name: riocsi-provisioner
 rules:
   # The following rule should be uncommented for plugins that require secrets
   # for provisioning.
@@ -58,15 +58,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-provisioner-role
+  name: csi-provisioner-role-binding
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
-    # replace with non-default namespace name
     namespace: default
 roleRef:
   kind: ClusterRole
-  name: external-provisioner-runner
+  name: riocsi-provisioner
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -75,9 +74,8 @@ roleRef:
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  # replace with non-default namespace name
-  namespace: default
-  name: external-provisioner-cfg
+  namespace: riocsi
+  name: riocsi-provisioner
 rules:
   # Only one of the following rules for endpoints or leases is required based on
   # what is set for `--leader-election-type`. Endpoints are deprecated in favor of Leases.
@@ -92,15 +90,13 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-provisioner-role-cfg
-  # replace with non-default namespace name
-  namespace: default
+  name: csi-provisioner-binding
+  namespace: riocsi
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
-    # replace with non-default namespace name
-    namespace: default
+    namespace: riocsi
 roleRef:
   kind: Role
-  name: external-provisioner-cfg
+  name: riocsi-provisioner
   apiGroup: rbac.authorization.k8s.io

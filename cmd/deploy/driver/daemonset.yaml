@@ -34,23 +34,6 @@ spec:
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
-        - name: csi-provisioner
-          image: k8s.gcr.io/sig-storage/csi-provisioner:v2.2.2
-          args:
-            - "--v=5"
-            - "--csi-address=$(CSI_ENDPOINT)"
-            - "--feature-gates=Topology=true"
-            - "--strict-topology"
-            - "--leader-election"
-            - "--extra-create-metadata=true"
-            - "--enable-capacity=true"
-            - "--default-fstype=ext4"
-          env:
-            - name: CSI_ENDPOINT
-              value: /var/lib/csi/sockets/rio/csi.sock
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/csi/sockets/rio
         - name: rio-csi
           image: docker.qiniu.io:32500/rio-csi:latest
           imagePullPolicy: Always
@@ -68,9 +51,9 @@ spec:
             - "--name=rio-csi"
             - "--version=v1.0"
             - "--endpoint=$(CSI_ENDPOINT)"
+            - "--endpoint=$(CSI_ENDPOINT)"
             - "--enable-identity-server"
             - "--enable-node-server"
-            - "--enable-controller-server"
           env:
             - name: NODE_ID
               valueFrom:
@@ -94,8 +77,6 @@ spec:
           hostPath:
             path: /var/lib/kubelet/plugins/rio-csi
             type: DirectoryOrCreate
-        - name: socket-dir
-          emptyDir: {}
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry
@@ -132,8 +113,8 @@ rules:
   - apiGroups: [""]
     resources: ["persistentvolumes", "nodes", "services"]
     verbs: ["get", "list"]
-  - apiGroups: ["local.openebs.io"]
-    resources: ["lvmvolumes", "lvmsnapshots", "lvmnodes"]
+  - apiGroups: ["rio.qiniu.io"]
+    resources: ["volumes", "snapshots", "nodes"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
 
 ---
