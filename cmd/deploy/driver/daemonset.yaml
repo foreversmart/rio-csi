@@ -39,7 +39,12 @@ spec:
           args:
             - "--v=5"
             - "--csi-address=$(CSI_ENDPOINT)"
-            - "--enable-leader-election"
+            - "--feature-gates=Topology=true"
+            - "--strict-topology"
+            - "--leader-election"
+            - "--extra-create-metadata=true"
+            - "--enable-capacity=true"
+            - "--default-fstype=ext4"
           env:
             - name: CSI_ENDPOINT
               value: /var/lib/csi/sockets/rio/csi.sock
