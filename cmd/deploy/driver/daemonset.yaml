@@ -34,6 +34,18 @@ spec:
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
+        - name: csi-provisioner
+          image: k8s.gcr.io/sig-storage/csi-provisioner:v2.2.2
+          args:
+            - "--v=5"
+            - "--csi-address=$(CSI_ENDPOINT)"
+            - "--enable-leader-election"
+          env:
+            - name: CSI_ENDPOINT
+              value: /var/lib/csi/sockets/rio/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/rio
         - name: rio-csi
           image: docker.qiniu.io:32500/rio-csi:latest
           imagePullPolicy: Always
@@ -76,6 +88,8 @@ spec:
           hostPath:
             path: /var/lib/kubelet/plugins/rio-csi
             type: DirectoryOrCreate
+        - name: socket-dir
+          emptyDir: {}
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry
