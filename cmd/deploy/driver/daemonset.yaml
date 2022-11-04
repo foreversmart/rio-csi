@@ -114,7 +114,7 @@ rules:
     resources: ["persistentvolumes", "nodes", "services"]
     verbs: ["get", "list"]
   - apiGroups: ["rio.qiniu.io"]
-    resources: ["volumes", "snapshots", "nodes"]
+    resources: ["volumes", "volumes/status", "snapshots", "nodes"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
 
 ---

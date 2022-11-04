@@ -55,7 +55,7 @@ rules:
     resources: ["pods"]
     verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["rio.qiniu.io"]
-    resources: ["volumes", "snapshots", "nodes"]
+    resources: ["volumes", "volumes/status" "snapshots", "nodes"]
     verbs: ["*"]
 ---
 kind: ClusterRoleBinding
