@@ -89,7 +89,7 @@ func init() {
 // watcher for volume is present in CSI agent
 func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 	options := metav1.CreateOptions{}
-	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Create(context.Background(), vol, options)
+	result, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Create(context.Background(), vol, options)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 		klog.Infof("provisioned volume %s", vol.Name)
 	}
 
-	return UpdateVolumeStatus(vol)
+	return UpdateVolumeStatus(result)
 }
 
 // UpdateVolumeStatus update volume status
@@ -220,7 +220,7 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 		return err
 	}
 
-	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	newVol, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
