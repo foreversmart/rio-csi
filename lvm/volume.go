@@ -94,6 +94,7 @@ func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 		return nil, err
 	}
 
+	result.Status.State = LVMStatusPending
 	if err == nil {
 		klog.Infof("provisioned volume %s", vol.Name)
 	}

@@ -59,7 +59,6 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	var vol riov1.Volume
 	l.Info("hello" + req.Name + "||||" + req.Namespace)
 
-	// TODO(user): your logic here
 	err := r.Get(ctx, client.ObjectKey{
 		Namespace: req.Namespace,
 		Name:      req.Name,
@@ -113,7 +112,11 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	if vol.Spec.VolGroup != "" {
 		err = lvm.CreateLVMVolume(vol)
 		if err == nil {
-			return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+			err = lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+			if err != nil {
+				l.Error(err, "UpdateVolInfo:", vol.Name)
+			}
+			return err
 		}
 	}
 
