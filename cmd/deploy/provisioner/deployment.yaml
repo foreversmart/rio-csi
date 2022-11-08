@@ -8,7 +8,7 @@ metadata:
   name: csi-provisioner
   namespace: riocsi
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       external-provisioner: csi-provisioner

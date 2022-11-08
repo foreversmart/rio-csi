@@ -41,7 +41,7 @@ const (
 	// RioFinalizer for the Volume CR
 	RioFinalizer string = "rio.qiniu.io/finalizer"
 	// VolGroupKey is key for LVM group name
-	VolGroupKey string = "openebs.io/volgroup"
+	VolGroupKey string = "rio/lvm-group"
 	// LVMVolKey for the LVMSnapshot CR to store Persistence Volume name
 	LVMVolKey string = "openebs.io/persistent-volume"
 	// LVMNodeKey will be used to insert Label in Volume CR
@@ -212,9 +212,9 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 	case LVMStatusReady:
 		finalizers = append(finalizers, RioFinalizer)
 	}
+
 	newVol, err := volbuilder.BuildFrom(vol).
 		WithFinalizer(finalizers).
-		WithVolumeStatus(state).
 		WithLabels(labels).Build()
 
 	if err != nil {
@@ -226,6 +226,7 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 		return err
 	}
 
+	newVol.Status.State = state
 	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).UpdateStatus(context.Background(), newVol, metav1.UpdateOptions{})
 
 	return err
