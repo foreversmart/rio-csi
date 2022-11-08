@@ -7,6 +7,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/utils/mount"
+	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/lvm"
 )
 
 type nodeServer struct {
@@ -22,13 +24,70 @@ type nodeServer struct {
 }
 
 func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	logrus.Debugf("running NodePublishVolume...")
-	return nil, status.Error(codes.Unimplemented, "Unimplemented NodePublishVolume")
+	var (
+		err error
+	)
+
+	if err = ns.validateNodePublishReq(req); err != nil {
+		return nil, err
+	}
+
+	vol, mountInfo, err := GetVolAndMountInfo(req)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	podLVinfo, err := getPodLVInfo(req)
+	if err != nil {
+		logrus.Warningf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
+	}
+	switch req.GetVolumeCapability().GetAccessType().(type) {
+	case *csi.VolumeCapability_Block:
+		// attempt block mount operation on the requested path
+		err = lvm.MountBlock(vol, mountInfo, podLVinfo)
+	case *csi.VolumeCapability_Mount:
+		// attempt filesystem mount operation on the requested path
+		err = lvm.MountFilesystem(vol, mountInfo, podLVinfo)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &csi.NodePublishVolumeResponse{}, nil
+
 }
 
 func (ns *nodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
-	logrus.Debugf("running NodeUnpublishVolume...")
-	return nil, status.Error(codes.Unimplemented, "Unimplemented NodeUnpublishVolume")
+	var (
+		err error
+		vol *apis.Volume
+	)
+
+	if err = ns.validateNodeUnPublishReq(req); err != nil {
+		return nil, err
+	}
+
+	targetPath := req.GetTargetPath()
+	volumeID := req.GetVolumeId()
+
+	if vol, err = lvm.GetVolume(volumeID); err != nil {
+		return nil, status.Errorf(codes.Internal,
+			"not able to get the LVMVolume %s err : %s",
+			volumeID, err.Error())
+	}
+
+	err = lvm.UmountVolume(vol, targetPath)
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal,
+			"unable to umount the volume %s err : %s",
+			volumeID, err.Error())
+	}
+	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
+		volumeID, targetPath)
+
+	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (ns *nodeServer) NodeGetVolumeStats(_ context.Context, _ *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
