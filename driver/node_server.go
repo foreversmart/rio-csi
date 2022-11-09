@@ -40,6 +40,7 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 	podLVinfo, err := getPodLVInfo(req)
 	if err != nil {
 		logrus.Warningf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
+		logrus.Error(req.VolumeContext)
 	}
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
@@ -51,6 +52,7 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 	}
 
 	if err != nil {
+		logrus.Error(err)
 		return nil, err
 	}
 
