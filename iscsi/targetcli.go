@@ -17,6 +17,7 @@ var (
 	lsCmd = "ls"
 
 	createCmd      = "create %s"
+	deleteCmd      = "delete %s"
 	createBlockCmd = "create %s %s"
 	cdCmd          = "cd %s"
 	setUserIDCmd   = "set auth userid=%s"
@@ -69,25 +70,5 @@ func SetUpTargetAcl(target, username, password string) (string, error) {
 	// set username and password
 	cmd.AddFormat(setUserIDCmd, username)
 	cmd.AddFormat(setPasswordCmd, password)
-	return cmd.Exec()
-}
-
-// PublicBlockDevice publish device as block device
-func PublicBlockDevice(disk, device string) (string, error) {
-	cmd := NewExecCmd()
-	cmd.Add(openBlockDir)
-	cmd.AddFormat(createBlockCmd, disk, device)
-	return cmd.Exec()
-
-}
-
-// MountLun mount device as lun Only support block device
-func MountLun(target, disk string) (string, error) {
-	disk = "/backstores/block/" + disk
-	cmd := NewExecCmd()
-	cmd.Add(openIscsiDir)
-	cmd.AddFormat(cdCmd, target)
-	cmd.Add(openLunsDir)
-	cmd.AddFormat(createCmd, disk)
 	return cmd.Exec()
 }
