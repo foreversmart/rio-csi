@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"qiniu.io/rio-csi/driver"
+	"qiniu.io/rio-csi/manager"
 )
 
 var (
@@ -21,14 +22,25 @@ CommitID: %s
 )
 
 var (
-	debug    bool
-	name     string
-	endpoint string
-	nodeID   string
+	debug       bool
+	name        string
+	endpoint    string
+	nodeID      string
+	metricsAddr string
+	probeAddr   string
 
 	enableIdentityServer   bool
 	enableControllerServer bool
 	enableNodeServer       bool
+
+	driverType DriverType
+)
+
+type DriverType string
+
+const (
+	DriverTypeNode    DriverType = "node"
+	DriverTypeControl DriverType = "control"
 )
 
 var (
@@ -37,16 +49,37 @@ var (
 		Short:   "CSI based rio csi driver",
 		Version: Version,
 		Run: func(cmd *cobra.Command, args []string) {
-			logrus.Info("start ")
-			driver.NewCSIDriver(
-				name,
-				Version,
-				nodeID,
-				endpoint,
-				enableIdentityServer,
-				enableControllerServer,
-				enableNodeServer,
-			).Run()
+			logrus.Info("start ", driverType)
+
+			switch driverType {
+			case DriverTypeNode:
+				go func() {
+					driver.NewCSIDriver(
+						name,
+						Version,
+						nodeID,
+						endpoint,
+						true,
+						false,
+						true,
+					).Run()
+				}()
+
+				manager.StartManager(nodeID, metricsAddr, probeAddr)
+
+			case DriverTypeControl:
+
+				driver.NewCSIDriver(
+					name,
+					Version,
+					nodeID,
+					endpoint,
+					true,
+					true,
+					false,
+				).Run()
+			}
+
 		},
 	}
 )
@@ -84,6 +117,9 @@ func setRootCMD() {
 
 	rootCmd.PersistentFlags().StringVar(&Version, "version", "v1.0", "CSI Driver Version")
 	_ = rootCmd.PersistentFlags().MarkHidden("version")
+
+	rootCmd.PersistentFlags().StringVar(&metricsAddr, "metricsAddr", ":9180", "set metrics addr")
+	rootCmd.PersistentFlags().StringVar(&probeAddr, "probeAddr", "9181", "set probe addr")
 
 	//rootCmd.SetVersionTemplate(fmt.Sprintf(versionTpl, name, Version, runtime.GOOS+"/"+runtime.GOARCH, BuildDate, CommitID))
 }
