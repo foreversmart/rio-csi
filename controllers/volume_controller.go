@@ -114,39 +114,41 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	// we'll first try to create a volume in that volume group.
 	if vol.Spec.VolGroup != "" {
 		err = lvm.CreateLVMVolume(vol)
-		if err == nil {
-			err = lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusReady)
-			if err != nil {
-				l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
-			}
-			return err
+		if err != nil {
+			l.Error(err, fmt.Sprintf("create lvm volume %s error %v", vol.Name, err))
 		}
 	}
 
-	vgs, err := r.getVgPriorityList(vol)
-	if err != nil {
-		return err
-	}
+	// create fails or VolGroup == empty
+	if (vol.Spec.VolGroup != "" && err != nil) || vol.Spec.VolGroup == "" {
+		vgs, vgErr := r.getVgPriorityList(vol)
+		if vgErr != nil {
+			l.Error(vgErr, fmt.Sprintf("getVgPriorityList %s error %v", vol.Name, err))
+			return vgErr
+		}
 
-	if len(vgs) == 0 {
-		err = fmt.Errorf("no vg available to serve volume request having regex=%q & capacity=%q",
-			vol.Spec.VgPattern, vol.Spec.Capacity)
-		l.Error(nil, fmt.Sprintf("lvm volume %v - %v", vol.Name, err))
-	} else {
-		for _, vg := range vgs {
-			// first update volGroup field in lvm volume resource for ensuring
-			// idempotency and avoiding volume leaks during crash.
-			if vol, err = lvm.UpdateVolGroup(vol, vg.Name); err != nil {
-				l.Error(nil, fmt.Sprintf("failed to update volGroup to %v: %v", vg.Name, err))
-				return err
-			}
-			if err = lvm.CreateLVMVolume(vol); err == nil {
-				return lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusReady)
+		if len(vgs) == 0 {
+			err = fmt.Errorf("no vg available to serve volume request having regex=%q & capacity=%q",
+				vol.Spec.VgPattern, vol.Spec.Capacity)
+			l.Error(nil, fmt.Sprintf("lvm volume %v - %v", vol.Name, err))
+		} else {
+			for _, vg := range vgs {
+				// first update volGroup field in lvm volume resource for ensuring
+				// idempotency and avoiding volume leaks during crash.
+				if vol, err = lvm.UpdateVolGroup(vol, vg.Name); err != nil {
+					l.Error(nil, fmt.Sprintf("failed to update volGroup to %v: %v", vg.Name, err))
+					return err
+				}
+				err = lvm.CreateLVMVolume(vol)
+				if err != nil {
+					l.Error(err, fmt.Sprintf("create lvm volume %s error %v", vol.Name, err))
+				}
 			}
 		}
 	}
+
 	// Iscsi publish volume
-	if vol.Spec.IscsiBlock == "" {
+	if err == nil && vol.Spec.IscsiBlock == "" {
 		device := getVolumeDevice(vol)
 		// TODO check device exist
 		_, err = iscsi.PublicBlockDevice(r.Target, vol.Name, device)
@@ -157,6 +159,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		}
 
 		// TODO block path
+		// TODO update fail recover
 		vol.Spec.IscsiBlock = vol.Name
 		vol, err = lvm.UpdateVolume(vol)
 		if err != nil {
@@ -166,29 +169,42 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		}
 	}
 
+	if err != nil {
+		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
+		// the volume provisioning failed so that controller can reschedule it.
+		vol.Status.Error = r.transformLVMError(err)
+		return lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusFailed)
+	}
+
 	// Iscsi Mount lun device
-	if vol.Spec.Lun == "" {
-		_, err = iscsi.MountLun(r.Target, vol.Name)
+	if err == nil && vol.Spec.Lun == "" {
+		lunID := ""
+		// TODO handle already exist error
+		lunID, err = iscsi.MountLun(r.Target, vol.Name)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("MountLun target %s, vol %s,  error: %v",
 				r.Target, vol.Name, err))
-			return err
 		}
 
 		// TODO lun number
-		vol.Spec.Lun = "0"
+		vol.Spec.Lun = lunID
 		vol, err = lvm.UpdateVolume(vol)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
-			return err
 		}
 	}
 
-	// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
-	// the volume provisioning failed so that controller can reschedule it.
-	vol.Status.Error = r.transformLVMError(err)
-	return lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusFailed)
+	if err == nil {
+		err = lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusReady)
+		if err != nil {
+			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+		}
+		return err
+	}
+
+	return nil
+
 }
 
 func (r *VolumeReconciler) transformLVMError(err error) *riov1.VolumeError {
