@@ -1,6 +1,9 @@
 package iscsi
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 type LunDevice struct {
 	Id     string // lun id eg. lun0
@@ -16,7 +19,21 @@ func MountLun(target, disk string) (string, error) {
 	cmd.AddFormat(cdCmd, target)
 	cmd.Add(openLunsDir)
 	cmd.AddFormat(createCmd, disk)
-	return cmd.Exec()
+	out, err := cmd.Exec()
+	if err != nil {
+		return "", err
+	}
+	lines := strings.Split(out, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "Created LUN ") {
+			s := strings.TrimPrefix(line, "Created LUN ")
+			s = strings.TrimSpace(s)
+			s = strings.TrimSuffix(s, ".")
+			return "lun" + s, nil
+		}
+	}
+
+	return "", errors.New("cant get lun id")
 }
 
 // UnmountLun mount device as lun Only support block device
