@@ -33,7 +33,12 @@ func SetUpTarget(group, name string) (string, error) {
 	cmd := NewExecCmd()
 	cmd.Add(openIscsiDir)
 	cmd.AddFormat(createCmd, target)
-	return cmd.Exec()
+	_, err := cmd.Exec()
+	if err != nil {
+		return "", err
+	}
+
+	return target, nil
 }
 
 func ListTarget() ([]string, error) {
