@@ -19,7 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	riov1 "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/lvm"
 	"regexp"
 	"sort"
@@ -38,6 +40,7 @@ type VolumeReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	NodeID string
+	Target string
 }
 
 //+kubebuilder:rbac:groups=rio.qiniu.io,resources=volumes,verbs=get;list;watch;create;update;patch;delete
@@ -112,9 +115,9 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	if vol.Spec.VolGroup != "" {
 		err = lvm.CreateLVMVolume(vol)
 		if err == nil {
-			err = lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+			err = lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusReady)
 			if err != nil {
-				l.Error(err, "UpdateVolInfo:", vol.Name)
+				l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
 			}
 			return err
 		}
@@ -138,15 +141,54 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 				return err
 			}
 			if err = lvm.CreateLVMVolume(vol); err == nil {
-				return lvm.UpdateVolInfo(vol, lvm.LVMStatusReady)
+				return lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusReady)
 			}
+		}
+	}
+	// Iscsi publish volume
+	if vol.Spec.IscsiBlock == "" {
+		device := getVolumeDevice(vol)
+		// TODO check device exist
+		_, err = iscsi.PublicBlockDevice(r.Target, vol.Name, device)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("PublicBlockDevice target %s, vol %s, device %s error: %v",
+				r.Target, vol.Name, device, err))
+			return err
+		}
+
+		// TODO block path
+		vol.Spec.IscsiBlock = vol.Name
+		vol, err = lvm.UpdateVolume(vol)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
+				vol.Name, err))
+			return err
+		}
+	}
+
+	// Iscsi Mount lun device
+	if vol.Spec.Lun == "" {
+		_, err = iscsi.MountLun(r.Target, vol.Name)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("MountLun target %s, vol %s,  error: %v",
+				r.Target, vol.Name, err))
+			return err
+		}
+
+		// TODO lun number
+		vol.Spec.Lun = "0"
+		vol, err = lvm.UpdateVolume(vol)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
+				vol.Name, err))
+			return err
 		}
 	}
 
 	// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
 	// the volume provisioning failed so that controller can reschedule it.
 	vol.Status.Error = r.transformLVMError(err)
-	return lvm.UpdateVolInfo(vol, lvm.LVMStatusFailed)
+	return lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusFailed)
 }
 
 func (r *VolumeReconciler) transformLVMError(err error) *riov1.VolumeError {
@@ -216,4 +258,8 @@ func (r *VolumeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&riov1.Volume{}).
 		Complete(r)
+}
+
+func getVolumeDevice(v *riov1.Volume) string {
+	return filepath.Join("dev", v.Spec.VolGroup, v.Name)
 }

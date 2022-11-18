@@ -200,8 +200,8 @@ func GetVolumeState(volID string) (string, string, error) {
 	return vol.Spec.OwnerNodeID, vol.Status.State, nil
 }
 
-// UpdateVolInfo updates Volume CR with node id and finalizer
-func UpdateVolInfo(vol *apis.Volume, state string) error {
+// UpdateVolInfoWithStatus updates Volume CR with node id and finalizer
+func UpdateVolInfoWithStatus(vol *apis.Volume, state string) error {
 	if vol.Finalizers != nil {
 		return nil
 	}
@@ -230,6 +230,11 @@ func UpdateVolInfo(vol *apis.Volume, state string) error {
 	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).UpdateStatus(context.Background(), newVol, metav1.UpdateOptions{})
 
 	return err
+}
+
+// UpdateVolume updates Volume
+func UpdateVolume(vol *apis.Volume) (*apis.Volume, error) {
+	return client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 }
 
 // UpdateVolGroup updates Volume CR with volGroup name.

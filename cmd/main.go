@@ -120,7 +120,7 @@ func setRootCMD() {
 	driverType = DriverType(dt)
 
 	rootCmd.PersistentFlags().StringVar(&metricsAddr, "metricsAddr", ":9180", "set metrics addr")
-	rootCmd.PersistentFlags().StringVar(&probeAddr, "probeAddr", "9181", "set probe addr")
+	rootCmd.PersistentFlags().StringVar(&probeAddr, "probeAddr", ":9181", "set probe addr")
 
 	//rootCmd.SetVersionTemplate(fmt.Sprintf(versionTpl, name, Version, runtime.GOOS+"/"+runtime.GOARCH, BuildDate, CommitID))
 }
