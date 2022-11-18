@@ -102,10 +102,6 @@ func Execute() {
 func setRootCMD() {
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug log")
 
-	rootCmd.PersistentFlags().BoolVar(&enableIdentityServer, "enable-identity-server", false, "Enable Identity gRPC Server")
-	rootCmd.PersistentFlags().BoolVar(&enableControllerServer, "enable-controller-server", false, "Enable Controller gRPC Server")
-	rootCmd.PersistentFlags().BoolVar(&enableNodeServer, "enable-node-server", false, "Enable Node gRPC Server")
-
 	rootCmd.PersistentFlags().StringVar(&nodeID, "nodeid", "", "CSI Node ID")
 	_ = rootCmd.MarkPersistentFlagRequired("nodeid")
 
@@ -117,6 +113,11 @@ func setRootCMD() {
 
 	rootCmd.PersistentFlags().StringVar(&Version, "version", "v1.0", "CSI Driver Version")
 	_ = rootCmd.PersistentFlags().MarkHidden("version")
+
+	dt := ""
+	rootCmd.PersistentFlags().StringVar(&dt, "driverType", "node", "set driver type node or control")
+	_ = rootCmd.MarkPersistentFlagRequired("driverType")
+	driverType = DriverType(dt)
 
 	rootCmd.PersistentFlags().StringVar(&metricsAddr, "metricsAddr", ":9180", "set metrics addr")
 	rootCmd.PersistentFlags().StringVar(&probeAddr, "probeAddr", "9181", "set probe addr")

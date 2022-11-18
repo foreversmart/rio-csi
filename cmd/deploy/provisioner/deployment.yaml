@@ -55,8 +55,7 @@ spec:
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
-            - "--enable-identity-server"
-            - "--enable-controller-server"
+            - "--driverType=control"
           env:
             - name: NODE_ID
               valueFrom:

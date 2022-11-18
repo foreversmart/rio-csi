@@ -51,9 +51,7 @@ spec:
             - "--name=rio-csi"
             - "--version=v1.0"
             - "--endpoint=$(CSI_ENDPOINT)"
-            - "--endpoint=$(CSI_ENDPOINT)"
-            - "--enable-identity-server"
-            - "--enable-node-server"
+            - "--driverType=node"
           env:
             - name: NODE_ID
               valueFrom:
