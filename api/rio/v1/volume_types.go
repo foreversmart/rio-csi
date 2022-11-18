@@ -59,6 +59,13 @@ type VolumeSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=yes;no
 	ThinProvision string `json:"thinProvision,omitempty"`
+
+	// +kubebuilder:validation:Required
+	Lun string `json:"lun"`
+	// +kubebuilder:validation:Required
+	IscsiBlock string `json:"iscsi_block"`
+	// +kubebuilder:validation:Required
+	Target string `json:"target"`
 }
 
 // VolumeStatus defines the observed state of Volume
