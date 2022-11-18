@@ -17,7 +17,6 @@ limitations under the License.
 */
 
 import (
-	"flag"
 	"os"
 
 	riov1 "qiniu.io/rio-csi/api/rio/v1"
@@ -53,8 +52,8 @@ func StartManager(nodeID, metricsAddr, probeAddr string) {
 	opts := zap.Options{
 		Development: true,
 	}
-	opts.BindFlags(flag.CommandLine)
-	flag.Parse()
+	//opts.BindFlags(flag.CommandLine)
+	//flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
