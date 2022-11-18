@@ -48,7 +48,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartManager(nodeID, metricsAddr, probeAddr string) {
+func StartManager(nodeID, target, metricsAddr, probeAddr string) {
 	opts := zap.Options{
 		Development: true,
 	}
@@ -85,6 +85,7 @@ func StartManager(nodeID, metricsAddr, probeAddr string) {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		NodeID: nodeID,
+		Target: target,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Volume")
 		os.Exit(1)

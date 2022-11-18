@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"qiniu.io/rio-csi/driver"
+	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/manager"
 )
 
@@ -29,9 +30,8 @@ var (
 	metricsAddr string
 	probeAddr   string
 
-	enableIdentityServer   bool
-	enableControllerServer bool
-	enableNodeServer       bool
+	iscsiUsername string
+	iscsiPasswd   string
 
 	driverType DriverType
 )
@@ -53,6 +53,35 @@ var (
 
 			switch driverType {
 			case DriverTypeNode:
+				// init iscsi server
+				target := ""
+				targets, err := iscsi.ListTarget()
+				if err != nil {
+					logrus.Error(err)
+					return
+				}
+
+				// pick default targets
+				if len(targets) > 0 {
+					target = targets[0]
+					// TODO check acl rules
+				} else {
+					// create a target and set up
+					target, err = iscsi.SetUpTarget("rio-csi", nodeID)
+					if err != nil {
+						logrus.Error(err)
+						return
+					}
+
+					_, err = iscsi.SetUpTargetAcl(target, iscsiUsername, iscsiPasswd)
+					if err != nil {
+						logrus.Error(err)
+						return
+					}
+				}
+
+				logrus.Info("iscsi target:", target)
+
 				go func() {
 					driver.NewCSIDriver(
 						name,
@@ -65,7 +94,7 @@ var (
 					).Run()
 				}()
 
-				manager.StartManager(nodeID, metricsAddr, probeAddr)
+				manager.StartManager(nodeID, target, metricsAddr, probeAddr)
 
 			case DriverTypeControl:
 
