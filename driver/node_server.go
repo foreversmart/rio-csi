@@ -1,13 +1,16 @@
 package driver
 
 import (
+	"fmt"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/lvm"
 )
 
@@ -61,6 +64,31 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		}
 	} else {
 		// mount on different nodes using iscsi
+		connector := iscsi.Connector{
+			VolumeName:    vol.Name,
+			TargetIqn:     vol.Spec.IscsiTarget,
+			TargetPortals: []string{vol.Spec.IscsiPortal},
+			Lun:           vol.Spec.IscsiLun,
+		}
+
+		devicePath, err := connector.Connect()
+		if err != nil {
+			logrus.Error(err)
+			return nil, err
+		}
+
+		if devicePath == "" {
+			logrus.Error("connect reported success, but no path returned")
+			return nil, fmt.Errorf("connect reported success, but no path returned")
+		}
+
+		mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: exec.New()}
+		err = mounter.FormatAndMount(devicePath, mountInfo.MountPath, mountInfo.FSType, mountInfo.MountOptions)
+		if err != nil {
+			logrus.Errorf("iscsi: failed to mount iscsi volume %s [%s] to %s, error %v", devicePath, mountInfo.FSType, mountInfo.MountPath, err)
+		}
+
+		// TODO set IO limits
 
 	}
 

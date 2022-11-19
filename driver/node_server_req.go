@@ -48,6 +48,8 @@ func GetVolAndMountInfo(req *csi.NodePublishVolumeRequest) (*apis.Volume, *lvm.M
 
 	if req.GetReadonly() {
 		mountinfo.MountOptions = append(mountinfo.MountOptions, "ro")
+	} else {
+		mountinfo.MountOptions = append(mountinfo.MountOptions, "rw")
 	}
 
 	volName := strings.ToLower(req.GetVolumeId())
