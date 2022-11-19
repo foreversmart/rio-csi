@@ -42,18 +42,26 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		logrus.Warningf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
 		logrus.Error(req.VolumeContext)
 	}
-	switch req.GetVolumeCapability().GetAccessType().(type) {
-	case *csi.VolumeCapability_Block:
-		// attempt block mount operation on the requested path
-		err = lvm.MountBlock(vol, mountInfo, podLVinfo)
-	case *csi.VolumeCapability_Mount:
-		// attempt filesystem mount operation on the requested path
-		err = lvm.MountFilesystem(vol, mountInfo, podLVinfo)
-	}
 
-	if err != nil {
-		logrus.Error(err)
-		return nil, err
+	// check pod and vol on the same node
+	if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
+		// if on same node go directly lvm mount
+		switch req.GetVolumeCapability().GetAccessType().(type) {
+		case *csi.VolumeCapability_Block:
+			// attempt block mount operation on the requested path
+			err = lvm.MountBlock(vol, mountInfo, podLVinfo)
+		case *csi.VolumeCapability_Mount:
+			// attempt filesystem mount operation on the requested path
+			err = lvm.MountFilesystem(vol, mountInfo, podLVinfo)
+		}
+
+		if err != nil {
+			logrus.Error(err)
+			return nil, err
+		}
+	} else {
+		// mount on different nodes using iscsi
+
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil

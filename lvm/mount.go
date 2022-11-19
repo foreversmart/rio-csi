@@ -58,6 +58,15 @@ type PodLVInfo struct {
 	// UID is the Uid of the pod
 	UID string
 
+	// Name is the Name of the pod
+	Name string
+
+	// Namespace is the namespace of the pod
+	Namespace string
+
+	// NodeId is the node id of the pod
+	NodeId string
+
 	// LVGroup is the LVM vg name in which lv needs to be provisioned
 	LVGroup string
 }

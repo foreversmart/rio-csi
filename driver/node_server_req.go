@@ -5,7 +5,9 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/lvm"
 	"strings"
 )
@@ -61,11 +63,28 @@ func GetVolAndMountInfo(req *csi.NodePublishVolumeRequest) (*apis.Volume, *lvm.M
 func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodLVInfo, error) {
 	var podLVInfo lvm.PodLVInfo
 	var ok bool
+	if podLVInfo.Name, ok = req.VolumeContext["csi.storage.k8s.io/pod.name"]; !ok {
+		return nil, errors.New("csi.storage.k8s.io/pod.name key missing in VolumeContext")
+	}
+
 	if podLVInfo.UID, ok = req.VolumeContext["csi.storage.k8s.io/pod.uid"]; !ok {
 		return nil, errors.New("csi.storage.k8s.io/pod.uid key missing in VolumeContext")
 	}
+
+	if podLVInfo.Namespace, ok = req.VolumeContext["csi.storage.k8s.io/pod.namespace"]; !ok {
+		return nil, errors.New("csi.storage.k8s.io/pod.namespace key missing in VolumeContext")
+	}
+
 	if podLVInfo.LVGroup, ok = req.VolumeContext["openebs.io/volgroup"]; !ok {
 		return nil, errors.New("openebs.io/volgroup key missing in VolumeContext")
 	}
+
+	podInfo, err := client.DefaultClient.ClientSet.CoreV1().Pods(podLVInfo.Namespace).Get(nil, podLVInfo.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	podLVInfo.NodeId = podInfo.Spec.NodeName
+
 	return &podLVInfo, nil
 }
