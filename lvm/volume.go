@@ -89,7 +89,7 @@ func init() {
 // watcher for volume is present in CSI agent
 func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 	options := metav1.CreateOptions{}
-	result, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Create(context.Background(), vol, options)
+	result, err := client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Create(context.Background(), vol, options)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 // UpdateVolumeStatus update volume status
 func UpdateVolumeStatus(vol *apis.Volume) (*apis.Volume, error) {
 	options := metav1.UpdateOptions{}
-	res, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).UpdateStatus(context.Background(), vol, options)
+	res, err := client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).UpdateStatus(context.Background(), vol, options)
 	if err == nil {
 		klog.Infof("provisioned volume %s statue %s", vol.Name, vol.Status.State)
 	}
@@ -126,7 +126,7 @@ func DeleteVolume(volumeID string) (err error) {
 		PropagationPolicy: &deletePropagation,
 	}
 
-	err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Delete(context.Background(), volumeID, options)
+	err = client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Delete(context.Background(), volumeID, options)
 	if err == nil {
 		klog.Infof("deprovisioned volume %s", volumeID)
 	}
@@ -137,7 +137,7 @@ func DeleteVolume(volumeID string) (err error) {
 // GetVolume fetches the given Volume
 func GetVolume(volumeID string) (*apis.Volume, error) {
 	getOptions := metav1.GetOptions{}
-	vol, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Get(context.Background(), volumeID, getOptions)
+	vol, err := client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Get(context.Background(), volumeID, getOptions)
 	return vol, err
 }
 
@@ -221,20 +221,20 @@ func UpdateVolInfoWithStatus(vol *apis.Volume, state string) error {
 		return err
 	}
 
-	newVol, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	newVol, err = client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
 
 	newVol.Status.State = state
-	_, err = client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).UpdateStatus(context.Background(), newVol, metav1.UpdateOptions{})
+	_, err = client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).UpdateStatus(context.Background(), newVol, metav1.UpdateOptions{})
 
 	return err
 }
 
 // UpdateVolume updates Volume
 func UpdateVolume(vol *apis.Volume) (*apis.Volume, error) {
-	return client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	return client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 }
 
 // UpdateVolGroup updates Volume CR with volGroup name.
@@ -245,14 +245,14 @@ func UpdateVolGroup(vol *apis.Volume, vgName string) (*apis.Volume, error) {
 		return nil, err
 	}
 
-	return client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
+	return client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 }
 
 // RemoveVolFinalizer adds finalizer to Volume CR
 func RemoveVolFinalizer(vol *apis.Volume) error {
 	vol.Finalizers = nil
 
-	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	_, err := client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
 
@@ -261,7 +261,7 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 
 	vol.Spec.Capacity = strconv.FormatInt(int64(newSize), 10)
 
-	_, err := client.DefaultClient.ClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
+	_, err := client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
 

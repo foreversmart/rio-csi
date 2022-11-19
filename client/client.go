@@ -2,13 +2,15 @@ package client
 
 import (
 	"fmt"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	clientset "qiniu.io/rio-csi/generated/internalclientset"
 )
 
 type KubeClient struct {
-	ClientSet *clientset.Clientset
+	InternalClientSet *clientset.Clientset
+	ClientSet         *kubernetes.Clientset
 }
 
 var (
@@ -32,13 +34,19 @@ func NewDefault(masterUrl, kubeConfigPath string) (c *KubeClient, err error) {
 		os.Exit(1)
 	}
 
-	clientSet, err := clientset.NewForConfig(config)
+	internalClientSet, err := clientset.NewForConfig(config)
+	if err != nil {
+		return
+	}
+
+	cs, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return
 	}
 
 	c = &KubeClient{
-		ClientSet: clientSet,
+		InternalClientSet: internalClientSet,
+		ClientSet:         cs,
 	}
 	return
 }
