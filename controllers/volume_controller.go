@@ -177,17 +177,24 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	}
 
 	// Iscsi Mount lun device
-	if err == nil && vol.Spec.Lun == "" {
+	if err == nil && vol.Spec.IscsiLun == -1 {
 		lunID := ""
 		// TODO handle already exist error
 		lunID, err = iscsi.MountLun(r.Target, vol.Name)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("MountLun target %s, vol %s,  error: %v",
 				r.Target, vol.Name, err))
+			return err
+		}
+
+		lunIntID, err := strconv.ParseInt(lunID, 10, 32)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("MountLun ParseInt %s error: %v", lunID, err))
+			return err
 		}
 
 		// TODO lun number
-		vol.Spec.Lun = lunID
+		vol.Spec.IscsiLun = int32(lunIntID)
 		vol, err = lvm.UpdateVolume(vol)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
@@ -199,8 +206,8 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		err = lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusReady)
 		if err != nil {
 			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+			return err
 		}
-		return err
 	}
 
 	return nil

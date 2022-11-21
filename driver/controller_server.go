@@ -76,6 +76,8 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			WithVolumeStatus(lvm.LVMStatusPending).
 			WithShared(params.Shared).
 			WithThinProvision(params.ThinProvision).Build()
+		// set default iscsi lun is -1 means no lun device
+		volObj.Spec.IscsiLun = -1
 
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())

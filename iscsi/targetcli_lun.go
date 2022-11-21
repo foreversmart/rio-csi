@@ -29,7 +29,7 @@ func MountLun(target, disk string) (string, error) {
 			s := strings.TrimPrefix(line, "Created LUN ")
 			s = strings.TrimSpace(s)
 			s = strings.TrimSuffix(s, ".")
-			return "lun" + s, nil
+			return s, nil
 		}
 	}
 
