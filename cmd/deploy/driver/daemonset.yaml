@@ -19,6 +19,7 @@ spec:
       #hostNetwork: true
       serviceAccount: riocsi-node-sa
       hostNetwork: true
+      hostPID: true
       containers:
         - name: csi-driver-registrar
           image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
@@ -51,6 +52,9 @@ spec:
             - "--name=rio-csi"
             - "--version=v1.0"
             - "--endpoint=$(CSI_ENDPOINT)"
+            - "--driverType=node"
+            - "--iscsiUsername=rio-csi"
+            - "--iscsiPasswd=rio-123"
             - "--driverType=node"
           env:
             - name: NODE_ID

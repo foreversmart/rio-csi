@@ -148,6 +148,12 @@ func setRootCMD() {
 	_ = rootCmd.MarkPersistentFlagRequired("driverType")
 	driverType = DriverType(dt)
 
+	rootCmd.PersistentFlags().StringVar(&iscsiUsername, "iscsiUsername", "", "set iscsi portal username")
+	_ = rootCmd.MarkPersistentFlagRequired("iscsiUsername")
+
+	rootCmd.PersistentFlags().StringVar(&iscsiPasswd, "iscsiPasswd", "", "set iscsi portal password")
+	_ = rootCmd.MarkPersistentFlagRequired("iscsiPasswd")
+
 	rootCmd.PersistentFlags().StringVar(&metricsAddr, "metricsAddr", ":9180", "set metrics addr")
 	rootCmd.PersistentFlags().StringVar(&probeAddr, "probeAddr", ":9181", "set probe addr")
 
