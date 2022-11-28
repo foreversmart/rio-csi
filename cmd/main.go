@@ -33,7 +33,8 @@ var (
 	iscsiUsername string
 	iscsiPasswd   string
 
-	driverType DriverType
+	driverType    DriverType
+	driverTypeStr string
 )
 
 type DriverType string
@@ -49,7 +50,8 @@ var (
 		Short:   "CSI based rio csi driver",
 		Version: Version,
 		Run: func(cmd *cobra.Command, args []string) {
-			logrus.Info("start ", driverType)
+			driverType = DriverType(driverTypeStr)
+			logrus.Info("start ", driverType, nodeID, endpoint, iscsiUsername)
 
 			switch driverType {
 			case DriverTypeNode:
@@ -143,10 +145,8 @@ func setRootCMD() {
 	rootCmd.PersistentFlags().StringVar(&Version, "version", "v1.0", "CSI Driver Version")
 	_ = rootCmd.PersistentFlags().MarkHidden("version")
 
-	dt := ""
-	rootCmd.PersistentFlags().StringVar(&dt, "driverType", "node", "set driver type node or control")
+	rootCmd.PersistentFlags().StringVar(&driverTypeStr, "driverType", "node", "set driver type node or control")
 	_ = rootCmd.MarkPersistentFlagRequired("driverType")
-	driverType = DriverType(dt)
 
 	rootCmd.PersistentFlags().StringVar(&iscsiUsername, "iscsiUsername", "", "set iscsi portal username")
 
