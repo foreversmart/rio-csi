@@ -44,6 +44,7 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 	if err != nil {
 		logrus.Warningf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
 		logrus.Error(req.VolumeContext)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// check pod and vol on the same node

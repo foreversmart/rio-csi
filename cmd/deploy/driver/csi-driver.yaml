@@ -3,4 +3,5 @@ kind: CSIDriver
 metadata:
   name: rio-csi
 spec:
+  podInfoOnMount: true
   attachRequired: false
