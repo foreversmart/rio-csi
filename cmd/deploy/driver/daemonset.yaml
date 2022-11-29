@@ -55,7 +55,6 @@ spec:
             - "--driverType=node"
             - "--iscsiUsername=rio-csi"
             - "--iscsiPasswd=rio-123"
-            - "--driverType=node"
           env:
             - name: NODE_ID
               valueFrom:
@@ -76,6 +75,12 @@ spec:
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
+            - name: targetcli-dir
+              mountPath: /root/.targetcli
+              #- name: lib-dir
+              #mountPath: /lib/modules
+            - name: run-dir
+              mountPath: /var/run/dbus
       volumes:
         - name: plugin-dir
           hostPath:
@@ -93,6 +98,14 @@ spec:
         - name: pods-mount-dir
           hostPath:
             path: /var/lib/kubelet/pods
+            type: Directory
+        - name: targetcli-dir
+          hostPath:
+            path: /root/.targetcli
+            type: DirectoryOrCreate
+        - name: run-dir
+          hostPath:
+            path: /var/run/dbus
             type: Directory
 ---
 
