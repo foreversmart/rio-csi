@@ -47,6 +47,8 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	logrus.Info("node publish volume", podLVinfo)
+
 	// check pod and vol on the same node
 	if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
 		// if on same node go directly lvm mount
@@ -90,7 +92,6 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		}
 
 		// TODO set IO limits
-
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
