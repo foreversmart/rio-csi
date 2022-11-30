@@ -53,3 +53,6 @@ docker-build: build ## Build docker image with the manager.
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
+
+.PHONY: deploy
+deploy: docker-build docker-push
