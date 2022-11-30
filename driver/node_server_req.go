@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"context"
 	"errors"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
@@ -77,7 +78,7 @@ func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodLVInfo, error) {
 		return nil, errors.New("csi.storage.k8s.io/pod.namespace key missing in VolumeContext")
 	}
 
-	podInfo, err := client.DefaultClient.ClientSet.CoreV1().Pods(podLVInfo.Namespace).Get(nil, podLVInfo.Name, metav1.GetOptions{})
+	podInfo, err := client.DefaultClient.ClientSet.CoreV1().Pods(podLVInfo.Namespace).Get(context.Background(), podLVInfo.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
