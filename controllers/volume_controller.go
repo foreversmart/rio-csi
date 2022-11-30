@@ -142,7 +142,10 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 				err = lvm.CreateLVMVolume(vol)
 				if err != nil {
 					l.Error(err, fmt.Sprintf("create lvm volume %s error %v", vol.Name, err))
+					return err
 				}
+			
+				break
 			}
 		}
 	}
