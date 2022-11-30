@@ -25,9 +25,10 @@ func MountLun(target, disk string) (string, error) {
 	}
 	lines := strings.Split(out, "\n")
 	for _, line := range lines {
-		if strings.HasPrefix(line, "Created LUN ") {
-			s := strings.TrimPrefix(line, "Created LUN ")
-			s = strings.TrimSpace(s)
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "Created LUN ") && strings.HasSuffix(line, ".") {
+			items := strings.Split(line, "Created LUN ")
+			s := strings.TrimSpace(items[1])
 			s = strings.TrimSuffix(s, ".")
 			return s, nil
 		}
