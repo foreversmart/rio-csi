@@ -62,6 +62,15 @@ spec:
                 description: Capacity of the volume
                 minLength: 1
                 type: string
+              iscsi_block:
+                type: string
+              iscsi_lun:
+                format: int32
+                type: integer
+              iscsi_portal:
+                type: string
+              iscsi_target:
+                type: string
               ownerNodeID:
                 description: OwnerNodeID is the Node ID where the volume group is
                   present which is where the volume has been provisioned. OwnerNodeID
@@ -95,6 +104,10 @@ spec:
                 type: string
             required:
             - capacity
+            - iscsi_block
+            - iscsi_lun
+            - iscsi_portal
+            - iscsi_target
             - ownerNodeID
             - vgPattern
             - volGroup
