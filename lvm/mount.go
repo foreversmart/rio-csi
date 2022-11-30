@@ -66,9 +66,6 @@ type PodLVInfo struct {
 
 	// NodeId is the node id of the pod
 	NodeId string
-
-	// LVGroup is the LVM vg name in which lv needs to be provisioned
-	LVGroup string
 }
 
 // FormatAndMountVol formats and mounts the created volume to the desired mount path
@@ -282,10 +279,10 @@ func setIOLimits(vol *apis.Volume, podLVInfo *PodLVInfo, devicePath string) erro
 	}
 	capacityGB := uint64(math.Ceil(float64(capacityBytes) / (1024 * 1024 * 1024)))
 	klog.Infof("Capacity of device in GB: %v", capacityGB)
-	riops := getRIopsPerGB(podLVInfo.LVGroup) * capacityGB
-	wiops := getWIopsPerGB(podLVInfo.LVGroup) * capacityGB
-	rbps := getRBpsPerGB(podLVInfo.LVGroup) * capacityGB
-	wbps := getWBpsPerGB(podLVInfo.LVGroup) * capacityGB
+	riops := getRIopsPerGB(vol.Spec.VolGroup) * capacityGB
+	wiops := getWIopsPerGB(vol.Spec.VolGroup) * capacityGB
+	rbps := getRBpsPerGB(vol.Spec.VolGroup) * capacityGB
+	wbps := getWBpsPerGB(vol.Spec.VolGroup) * capacityGB
 	klog.Infof("Setting iolimits for podUId %s, device %s: riops=%v, wiops=%v, rbps=%v, wbps=%v",
 		podLVInfo.UID, devicePath, riops, wiops, rbps, wbps,
 	)

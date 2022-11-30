@@ -97,7 +97,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	}
 
 	//
-	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup, lvm.OpenEBSCasTypeKey: lvm.LVMCasTypeName}
+	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup}
 	topology := map[string]string{lvm.LVMTopologyKey: vol.Spec.OwnerNodeID}
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{

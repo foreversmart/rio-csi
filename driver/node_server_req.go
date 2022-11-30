@@ -77,10 +77,6 @@ func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*lvm.PodLVInfo, error) {
 		return nil, errors.New("csi.storage.k8s.io/pod.namespace key missing in VolumeContext")
 	}
 
-	if podLVInfo.LVGroup, ok = req.VolumeContext["openebs.io/volgroup"]; !ok {
-		return nil, errors.New("openebs.io/volgroup key missing in VolumeContext")
-	}
-
 	podInfo, err := client.DefaultClient.ClientSet.CoreV1().Pods(podLVInfo.Namespace).Get(nil, podLVInfo.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
