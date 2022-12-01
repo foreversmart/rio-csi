@@ -7,10 +7,13 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/iscsi"
+	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
 )
 
@@ -66,11 +69,17 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 			return nil, err
 		}
 	} else {
+		node, getErr := client.DefaultClient.InternalClientSet.RioV1().Nodes(vol.Namespace).Get(context.TODO(), vol.Spec.OwnerNodeID, metav1.GetOptions{})
+		if getErr != nil {
+			logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, err)
+			return nil, err
+		}
+
 		// mount on different nodes using iscsi
 		connector := iscsi.Connector{
 			VolumeName:    vol.Name,
 			TargetIqn:     vol.Spec.IscsiTarget,
-			TargetPortals: []string{vol.Spec.IscsiPortal},
+			TargetPortals: []string{node.ISCSIInfo.Portal},
 			Lun:           vol.Spec.IscsiLun,
 		}
 
