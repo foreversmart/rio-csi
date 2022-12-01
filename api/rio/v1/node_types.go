@@ -25,7 +25,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=rionode
 
-// Node is the Schema for the nodes API
+// RioNode is the Schema for the nodes API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=rionode
@@ -124,13 +124,13 @@ type VolumeGroup struct {
 
 //+kubebuilder:object:root=true
 
-// NodeList contains a list of Node
-type NodeList struct {
+// RioNodeList contains a list of Node
+type RioNodeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []RioNode `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&RioNode{}, &NodeList{})
+	SchemeBuilder.Register(&RioNode{}, &RioNodeList{})
 }
