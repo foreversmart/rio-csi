@@ -18,6 +18,7 @@ limitations under the License.
 
 import (
 	"os"
+	"qiniu.io/rio-csi/logger"
 
 	riov1 "qiniu.io/rio-csi/api/rio/v1"
 
@@ -48,12 +49,19 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartManager(nodeID, target, metricsAddr, probeAddr string) {
+func StartManager(nodeID, namespace, target, metricsAddr, probeAddr string) {
+	nodeManager, err := NewNodeManager(nodeID, namespace)
+	if err != nil {
+		logger.StdLog.Errorf("cant new node manager %s %s error %v", nodeID, namespace, err)
+		os.Exit(1)
+	}
+
+	// start node manager
+	go nodeManager.Start()
+
 	opts := zap.Options{
 		Development: true,
 	}
-	//opts.BindFlags(flag.CommandLine)
-	//flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -90,6 +98,7 @@ func StartManager(nodeID, target, metricsAddr, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Volume")
 		os.Exit(1)
 	}
+
 	if err = (&controllers.NodeReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

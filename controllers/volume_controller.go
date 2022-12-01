@@ -66,6 +66,7 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		Namespace: req.Namespace,
 		Name:      req.Name,
 	}, &vol)
+
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -144,7 +145,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 					l.Error(err, fmt.Sprintf("create lvm volume %s error %v", vol.Name, err))
 					return err
 				}
-			
+
 				break
 			}
 		}
@@ -198,6 +199,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 
 		// TODO lun number
 		vol.Spec.IscsiLun = int32(lunIntID)
+		vol.Spec.IscsiTarget = r.Target
 		vol, err = lvm.UpdateVolume(vol)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
