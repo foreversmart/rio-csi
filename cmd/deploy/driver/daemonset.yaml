@@ -49,6 +49,7 @@ spec:
           args :
             - "--nodeid=$(NODE_ID)"
             - "--name=rio-csi"
+            - "--namespace=$(RIO_CSI_NAMESPACE)"
             - "--version=v1.0"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--driverType=node"
