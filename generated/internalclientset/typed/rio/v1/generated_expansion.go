@@ -17,4 +17,6 @@ limitations under the License.
 
 package v1
 
+type NodeExpansion interface{}
+
 type VolumeExpansion interface{}

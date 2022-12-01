@@ -27,12 +27,17 @@ import (
 
 type RioV1Interface interface {
 	RESTClient() rest.Interface
+	NodesGetter
 	VolumesGetter
 }
 
 // RioV1Client is used to interact with features provided by the rio group.
 type RioV1Client struct {
 	restClient rest.Interface
+}
+
+func (c *RioV1Client) Nodes(namespace string) NodeInterface {
+	return newNodes(c, namespace)
 }
 
 func (c *RioV1Client) Volumes(namespace string) VolumeInterface {
