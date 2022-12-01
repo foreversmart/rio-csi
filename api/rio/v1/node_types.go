@@ -29,6 +29,7 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=rionode
+// +kubebuilder:printcolumn:name="Portal",type=string,JSONPath=`.iscsi_info.portal`,description="node portal info"
 type RioNode struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

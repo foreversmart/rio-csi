@@ -35,7 +35,7 @@ type NodeManager struct {
 var nodeResource = schema.GroupVersionResource{
 	Group:    apis.SchemeGroupVersion.Group,
 	Version:  apis.SchemeGroupVersion.Version,
-	Resource: "nodes",
+	Resource: "rionodes",
 }
 
 func NewNodeManager(nodeID, namespace string) (m *NodeManager, err error) {
