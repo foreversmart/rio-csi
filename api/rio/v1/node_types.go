@@ -52,6 +52,18 @@ type Node struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	VolumeGroups []VolumeGroup `json:"volumeGroups"`
+	ISCSIInfo    ISCSIInfo     `json:"iscsi_info"`
+}
+
+// ISCSIInfo specifies attributes of node iscsi server info
+type ISCSIInfo struct {
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Iface string `json:"iface"`
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Portal string `json:"portal"`
 }
 
 // VolumeGroup specifies attributes of a given vg exists on node.

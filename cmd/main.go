@@ -25,6 +25,7 @@ CommitID: %s
 var (
 	debug       bool
 	name        string
+	namespace   string
 	endpoint    string
 	nodeID      string
 	metricsAddr string
@@ -96,7 +97,7 @@ var (
 					).Run()
 				}()
 
-				manager.StartManager(nodeID, target, metricsAddr, probeAddr)
+				manager.StartManager(nodeID, namespace, target, metricsAddr, probeAddr)
 
 			case DriverTypeControl:
 
@@ -141,6 +142,10 @@ func setRootCMD() {
 
 	rootCmd.PersistentFlags().StringVar(&name, "name", "rio-csi", "CSI Driver Name")
 	_ = rootCmd.PersistentFlags().MarkHidden("name")
+
+	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "riocsi", "CSI Driver namespace")
+	_ = rootCmd.MarkPersistentFlagRequired("namespace")
+	_ = rootCmd.PersistentFlags().MarkHidden("namespace")
 
 	rootCmd.PersistentFlags().StringVar(&Version, "version", "v1.0", "CSI Driver Version")
 	_ = rootCmd.PersistentFlags().MarkHidden("version")
