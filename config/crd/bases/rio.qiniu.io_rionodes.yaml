@@ -17,7 +17,12 @@ spec:
     singular: rionode
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: node portal info
+      jsonPath: .iscsi_info.portal
+      name: Portal
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: RioNode is the Schema for the nodes API
