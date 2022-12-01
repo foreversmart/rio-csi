@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
@@ -11,6 +12,7 @@ import (
 type KubeClient struct {
 	InternalClientSet *clientset.Clientset
 	ClientSet         *kubernetes.Clientset
+	DynamicClient     dynamic.Interface
 }
 
 var (
@@ -44,9 +46,15 @@ func NewDefault(masterUrl, kubeConfigPath string) (c *KubeClient, err error) {
 		return
 	}
 
+	dc, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	c = &KubeClient{
 		InternalClientSet: internalClientSet,
 		ClientSet:         cs,
+		DynamicClient:     dc,
 	}
 	return
 }
