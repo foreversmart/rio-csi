@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"qiniu.io/rio-csi/driver"
 	"qiniu.io/rio-csi/iscsi"
@@ -118,7 +117,6 @@ var (
 )
 
 func init() {
-	cobra.OnInitialize(initLog)
 	setRootCMD()
 }
 
@@ -162,15 +160,4 @@ func setRootCMD() {
 	rootCmd.PersistentFlags().StringVar(&probeAddr, "probeAddr", ":9181", "set probe addr")
 
 	//rootCmd.SetVersionTemplate(fmt.Sprintf(versionTpl, name, Version, runtime.GOOS+"/"+runtime.GOARCH, BuildDate, CommitID))
-}
-
-func initLog() {
-	if debug {
-		logger.StdLog.SetLevel(logger.StdLog.DebugLevel)
-	}
-
-	logger.StdLog.SetFormatter(&logger.StdLog.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05",
-	})
 }
