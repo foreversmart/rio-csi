@@ -90,7 +90,7 @@ func NewNodeManager(nodeID, namespace string) (m *NodeManager, err error) {
 		Lister:         lister,
 		OwnerReference: ownerRef,
 		NodeIP:         nodeIP,
-		SyncInterval:   time.Second * time.Second,
+		SyncInterval:   time.Second * 60,
 	}, nil
 }
 
@@ -114,7 +114,7 @@ func (m *NodeManager) Sync() error {
 		return err
 	}
 
-	var node *apis.Node
+	var node *apis.RioNode
 	if cacheNode != nil {
 		nodeStruct, ok := getNodeStructuredObject(cacheNode)
 		if !ok {
@@ -132,7 +132,7 @@ func (m *NodeManager) Sync() error {
 
 	// if it doesn't exists, create node object
 	if node == nil {
-		node = &apis.Node{
+		node = &apis.RioNode{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            m.NodeID,
 				Namespace:       m.Namespace,
@@ -146,7 +146,7 @@ func (m *NodeManager) Sync() error {
 		}
 
 		logger.StdLog.Infof("lvm node controller: creating new node object for %+v", node)
-		if _, err = client.DefaultClient.InternalClientSet.RioV1().Nodes(m.Namespace).Create(context.TODO(), node, metav1.CreateOptions{}); err != nil {
+		if _, err = client.DefaultClient.InternalClientSet.RioV1().RioNodes(m.Namespace).Create(context.TODO(), node, metav1.CreateOptions{}); err != nil {
 			logger.StdLog.Errorf("create lvm node %s/%s: %v", m.Namespace, m.NodeID, err)
 			return errors.Errorf("create lvm node %s/%s: %v", m.Namespace, m.NodeID, err)
 		}
@@ -179,7 +179,7 @@ func (m *NodeManager) Sync() error {
 
 	logger.StdLog.Infof("lvm node controller: updating node object with %+v", node)
 	if _, err = client.DefaultClient.InternalClientSet.RioV1().
-		Nodes(m.Namespace).
+		RioNodes(m.Namespace).
 		Update(context.TODO(), node, metav1.UpdateOptions{}); err != nil {
 		return errors.Errorf("update lvm node %s/%s: %v", m.Namespace, m.NodeID, err)
 	}
@@ -190,13 +190,13 @@ func (m *NodeManager) Sync() error {
 }
 
 // getNodeStructuredObject Obj from queue is not readily in lvmnode type. This function would convert obj into lvmnode type.
-func getNodeStructuredObject(obj interface{}) (*apis.Node, bool) {
+func getNodeStructuredObject(obj interface{}) (*apis.RioNode, bool) {
 	unstructuredInterface, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		runtime.HandleError(errors.Errorf("couldnt type assert obj: %#v to unstructured obj", obj))
 		return nil, false
 	}
-	node := &apis.Node{}
+	node := &apis.RioNode{}
 	err := k8sruntime.DefaultUnstructuredConverter.FromUnstructured(unstructuredInterface.UnstructuredContent(), &node)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("err %s, While converting unstructured obj to typed object\n", err.Error()))

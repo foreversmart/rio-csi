@@ -27,8 +27,8 @@ type FakeRioV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeRioV1) Nodes(namespace string) v1.NodeInterface {
-	return &FakeNodes{c, namespace}
+func (c *FakeRioV1) RioNodes(namespace string) v1.RioNodeInterface {
+	return &FakeRioNodes{c, namespace}
 }
 
 func (c *FakeRioV1) Volumes(namespace string) v1.VolumeInterface {

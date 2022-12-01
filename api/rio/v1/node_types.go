@@ -21,33 +21,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// NodeSpec defines the desired state of Node
-type NodeSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Node. Edit node_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
-// NodeStatus defines the observed state of Node
-type NodeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
-
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +resource:path=lvmnode
+// +resource:path=rionode
 
 // Node is the Schema for the nodes API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=rionode
-type Node struct {
+type RioNode struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -57,8 +39,6 @@ type Node struct {
 
 // ISCSIInfo specifies attributes of node iscsi server info
 type ISCSIInfo struct {
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength=1
 	Iface string `json:"iface"`
 
 	// +kubebuilder:validation:Required
@@ -148,9 +128,9 @@ type VolumeGroup struct {
 type NodeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Node `json:"items"`
+	Items           []RioNode `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Node{}, &NodeList{})
+	SchemeBuilder.Register(&RioNode{}, &NodeList{})
 }

@@ -27,7 +27,7 @@ import (
 
 type RioV1Interface interface {
 	RESTClient() rest.Interface
-	NodesGetter
+	RioNodesGetter
 	VolumesGetter
 }
 
@@ -36,8 +36,8 @@ type RioV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *RioV1Client) Nodes(namespace string) NodeInterface {
-	return newNodes(c, namespace)
+func (c *RioV1Client) RioNodes(namespace string) RioNodeInterface {
+	return newRioNodes(c, namespace)
 }
 
 func (c *RioV1Client) Volumes(namespace string) VolumeInterface {

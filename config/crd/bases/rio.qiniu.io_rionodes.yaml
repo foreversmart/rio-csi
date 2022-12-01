@@ -5,16 +5,16 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: nodes.rio.qiniu.io
+  name: rionodes.rio.qiniu.io
 spec:
   group: rio.qiniu.io
   names:
-    kind: Node
-    listKind: NodeList
-    plural: nodes
+    kind: RioNode
+    listKind: RioNodeList
+    plural: rionodes
     shortNames:
     - rionode
-    singular: node
+    singular: rionode
   scope: Namespaced
   versions:
   - name: v1
@@ -31,7 +31,6 @@ spec:
             description: ISCSIInfo specifies attributes of node iscsi server info
             properties:
               iface:
-                minLength: 1
                 type: string
               portal:
                 minLength: 1
