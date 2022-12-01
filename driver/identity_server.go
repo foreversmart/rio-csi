@@ -2,10 +2,10 @@ package driver
 
 import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"qiniu.io/rio-csi/logger"
 )
 
 type IdentityServer struct {
@@ -13,7 +13,7 @@ type IdentityServer struct {
 }
 
 func (ids *IdentityServer) GetPluginInfo(_ context.Context, _ *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	logrus.Infof("Using default GetPluginInfo")
+	logger.StdLog.Infof("Using default GetPluginInfo")
 
 	if ids.Driver.name == "" {
 		return nil, status.Error(codes.Unavailable, "Driver name not configured")
@@ -34,7 +34,7 @@ func (ids *IdentityServer) Probe(_ context.Context, _ *csi.ProbeRequest) (*csi.P
 }
 
 func (ids *IdentityServer) GetPluginCapabilities(_ context.Context, _ *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
-	logrus.Infof("Using default capabilities")
+	logger.StdLog.Infof("Using default capabilities")
 	return &csi.GetPluginCapabilitiesResponse{
 		Capabilities: []*csi.PluginCapability{
 			{

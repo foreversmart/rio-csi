@@ -2,7 +2,7 @@ package driver
 
 import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/sirupsen/logrus"
+	"qiniu.io/rio-csi/logger"
 )
 
 type RioCSI struct {
@@ -21,11 +21,11 @@ type RioCSI struct {
 }
 
 func NewCSIDriver(name, version, nodeID, endpoint string, enableIdentityServer, enableControllerServer, enableNodeServer bool) *RioCSI {
-	logrus.Infof("Driver: %s version: %s", name, version)
+	logger.StdLog.Infof("Driver: %s version: %s", name, version)
 
 	// Add some check here
 	//if parameter1 == "" {
-	//	logrus.Fatal("parameter1 is empty")
+	//	logger.StdLog.Fatal("parameter1 is empty")
 	//}
 
 	n := &RioCSI{
@@ -60,16 +60,16 @@ func (n *RioCSI) Run() {
 	var nodeServer csi.NodeServer
 
 	if n.enableIdentityServer {
-		logrus.Info("Enable gRPC Server: IdentityServer")
+		logger.StdLog.Info("Enable gRPC Server: IdentityServer")
 		identityServer = NewIdentityServer(n)
 	}
 
 	if n.enableControllerServer {
-		logrus.Info("Enable gRPC Server: ControllerServer")
+		logger.StdLog.Info("Enable gRPC Server: ControllerServer")
 		controllerServer = NewControllerServer(n)
 	}
 	if n.enableNodeServer {
-		logrus.Info("Enable gRPC Server: NodeServer")
+		logger.StdLog.Info("Enable gRPC Server: NodeServer")
 		nodeServer = NewNodeServer(n)
 	}
 
@@ -86,7 +86,7 @@ func (n *RioCSI) Run() {
 func (n *RioCSI) AddVolumeCapabilityAccessModes(vc []csi.VolumeCapability_AccessMode_Mode) {
 	var vca []*csi.VolumeCapability_AccessMode
 	for _, c := range vc {
-		logrus.Infof("Enabling volume access mode: %v", c.String())
+		logger.StdLog.Infof("Enabling volume access mode: %v", c.String())
 		vca = append(vca, &csi.VolumeCapability_AccessMode{Mode: c})
 	}
 	n.accessModes = vca
@@ -95,7 +95,7 @@ func (n *RioCSI) AddVolumeCapabilityAccessModes(vc []csi.VolumeCapability_Access
 func (n *RioCSI) AddControllerServiceCapabilities(cl []csi.ControllerServiceCapability_RPC_Type) {
 	var csc []*csi.ControllerServiceCapability
 	for _, c := range cl {
-		logrus.Infof("Enabling controller service capability: %v", c.String())
+		logger.StdLog.Infof("Enabling controller service capability: %v", c.String())
 		csc = append(csc, NewControllerServiceCapability(c))
 	}
 	n.serviceCapabilities = csc

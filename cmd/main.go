@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"qiniu.io/rio-csi/driver"
 	"qiniu.io/rio-csi/iscsi"
+	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/manager"
 )
 
@@ -52,7 +53,7 @@ var (
 		Version: Version,
 		Run: func(cmd *cobra.Command, args []string) {
 			driverType = DriverType(driverTypeStr)
-			logrus.Info("start ", driverType, nodeID, endpoint, iscsiUsername)
+			logger.StdLog.Info("start ", driverType, nodeID, endpoint, iscsiUsername)
 
 			switch driverType {
 			case DriverTypeNode:
@@ -60,7 +61,7 @@ var (
 				target := ""
 				targets, err := iscsi.ListTarget()
 				if err != nil {
-					logrus.Error(err)
+					logger.StdLog.Error(err)
 					return
 				}
 
@@ -72,18 +73,18 @@ var (
 					// create a target and set up
 					target, err = iscsi.SetUpTarget("rio-csi", nodeID)
 					if err != nil {
-						logrus.Error(err)
+						logger.StdLog.Error(err)
 						return
 					}
 
 					_, err = iscsi.SetUpTargetAcl(target, iscsiUsername, iscsiPasswd)
 					if err != nil {
-						logrus.Error(err)
+						logger.StdLog.Error(err)
 						return
 					}
 				}
 
-				logrus.Info("iscsi target:", target)
+				logger.StdLog.Info("iscsi target:", target)
 
 				go func() {
 					driver.NewCSIDriver(
@@ -127,7 +128,7 @@ func main() {
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		logrus.Fatal(err)
+		logger.StdLog.Fatal(err)
 	}
 }
 
@@ -165,10 +166,10 @@ func setRootCMD() {
 
 func initLog() {
 	if debug {
-		logrus.SetLevel(logrus.DebugLevel)
+		logger.StdLog.SetLevel(logger.StdLog.DebugLevel)
 	}
 
-	logrus.SetFormatter(&logrus.TextFormatter{
+	logger.StdLog.SetFormatter(&logger.StdLog.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04:05",
 	})

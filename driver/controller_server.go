@@ -2,12 +2,12 @@ package driver
 
 import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/mount"
+	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
 	"qiniu.io/rio-csi/lvm/builder/volbuilder"
 	"qiniu.io/rio-csi/lvm/common/errors"
@@ -28,14 +28,14 @@ type ControllerServer struct {
 }
 
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	logrus.Debugf("running CreateLVMVolume...")
+	logger.StdLog.Debugf("running CreateLVMVolume...")
 
 	params, err := NewVolumeParams(req.GetParameters())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"failed to parse csi volume params: %v", err)
 	}
-	logrus.Info("create volume parameters:", req.GetParameters())
+	logger.StdLog.Info("create volume parameters:", req.GetParameters())
 
 	volName := strings.ToLower(req.GetName())
 	size := getRoundedCapacity(req.GetCapacityRange().RequiredBytes)
@@ -114,14 +114,14 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 }
 
 func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
-	logrus.Debugf("running DeleteVolume...")
+	logger.StdLog.Debugf("running DeleteVolume...")
 	var err error
 	if err = cs.validateDeleteVolumeReq(req); err != nil {
 		return nil, err
 	}
 
 	volumeID := strings.ToLower(req.GetVolumeId())
-	logrus.Infof("received request to delete volume %q", volumeID)
+	logger.StdLog.Infof("received request to delete volume %q", volumeID)
 	vol, err := lvm.GetVolume(volumeID)
 	if err != nil {
 		if k8serror.IsNotFound(err) {
@@ -147,60 +147,60 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 }
 
 func (cs *ControllerServer) ControllerPublishVolume(_ context.Context, _ *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
-	logrus.Debugf("running ControllerPublishVolume...")
+	logger.StdLog.Debugf("running ControllerPublishVolume...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented ControllerPublishVolume")
 }
 
 func (cs *ControllerServer) ControllerUnpublishVolume(_ context.Context, _ *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
-	logrus.Debugf("running ControllerUnpublishVolume...")
+	logger.StdLog.Debugf("running ControllerUnpublishVolume...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented ControllerUnpublishVolume")
 }
 
 func (cs *ControllerServer) ValidateVolumeCapabilities(_ context.Context, _ *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
-	logrus.Debugf("running ValidateVolumeCapabilities...")
+	logger.StdLog.Debugf("running ValidateVolumeCapabilities...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented ValidateVolumeCapabilities")
 }
 
 func (cs *ControllerServer) ListVolumes(_ context.Context, _ *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
-	logrus.Debugf("running ListVolumes...")
+	logger.StdLog.Debugf("running ListVolumes...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented ListVolumes")
 }
 
 func (cs *ControllerServer) GetCapacity(_ context.Context, _ *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
-	logrus.Debugf("running GetCapacity...")
+	logger.StdLog.Debugf("running GetCapacity...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented GetCapacity")
 }
 
 // ControllerGetCapabilities implements the default GRPC callout.
 // Default supports all capabilities
 func (cs *ControllerServer) ControllerGetCapabilities(_ context.Context, _ *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
-	logrus.Infof("get ControllerGetCapabilities")
+	logger.StdLog.Infof("get ControllerGetCapabilities")
 	return &csi.ControllerGetCapabilitiesResponse{
 		Capabilities: cs.Driver.serviceCapabilities,
 	}, nil
 }
 
 func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
-	logrus.Debugf("running CreateSnapshot...")
+	logger.StdLog.Debugf("running CreateSnapshot...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented CreateSnapshot")
 }
 
 func (cs *ControllerServer) DeleteSnapshot(_ context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
-	logrus.Debugf("running DeleteSnapshot...")
+	logger.StdLog.Debugf("running DeleteSnapshot...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented DeleteSnapshot")
 }
 
 func (cs *ControllerServer) ListSnapshots(_ context.Context, _ *csi.ListSnapshotsRequest) (*csi.ListSnapshotsResponse, error) {
-	logrus.Debugf("running ListSnapshots...")
+	logger.StdLog.Debugf("running ListSnapshots...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented ListSnapshots")
 }
 
 func (cs *ControllerServer) ControllerExpandVolume(_ context.Context, _ *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
-	logrus.Debugf("running ControllerExpandVolume...")
+	logger.StdLog.Debugf("running ControllerExpandVolume...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented ControllerExpandVolume")
 }
 
 func (cs *ControllerServer) ControllerGetVolume(_ context.Context, _ *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
-	logrus.Debugf("running ControllerGetVolume...")
+	logger.StdLog.Debugf("running ControllerGetVolume...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented ControllerGetVolume")
 }

@@ -3,9 +3,8 @@ package driver
 import (
 	"fmt"
 	"k8s.io/utils/mount"
+	"qiniu.io/rio-csi/logger"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
@@ -54,13 +53,13 @@ func ParseEndpoint(ep string) (string, string, error) {
 }
 
 func logGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	logrus.Infof("GRPC call: %s", info.FullMethod)
-	logrus.Infof("GRPC request: %s", protosanitizer.StripSecrets(req))
+	logger.StdLog.Infof("GRPC call: %s", info.FullMethod)
+	logger.StdLog.Infof("GRPC request: %s", protosanitizer.StripSecrets(req))
 	resp, err := handler(ctx, req)
 	if err != nil {
-		logrus.Errorf("GRPC error: %v", err)
+		logger.StdLog.Errorf("GRPC error: %v", err)
 	} else {
-		logrus.Infof("GRPC response: %s", protosanitizer.StripSecrets(resp))
+		logger.StdLog.Infof("GRPC response: %s", protosanitizer.StripSecrets(resp))
 	}
 	return resp, err
 }

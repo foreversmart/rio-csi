@@ -3,7 +3,6 @@ package driver
 import (
 	"fmt"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -45,12 +44,12 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 
 	podLVinfo, err := getPodLVInfo(req)
 	if err != nil {
-		logrus.Warningf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
-		logrus.Error(req.VolumeContext)
+		logger.StdLog.Errorf("PodLVInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
+		logger.StdLog.Error(req.VolumeContext)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	logrus.Info("node publish volume", podLVinfo)
+	logger.StdLog.Info("node publish volume", podLVinfo)
 
 	// check pod and vol on the same node
 	if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
@@ -65,7 +64,7 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		}
 
 		if err != nil {
-			logrus.Error(err)
+			logger.StdLog.Error(err)
 			return nil, err
 		}
 	} else {
@@ -85,19 +84,19 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 
 		devicePath, err := connector.Connect()
 		if err != nil {
-			logrus.Error(err)
+			logger.StdLog.Error(err)
 			return nil, err
 		}
 
 		if devicePath == "" {
-			logrus.Error("connect reported success, but no path returned")
+			logger.StdLog.Error("connect reported success, but no path returned")
 			return nil, fmt.Errorf("connect reported success, but no path returned")
 		}
 
 		mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: exec.New()}
 		err = mounter.FormatAndMount(devicePath, mountInfo.MountPath, mountInfo.FSType, mountInfo.MountOptions)
 		if err != nil {
-			logrus.Errorf("iscsi: failed to mount iscsi volume %s [%s] to %s, error %v", devicePath, mountInfo.FSType, mountInfo.MountPath, err)
+			logger.StdLog.Errorf("iscsi: failed to mount iscsi volume %s [%s] to %s, error %v", devicePath, mountInfo.FSType, mountInfo.MountPath, err)
 		}
 
 		// TODO set IO limits
@@ -133,34 +132,34 @@ func (ns *nodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 			"unable to umount the volume %s err : %s",
 			volumeID, err.Error())
 	}
-	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
+	logger.StdLog.Infof("hostpath: volume %s path: %s has been unmounted.",
 		volumeID, targetPath)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (ns *nodeServer) NodeGetVolumeStats(_ context.Context, _ *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
-	logrus.Debugf("running NodeGetVolumeStats...")
+	logger.StdLog.Debugf("running NodeGetVolumeStats...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented NodeGetVolumeStats")
 }
 
 func (ns *nodeServer) NodeUnstageVolume(_ context.Context, _ *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
-	logrus.Debugf("running NodeUnstageVolume...")
+	logger.StdLog.Debugf("running NodeUnstageVolume...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented NodeUnstageVolume")
 }
 
 func (ns *nodeServer) NodeStageVolume(_ context.Context, _ *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
-	logrus.Debugf("running NodeStageVolume...")
+	logger.StdLog.Debugf("running NodeStageVolume...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented NodeStageVolume")
 }
 
 func (ns *nodeServer) NodeExpandVolume(_ context.Context, _ *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
-	logrus.Debugf("running NodeExpandVolume...")
+	logger.StdLog.Debugf("running NodeExpandVolume...")
 	return nil, status.Error(codes.Unimplemented, "Unimplemented NodeExpandVolume")
 }
 
 func (ns *nodeServer) NodeGetInfo(_ context.Context, _ *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-	logrus.Infof("Using default NodeGetInfo")
+	logger.StdLog.Infof("Using default NodeGetInfo")
 	return &csi.NodeGetInfoResponse{
 		NodeId:            ns.Driver.nodeID,
 		MaxVolumesPerNode: 65535,
@@ -168,7 +167,7 @@ func (ns *nodeServer) NodeGetInfo(_ context.Context, _ *csi.NodeGetInfoRequest) 
 }
 
 func (ns *nodeServer) NodeGetCapabilities(_ context.Context, _ *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
-	logrus.Infof("Using default NodeGetCapabilities")
+	logger.StdLog.Infof("Using default NodeGetCapabilities")
 
 	return &csi.NodeGetCapabilitiesResponse{
 		Capabilities: []*csi.NodeServiceCapability{

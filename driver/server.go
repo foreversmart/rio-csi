@@ -4,12 +4,12 @@ import (
 	"google.golang.org/grpc/reflection"
 	"net"
 	"os"
+	"qiniu.io/rio-csi/logger"
 	"sync"
 
 	"google.golang.org/grpc"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/sirupsen/logrus"
 )
 
 // Defines Non blocking GRPC server interfaces
@@ -55,19 +55,19 @@ func (s *nonBlockingGRPCServer) ForceStop() {
 func (s *nonBlockingGRPCServer) serve(endpoint string, ids csi.IdentityServer, cs csi.ControllerServer, ns csi.NodeServer) {
 	proto, addr, err := ParseEndpoint(endpoint)
 	if err != nil {
-		logrus.Fatal(err.Error())
+		logger.StdLog.Fatal(err.Error())
 	}
 
 	if proto == "unix" {
 		addr = "/" + addr
 		if err := os.Remove(addr); err != nil && !os.IsNotExist(err) {
-			logrus.Fatalf("Failed to remove %s, error: %s", addr, err.Error())
+			logger.StdLog.Fatalf("Failed to remove %s, error: %s", addr, err.Error())
 		}
 	}
 
 	listener, err := net.Listen(proto, addr)
 	if err != nil {
-		logrus.Fatalf("Failed to listen: %v", err)
+		logger.StdLog.Fatalf("Failed to listen: %v", err)
 	}
 
 	opts := []grpc.ServerOption{
@@ -88,6 +88,6 @@ func (s *nonBlockingGRPCServer) serve(endpoint string, ids csi.IdentityServer, c
 	}
 
 	reflection.Register(server)
-	logrus.Infof("Listening 1for connections on address: %v", listener.Addr())
+	logger.StdLog.Infof("Listening 1for connections on address: %v", listener.Addr())
 	_ = server.Serve(listener)
 }
