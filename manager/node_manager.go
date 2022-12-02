@@ -82,10 +82,9 @@ func NewNodeManager(nodeID, namespace string, stopCh chan struct{}) (m *NodeMana
 			options.FieldSelector = fields.OneTermEqualSelector("metadata.name", nodeID).String()
 		})
 
-	nodeInformerFactory.Start(stopCh)
-
 	nodeInformer := nodeInformerFactory.ForResource(nodeResource).Informer()
 	lister := dynamiclister.New(nodeInformer.GetIndexer(), nodeResource)
+	nodeInformerFactory.Start(stopCh)
 	return &NodeManager{
 		NodeID:         nodeID,
 		Namespace:      namespace,
