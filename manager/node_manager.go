@@ -38,7 +38,7 @@ var nodeResource = schema.GroupVersionResource{
 	Resource: "rionodes",
 }
 
-func NewNodeManager(nodeID, namespace string) (m *NodeManager, err error) {
+func NewNodeManager(nodeID, namespace string, stopCh chan struct{}) (m *NodeManager, err error) {
 	if nodeID == "" || namespace == "" {
 		logger.StdLog.Errorf("node ID :%s or namespace :%s is empty", nodeID, namespace)
 		return nil, errors.New("node ID or namespace cant be empty")
@@ -81,6 +81,8 @@ func NewNodeManager(nodeID, namespace string) (m *NodeManager, err error) {
 		namespace, func(options *metav1.ListOptions) {
 			options.FieldSelector = fields.OneTermEqualSelector("metadata.name", nodeID).String()
 		})
+
+	nodeInformerFactory.Start(stopCh)
 
 	nodeInformer := nodeInformerFactory.ForResource(nodeResource).Informer()
 	lister := dynamiclister.New(nodeInformer.GetIndexer(), nodeResource)
@@ -145,13 +147,13 @@ func (m *NodeManager) Sync() error {
 			},
 		}
 
-		logger.StdLog.Infof("lvm node controller: creating new node object for %+v", node)
+		logger.StdLog.Infof("rio node controller: creating new node object for %+v", node)
 		if _, err = client.DefaultClient.InternalClientSet.RioV1().RioNodes(m.Namespace).Create(context.TODO(), node, metav1.CreateOptions{}); err != nil {
-			logger.StdLog.Errorf("create lvm node %s/%s: %v", m.Namespace, m.NodeID, err)
-			return errors.Errorf("create lvm node %s/%s: %v", m.Namespace, m.NodeID, err)
+			logger.StdLog.Errorf("create rio node %s/%s: %v", m.Namespace, m.NodeID, err)
+			return errors.Errorf("create rio node %s/%s: %v", m.Namespace, m.NodeID, err)
 		}
 
-		logger.StdLog.Infof("lvm node controller: created node object %s/%s", m.Namespace, m.NodeID)
+		logger.StdLog.Infof("rio node controller: created node object %s/%s", m.Namespace, m.NodeID)
 		return nil
 	}
 
@@ -159,7 +161,7 @@ func (m *NodeManager) Sync() error {
 	isNeedUpdate := false
 	// validate if owner reference updated.
 	if ownerRefs, req := m.isOwnerRefsUpdateRequired(node.OwnerReferences); req {
-		logger.StdLog.Infof("lvm node controller: node owner references updated current=%+v, required=%+v",
+		logger.StdLog.Infof("rio node controller: node owner references updated current=%+v, required=%+v",
 			node.OwnerReferences, ownerRefs)
 		node.OwnerReferences = ownerRefs
 		isNeedUpdate = true
@@ -167,7 +169,7 @@ func (m *NodeManager) Sync() error {
 
 	// validate if node volume groups are upto date.
 	if !equality.Semantic.DeepEqual(node.VolumeGroups, vgs) {
-		logger.StdLog.Infof("lvm node controller: node volume groups updated current=%+v, required=%+v",
+		logger.StdLog.Infof("rio node controller: node volume groups updated current=%+v, required=%+v",
 			node.VolumeGroups, vgs)
 		node.VolumeGroups = vgs
 		isNeedUpdate = true
@@ -177,14 +179,14 @@ func (m *NodeManager) Sync() error {
 		return nil
 	}
 
-	logger.StdLog.Infof("lvm node controller: updating node object with %+v", node)
+	logger.StdLog.Infof("rio node controller: updating node object with %+v", node)
 	if _, err = client.DefaultClient.InternalClientSet.RioV1().
 		RioNodes(m.Namespace).
 		Update(context.TODO(), node, metav1.UpdateOptions{}); err != nil {
 		return errors.Errorf("update lvm node %s/%s: %v", m.Namespace, m.NodeID, err)
 	}
 
-	logger.StdLog.Infof("lvm node controller: updated node object %s/%s", m.Namespace, m.NodeID)
+	logger.StdLog.Infof("rio node controller: updated node object %s/%s", m.Namespace, m.NodeID)
 
 	return nil
 }

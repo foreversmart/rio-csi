@@ -49,8 +49,8 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartManager(nodeID, namespace, target, metricsAddr, probeAddr string) {
-	nodeManager, err := NewNodeManager(nodeID, namespace)
+func StartManager(nodeID, namespace, target, metricsAddr, probeAddr string, stopCh chan struct{}) {
+	nodeManager, err := NewNodeManager(nodeID, namespace, stopCh)
 	if err != nil {
 		logger.StdLog.Errorf("cant new node manager %s %s error %v", nodeID, namespace, err)
 		os.Exit(1)

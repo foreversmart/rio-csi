@@ -2,10 +2,14 @@ package main
 
 import (
 	"github.com/spf13/cobra"
+	"os"
+	"os/signal"
 	"qiniu.io/rio-csi/driver"
 	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/manager"
+	"syscall"
+	"time"
 )
 
 var (
@@ -97,7 +101,7 @@ var (
 					).Run()
 				}()
 
-				manager.StartManager(nodeID, namespace, target, metricsAddr, probeAddr)
+				manager.StartManager(nodeID, namespace, target, metricsAddr, probeAddr, stopCh)
 
 			case DriverTypeControl:
 
@@ -120,7 +124,25 @@ func init() {
 	setRootCMD()
 }
 
+var stopCh chan struct{}
+
 func main() {
+	go func() {
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1, syscall.SIGUSR2)
+
+		for {
+			select {
+			case <-sigs:
+				logger.StdLog.Info("接受到了结束进程的信号")
+				close(stopCh)
+				time.Sleep(time.Second * 2)
+				os.Exit(1)
+			}
+		}
+
+	}()
+
 	Execute()
 }
 
