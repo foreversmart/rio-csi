@@ -80,6 +80,12 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 			TargetIqn:     vol.Spec.IscsiTarget,
 			TargetPortals: []string{node.ISCSIInfo.Portal},
 			Lun:           vol.Spec.IscsiLun,
+			DiscoverySecrets: iscsi.Secrets{
+				SecretsType: "chap",
+				UserName:    ns.Driver.iscsiUsername,
+				Password:    ns.Driver.iscsiPassword,
+			},
+			DoDiscovery: true,
 		}
 
 		devicePath, err := connector.Connect()

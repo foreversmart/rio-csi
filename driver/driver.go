@@ -11,6 +11,9 @@ type RioCSI struct {
 	version  string
 	endpoint string
 
+	iscsiUsername string
+	iscsiPassword string
+
 	// Add CSI plugin parameters here
 	enableIdentityServer   bool
 	enableControllerServer bool
@@ -20,7 +23,7 @@ type RioCSI struct {
 	serviceCapabilities []*csi.ControllerServiceCapability
 }
 
-func NewCSIDriver(name, version, nodeID, endpoint string, enableIdentityServer, enableControllerServer, enableNodeServer bool) *RioCSI {
+func NewCSIDriver(name, version, nodeID, endpoint, iscsiUsername, iscsiPassword string, enableIdentityServer, enableControllerServer, enableNodeServer bool) *RioCSI {
 	logger.StdLog.Infof("Driver: %s version: %s", name, version)
 
 	// Add some check here
@@ -33,6 +36,8 @@ func NewCSIDriver(name, version, nodeID, endpoint string, enableIdentityServer, 
 		nodeID:                 nodeID,
 		version:                version,
 		endpoint:               endpoint,
+		iscsiUsername:          iscsiUsername,
+		iscsiPassword:          iscsiPassword,
 		enableIdentityServer:   enableIdentityServer,
 		enableControllerServer: enableControllerServer,
 		enableNodeServer:       enableNodeServer,
