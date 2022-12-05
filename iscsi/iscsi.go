@@ -78,7 +78,8 @@ type Connector struct {
 
 func init() {
 	// by default, we don't log anything, EnableDebugLogging() can turn on some tracing
-	debug = log.New(ioutil.Discard, "", 0)
+	//debug = log.New(ioutil.Discard, "", 0)
+	EnableDebugLogging(os.Stdout)
 }
 
 // EnableDebugLogging provides a mechanism to turn on debug logging for this package
