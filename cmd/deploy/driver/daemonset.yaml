@@ -81,6 +81,21 @@ spec:
               #mountPath: /lib/modules
             - name: run-dir
               mountPath: /var/run/dbus
+            - name: timezone
+              mountPath: /etc/localtime
+            - name: host-sys
+              mountPath: /sys
+            - name: host-mount
+              mountPath: /run/mount
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: iscsi-bin
+              mountPath: /usr/sbin/iscsiadm
+              readOnly: true
+            - name: initiator-dir
+              mountPath: /etc/iscsi
+              readOnly: true
       volumes:
         - name: plugin-dir
           hostPath:
@@ -106,6 +121,30 @@ spec:
         - name: run-dir
           hostPath:
             path: /var/run/dbus
+            type: Directory
+        - name: timezone
+          hostPath:
+            path: /etc/localtime
+            type: ""
+        - name: host-sys
+          hostPath:
+            path: /sys
+            type: ""
+        - name: host-mount
+          hostPath:
+            path: /run/mount
+            type: ""
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+            type: ""
+        - name: iscsi-bin
+          hostPath:
+            path: /usr/sbin/iscsiadm
+            type: File
+        - name: initiator-dir
+          hostPath:
+            path: /etc/iscsi
             type: Directory
 ---
 

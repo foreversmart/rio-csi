@@ -55,6 +55,7 @@ spec:
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
+            - "--namespace=$(RIO_CSI_NAMESPACE)"
             - "--driverType=control"
           env:
             - name: NODE_ID
