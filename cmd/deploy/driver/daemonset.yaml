@@ -77,8 +77,8 @@ spec:
               mountPropagation: Bidirectional
             - name: targetcli-dir
               mountPath: /root/.targetcli
-              #- name: lib-dir
-              #mountPath: /lib/modules
+            - name: lib-dir
+              mountPath: /lib/modules
             - name: run-dir
               mountPath: /var/run/dbus
             - name: initiator-dir
@@ -108,6 +108,10 @@ spec:
           hostPath:
             path: /root/.targetcli
             type: DirectoryOrCreate
+        - name: lib-dir
+          hostPath:
+            path: /lib/modules
+            type: Directory
         - name: run-dir
           hostPath:
             path: /var/run/dbus
