@@ -16,9 +16,9 @@ spec:
         app: csi-driver-node
     spec:
       # debug only(connect to dlv 2345 port)
-      #hostNetwork: true
       serviceAccount: riocsi-node-sa
       hostNetwork: true
+      hostIPC: true
       containers:
         - name: csi-driver-registrar
           image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
@@ -81,6 +81,10 @@ spec:
               mountPath: /lib/modules
             - name: run-dir
               mountPath: /var/run/dbus
+            - name: lvm-dir
+              mountPath: /run/lvm
+            - name: udev-dir
+              mountPath: /run/udev
             - name: initiator-dir
               mountPath: /etc/iscsi
               readOnly: true
@@ -115,6 +119,14 @@ spec:
         - name: run-dir
           hostPath:
             path: /var/run/dbus
+            type: Directory
+        - name: lvm-dir
+          hostPath:
+            path: /run/lvm
+            type: Directory
+        - name: udev-dir
+          hostPath:
+            path: /run/udev
             type: Directory
         - name: initiator-dir
           hostPath:
