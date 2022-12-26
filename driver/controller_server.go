@@ -1,12 +1,14 @@
 package driver
 
 import (
+	"fmt"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/mount"
+	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
 	"qiniu.io/rio-csi/lvm/builder/volbuilder"
@@ -133,7 +135,20 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 	// if volume is not already triggered for deletion, delete the volume.
 	// otherwise, just wait for the existing deletion operation to complete.
 	if vol.GetDeletionTimestamp() == nil {
+		_, err = iscsi.UnmountLun(vol.Spec.IscsiTarget, fmt.Sprintf("%d", vol.Spec.IscsiLun))
+		if err != nil {
+			logger.StdLog.Error(volumeID, err)
+			return nil, errors.Wrapf(err, "failed to handle delete volume request for {%s}", volumeID)
+		}
+
+		_, err = iscsi.UnPublicBlockDevice(vol.Spec.IscsiTarget, volumeID)
+		if err != nil {
+			logger.StdLog.Error(volumeID, err)
+			return nil, errors.Wrapf(err, "failed to handle delete volume request for {%s}", volumeID)
+		}
+
 		if err = lvm.DeleteVolume(volumeID); err != nil {
+			logger.StdLog.Error(volumeID, err)
 			return nil, errors.Wrapf(err,
 				"failed to handle delete volume request for {%s}", volumeID)
 		}
