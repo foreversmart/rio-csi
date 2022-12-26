@@ -76,6 +76,7 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 
 		// mount on different nodes using iscsi
 		connector := iscsi.Connector{
+			AuthType:      "chap",
 			VolumeName:    vol.Name,
 			TargetIqn:     vol.Spec.IscsiTarget,
 			TargetPortals: []string{node.ISCSIInfo.Portal},
@@ -85,7 +86,8 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 				UserName:    ns.Driver.iscsiUsername,
 				Password:    ns.Driver.iscsiPassword,
 			},
-			DoDiscovery: true,
+			DoDiscovery:     true,
+			DoCHAPDiscovery: true,
 		}
 
 		devicePath, err := connector.Connect()

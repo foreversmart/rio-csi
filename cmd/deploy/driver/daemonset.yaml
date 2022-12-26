@@ -87,7 +87,6 @@ spec:
               mountPath: /run/udev
             - name: initiator-dir
               mountPath: /etc/iscsi
-              readOnly: true
             - name: initiator-socket
               mountPath: /etc/systemd/system/sockets.target.wants/iscsid.socket
       volumes:
