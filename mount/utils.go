@@ -1,24 +1,34 @@
-/*
-Copyright 2020 The OpenEBS Authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package mount
 
 import (
 	"k8s.io/utils/mount"
+	apis "qiniu.io/rio-csi/api/rio/v1"
+	"strings"
 )
+
+// lvm related constants
+const (
+	DevPath       = "/dev/"
+	DevMapperPath = "/dev/mapper/"
+	// MinExtentRoundOffSize represents minimum size (256Mi) to roundoff the volume
+	// group size in case of thin pool provisioning
+	MinExtentRoundOffSize = 268435456
+
+	// BlockCleanerCommand is the command used to clean filesystem on the device
+	BlockCleanerCommand = "wipefs"
+)
+
+// GetVolumeDevPath returns devpath for the given volume
+func GetVolumeDevPath(vol *apis.Volume) (string, error) {
+	// LVM doubles the hiphen for the mapper device name
+	// and uses single hiphen to separate volume group from volume
+	vg := strings.Replace(vol.Spec.VolGroup, "-", "--", -1)
+
+	lv := strings.Replace(vol.Name, "-", "--", -1)
+	dev := DevMapperPath + vg + "-" + lv
+
+	return dev, nil
+}
 
 // GetMounts gets mountpoints for the specified volume
 func GetMounts(dev string) ([]string, error) {

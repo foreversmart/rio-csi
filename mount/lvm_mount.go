@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package lvm
+package mount
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ import (
 	"math"
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
-	"qiniu.io/rio-csi/lvm/device/iolimit"
+	"qiniu.io/rio-csi/mount/device/iolimit"
 	"strconv"
 
 	"google.golang.org/grpc/codes"
@@ -29,47 +29,10 @@ import (
 	"k8s.io/klog"
 	utilexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
-	mnt "qiniu.io/rio-csi/lvm/mount"
 )
 
-// MountInfo contains the volume related info
-// for all types of volumes in Volume
-type MountInfo struct {
-	// FSType of a volume will specify the
-	// format type - ext4(default), xfs of PV
-	FSType string `json:"fsType"`
-
-	// AccessMode of a volume will hold the
-	// access mode of the volume
-	AccessModes []string `json:"accessModes"`
-
-	// MountPath of the volume will hold the
-	// path on which the volume is mounted
-	// on that node
-	MountPath string `json:"mountPath"`
-
-	// MountOptions specifies the options with
-	// which mount needs to be attempted
-	MountOptions []string `json:"mountOptions"`
-}
-
-// PodLVInfo contains the pod, LVGroup related info
-type PodLVInfo struct {
-	// UID is the Uid of the pod
-	UID string
-
-	// Name is the Name of the pod
-	Name string
-
-	// Namespace is the namespace of the pod
-	Namespace string
-
-	// NodeId is the node id of the pod
-	NodeId string
-}
-
 // FormatAndMountVol formats and mounts the created volume to the desired mount path
-func FormatAndMountVol(devicePath string, mountInfo *MountInfo) error {
+func FormatAndMountVol(devicePath string, mountInfo *Info) error {
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	err := mounter.FormatAndMount(devicePath, mountInfo.MountPath, mountInfo.FSType, mountInfo.MountOptions)
@@ -85,8 +48,7 @@ func FormatAndMountVol(devicePath string, mountInfo *MountInfo) error {
 }
 
 // UmountVolume unmounts the volume and the corresponding mount path is removed
-func UmountVolume(vol *apis.Volume, targetPath string,
-) error {
+func UmountVolume(vol *apis.Volume, targetPath string) error {
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	dev, ref, err := mount.GetDeviceNameFromMount(mounter, targetPath)
@@ -139,10 +101,6 @@ func verifyMountRequest(vol *apis.Volume, mountpath string) (bool, error) {
 		return false, status.Error(codes.InvalidArgument, "verifyMount: mount path missing in request")
 	}
 
-	if len(vol.Spec.OwnerNodeID) > 0 &&
-		vol.Spec.OwnerNodeID != NodeID {
-		return false, status.Error(codes.Internal, "verifyMount: volume is owned by different node")
-	}
 	if vol.Finalizers == nil {
 		return false, status.Error(codes.Internal, "verifyMount: volume is not ready to be mounted")
 	}
@@ -161,7 +119,7 @@ func verifyMountRequest(vol *apis.Volume, mountpath string) (bool, error) {
 	 * be unmounted before proceeding to the mount
 	 * operation.
 	 */
-	currentMounts, err := mnt.GetMounts(devicePath)
+	currentMounts, err := GetMounts(devicePath)
 	if err != nil {
 		klog.Errorf("can not get mounts for volume:%s dev %s err: %v",
 			vol.Name, devicePath, err.Error())
@@ -187,7 +145,7 @@ func verifyMountRequest(vol *apis.Volume, mountpath string) (bool, error) {
 }
 
 // MountVolume mounts the disk to the specified path
-func MountVolume(vol *apis.Volume, mount *MountInfo, podLVInfo *PodLVInfo) error {
+func MountVolume(vol *apis.Volume, mount *Info, podLVInfo *PodInfo) error {
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	mounted, err := verifyMountRequest(vol, mount.MountPath)
 	if err != nil {
@@ -212,7 +170,7 @@ func MountVolume(vol *apis.Volume, mount *MountInfo, podLVInfo *PodLVInfo) error
 
 	klog.Infof("lvm: volume %v mounted %v fs %v", volume, mount.MountPath, mount.FSType)
 
-	if ioLimitsEnabled && podLVInfo != nil {
+	if podLVInfo != nil {
 		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
 			klog.Warningf("lvm: error setting io limits: podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
 		} else {
@@ -224,7 +182,7 @@ func MountVolume(vol *apis.Volume, mount *MountInfo, podLVInfo *PodLVInfo) error
 }
 
 // MountFilesystem mounts the disk to the specified path
-func MountFilesystem(vol *apis.Volume, mount *MountInfo, podinfo *PodLVInfo) error {
+func MountFilesystem(vol *apis.Volume, mount *Info, podinfo *PodInfo) error {
 	if err := os.MkdirAll(mount.MountPath, 0755); err != nil {
 		return status.Errorf(codes.Internal, "Could not create dir {%q}, err: %v", mount.MountPath, err)
 	}
@@ -233,7 +191,7 @@ func MountFilesystem(vol *apis.Volume, mount *MountInfo, podinfo *PodLVInfo) err
 }
 
 // MountBlock mounts the block disk to the specified path
-func MountBlock(vol *apis.Volume, mountinfo *MountInfo, podLVInfo *PodLVInfo) error {
+func MountBlock(vol *apis.Volume, mountinfo *Info, podLVInfo *PodInfo) error {
 	target := mountinfo.MountPath
 	volume := vol.Spec.VolGroup + "/" + vol.Name
 	devicePath := DevPath + volume
@@ -258,7 +216,7 @@ func MountBlock(vol *apis.Volume, mountinfo *MountInfo, podLVInfo *PodLVInfo) er
 
 	klog.Infof("NodePublishVolume mounted block device %s at %s", devicePath, target)
 
-	if ioLimitsEnabled && podLVInfo != nil {
+	if podLVInfo != nil {
 		if err := setIOLimits(vol, podLVInfo, devicePath); err != nil {
 			klog.Warningf(": error setting io limits for podUid %s, device %s, err=%v", podLVInfo.UID, devicePath, err)
 		} else {
@@ -268,9 +226,9 @@ func MountBlock(vol *apis.Volume, mountinfo *MountInfo, podLVInfo *PodLVInfo) er
 	return nil
 }
 
-func setIOLimits(vol *apis.Volume, podLVInfo *PodLVInfo, devicePath string) error {
+func setIOLimits(vol *apis.Volume, podLVInfo *PodInfo, devicePath string) error {
 	if podLVInfo == nil {
-		return errors.New("PodLVInfo is missing. Skipping setting IOLimits")
+		return errors.New("PodInfo is missing. Skipping setting IOLimits")
 	}
 	capacityBytes, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
 	if err != nil {

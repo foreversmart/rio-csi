@@ -1,0 +1,5 @@
+package iscsi
+
+func Mount() {
+
+}
