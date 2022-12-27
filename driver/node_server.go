@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 	"k8s.io/utils/mount"
+	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/iscsi"
@@ -90,8 +91,8 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 			DoCHAPDiscovery: true,
 		}
 
-		devicePath, err := connector.Connect()
-		if err != nil {
+		devicePath, connectErr := connector.Connect()
+		if connectErr != nil {
 			logger.StdLog.Error(err)
 			return nil, err
 		}
@@ -101,10 +102,28 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 			return nil, fmt.Errorf("connect reported success, but no path returned")
 		}
 
+		mntPath := mountInfo.MountPath
 		mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: exec.New()}
-		err = mounter.FormatAndMount(devicePath, mountInfo.MountPath, mountInfo.FSType, mountInfo.MountOptions)
+
+		// check mount point
+		notMnt, mountErr := mounter.IsLikelyNotMountPoint(mntPath)
+		if mountErr != nil && !os.IsNotExist(mountErr) {
+			logger.StdLog.Errorf("heuristic determination of mount point failed %s error %v", mntPath, mountErr)
+			return nil, fmt.Errorf("heuristic determination of mount point failed:%v", err)
+		}
+		if !notMnt {
+			logger.StdLog.Infof("iscsi: %s already mounted", mntPath)
+			return nil, nil
+		}
+
+		if err = os.MkdirAll(mntPath, 0o750); err != nil {
+			logger.StdLog.Errorf("iscsi: failed to mkdir %s, error", mntPath)
+			return nil, err
+		}
+
+		err = mounter.FormatAndMount(devicePath, mntPath, mountInfo.FSType, mountInfo.MountOptions)
 		if err != nil {
-			logger.StdLog.Errorf("iscsi: failed to mount iscsi volume %s [%s] to %s, error %v", devicePath, mountInfo.FSType, mountInfo.MountPath, err)
+			logger.StdLog.Errorf("iscsi: failed to mount iscsi volume %s [%s] to %s, error %v", devicePath, mountInfo.FSType, mntPath, err)
 		}
 
 		// TODO set IO limits
