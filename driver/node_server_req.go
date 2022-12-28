@@ -42,16 +42,16 @@ func (ns *nodeServer) validateNodeUnPublishReq(req *csi.NodeUnpublishVolumeReque
 
 // GetVolAndMountInfo get volume and mount info from node csi volume request
 func GetVolAndMountInfo(req *csi.NodePublishVolumeRequest) (*apis.Volume, *mount.Info, error) {
-	var mountinfo mount.Info
+	var info mount.Info
 
-	mountinfo.FSType = req.GetVolumeCapability().GetMount().GetFsType()
-	mountinfo.MountPath = req.GetTargetPath()
-	mountinfo.MountOptions = append(mountinfo.MountOptions, req.GetVolumeCapability().GetMount().GetMountFlags()...)
+	info.FSType = req.GetVolumeCapability().GetMount().GetFsType()
+	info.MountPath = req.GetTargetPath()
+	info.MountOptions = append(info.MountOptions, req.GetVolumeCapability().GetMount().GetMountFlags()...)
 
 	if req.GetReadonly() {
-		mountinfo.MountOptions = append(mountinfo.MountOptions, "ro")
+		info.MountOptions = append(info.MountOptions, "ro")
 	} else {
-		mountinfo.MountOptions = append(mountinfo.MountOptions, "rw")
+		info.MountOptions = append(info.MountOptions, "rw")
 	}
 
 	volName := strings.ToLower(req.GetVolumeId())
@@ -61,7 +61,7 @@ func GetVolAndMountInfo(req *csi.NodePublishVolumeRequest) (*apis.Volume, *mount
 		return nil, nil, err
 	}
 
-	return vol, &mountinfo, nil
+	return vol, &info, nil
 }
 
 func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*mount.PodInfo, error) {

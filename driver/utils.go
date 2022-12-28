@@ -27,8 +27,7 @@ func NewControllerServer(d *RioCSI) *ControllerServer {
 
 func NewNodeServer(n *RioCSI) *nodeServer {
 	return &nodeServer{
-		Driver:  n,
-		mounter: mount.New(""),
+		Driver: n,
 	}
 }
 

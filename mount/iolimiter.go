@@ -17,7 +17,12 @@ limitations under the License.
 package mount
 
 import (
+	"errors"
+	"math"
+	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/driver/config"
+	"qiniu.io/rio-csi/logger"
+	"qiniu.io/rio-csi/mount/device/iolimit"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,6 +40,41 @@ var (
 	wbpsPerGB        map[string]uint64
 	rwlock           sync.RWMutex
 )
+
+func setIOLimits(vol *apis.Volume, podLVInfo *PodInfo, devicePath string) error {
+	if podLVInfo == nil {
+		return errors.New("PodInfo is missing. Skipping setting IOLimits")
+	}
+	capacityBytes, err := strconv.ParseUint(vol.Spec.Capacity, 10, 64)
+	if err != nil {
+		logger.StdLog.Warn("error parsing Volume.Spec.Capacity. Skipping setting IOLimits", err)
+		return err
+	}
+	capacityGB := uint64(math.Ceil(float64(capacityBytes) / (1024 * 1024 * 1024)))
+	logger.StdLog.Infof("Capacity of device in GB: %v", capacityGB)
+	riops := getRIopsPerGB(vol.Spec.VolGroup) * capacityGB
+	wiops := getWIopsPerGB(vol.Spec.VolGroup) * capacityGB
+	rbps := getRBpsPerGB(vol.Spec.VolGroup) * capacityGB
+	wbps := getWBpsPerGB(vol.Spec.VolGroup) * capacityGB
+	logger.StdLog.Infof("Setting iolimits for podUId %s, device %s: riops=%v, wiops=%v, rbps=%v, wbps=%v",
+		podLVInfo.UID, devicePath, riops, wiops, rbps, wbps,
+	)
+	err = iolimit.SetIOLimits(&iolimit.Request{
+		DeviceName:       devicePath,
+		PodUid:           podLVInfo.UID,
+		ContainerRuntime: getContainerRuntime(),
+		IOLimit: &iolimit.IOMax{
+			Riops: riops,
+			Wiops: wiops,
+			Rbps:  rbps,
+			Wbps:  wbps,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func isSet() bool {
 	rwlock.RLock()

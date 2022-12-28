@@ -1,14 +1,18 @@
 package driver
 
 import (
+	"fmt"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/utils/mount"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/client"
+	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
+	"qiniu.io/rio-csi/mount"
 )
 
 type nodeServer struct {
@@ -20,7 +24,7 @@ type nodeServer struct {
 	//
 	// In the CSI implementation of other storage vendors, you may need to add other
 	// instances, such as the api client of Alibaba Cloud Storage.
-	mounter mount.Interface
+	//mounter mount.Interface
 }
 
 func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -44,27 +48,61 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	logger.StdLog.Info("node publish volume", podLVinfo)
-
 	// check pod and vol on the same node
 	if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
 		// if on same node go directly lvm mount
-		switch req.GetVolumeCapability().GetAccessType().(type) {
-		case *csi.VolumeCapability_Block:
-			// attempt block mount operation on the requested path
-			err = lvm.MountBlock(vol, mountInfo, podLVinfo)
-		case *csi.VolumeCapability_Mount:
-			// attempt filesystem mount operation on the requested path
-			err = lvm.MountFilesystem(vol, mountInfo, podLVinfo)
-		}
-
-		if err != nil {
-			logger.StdLog.Error(err)
-			return nil, err
-		}
+		mountInfo.DevicePath = mount.GetVolumeDevicePath(vol)
 	} else {
+		node, getErr := client.DefaultClient.InternalClientSet.RioV1().RioNodes(vol.Namespace).Get(context.TODO(), vol.Spec.OwnerNodeID, metav1.GetOptions{})
+		if getErr != nil {
+			logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, err)
+			return nil, getErr
+		}
 
-		// TODO set IO limits
+		// mount on different nodes using iscsi
+		connector := iscsi.Connector{
+			AuthType:      "chap",
+			VolumeName:    vol.Name,
+			TargetIqn:     vol.Spec.IscsiTarget,
+			TargetPortals: []string{node.ISCSIInfo.Portal},
+			Lun:           vol.Spec.IscsiLun,
+			DiscoverySecrets: iscsi.Secrets{
+				SecretsType: "chap",
+				UserName:    ns.Driver.iscsiUsername,
+				Password:    ns.Driver.iscsiPassword,
+			},
+			DoDiscovery:     true,
+			DoCHAPDiscovery: true,
+		}
+
+		devicePath, connectErr := connector.Connect()
+		if connectErr != nil {
+			logger.StdLog.Error(connectErr)
+			return nil, connectErr
+		}
+
+		if devicePath == "" {
+			logger.StdLog.Error("connect reported success, but no path returned")
+			return nil, fmt.Errorf("connect reported success, but no path returned")
+		}
+
+		mountInfo.DevicePath = devicePath
+	}
+
+	logger.StdLog.Info("node publish volume", podLVinfo, mountInfo)
+
+	switch req.GetVolumeCapability().GetAccessType().(type) {
+	case *csi.VolumeCapability_Block:
+		// attempt block mount operation on the requested path
+		err = mount.MountBlock(vol, mountInfo, podLVinfo)
+	case *csi.VolumeCapability_Mount:
+		// attempt filesystem mount operation on the requested path
+		err = mount.MountFilesystem(vol, mountInfo, podLVinfo)
+	}
+
+	if err != nil {
+		logger.StdLog.Error(err)
+		return nil, err
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -90,7 +128,7 @@ func (ns *nodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 			volumeID, err.Error())
 	}
 
-	err = lvm.UmountVolume(vol, targetPath)
+	err = mount.UmountVolume(vol, targetPath)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,

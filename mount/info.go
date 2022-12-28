@@ -16,6 +16,9 @@ type Info struct {
 	// on that node
 	MountPath string `json:"mountPath"`
 
+	// DevicePath is device path in the host
+	DevicePath string `json:"device_path"`
+
 	// MountOptions specifies the options with
 	// which mount needs to be attempted
 	MountOptions []string `json:"mountOptions"`
