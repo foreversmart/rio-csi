@@ -48,46 +48,47 @@ func (ns *nodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	// TODO vol and pod on the same node to local mount
 	// check pod and vol on the same node
-	if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
-		// if on same node go directly lvm mount
-		mountInfo.DevicePath = mount.GetVolumeDevicePath(vol)
-	} else {
-		node, getErr := client.DefaultClient.InternalClientSet.RioV1().RioNodes(vol.Namespace).Get(context.TODO(), vol.Spec.OwnerNodeID, metav1.GetOptions{})
-		if getErr != nil {
-			logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, err)
-			return nil, getErr
-		}
-
-		// mount on different nodes using iscsi
-		connector := iscsi.Connector{
-			AuthType:      "chap",
-			VolumeName:    vol.Name,
-			TargetIqn:     vol.Spec.IscsiTarget,
-			TargetPortals: []string{node.ISCSIInfo.Portal},
-			Lun:           vol.Spec.IscsiLun,
-			DiscoverySecrets: iscsi.Secrets{
-				SecretsType: "chap",
-				UserName:    ns.Driver.iscsiUsername,
-				Password:    ns.Driver.iscsiPassword,
-			},
-			DoDiscovery:     true,
-			DoCHAPDiscovery: true,
-		}
-
-		devicePath, connectErr := connector.Connect()
-		if connectErr != nil {
-			logger.StdLog.Error(connectErr)
-			return nil, connectErr
-		}
-
-		if devicePath == "" {
-			logger.StdLog.Error("connect reported success, but no path returned")
-			return nil, fmt.Errorf("connect reported success, but no path returned")
-		}
-
-		mountInfo.DevicePath = devicePath
+	//if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
+	//	// if on same node go directly lvm mount
+	//	mountInfo.DevicePath = mount.GetVolumeDevicePath(vol)
+	//} else {
+	node, getErr := client.DefaultClient.InternalClientSet.RioV1().RioNodes(vol.Namespace).Get(context.TODO(), vol.Spec.OwnerNodeID, metav1.GetOptions{})
+	if getErr != nil {
+		logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, err)
+		return nil, getErr
 	}
+
+	// mount on different nodes using iscsi
+	connector := iscsi.Connector{
+		AuthType:      "chap",
+		VolumeName:    vol.Name,
+		TargetIqn:     vol.Spec.IscsiTarget,
+		TargetPortals: []string{node.ISCSIInfo.Portal},
+		Lun:           vol.Spec.IscsiLun,
+		DiscoverySecrets: iscsi.Secrets{
+			SecretsType: "chap",
+			UserName:    ns.Driver.iscsiUsername,
+			Password:    ns.Driver.iscsiPassword,
+		},
+		DoDiscovery:     true,
+		DoCHAPDiscovery: true,
+	}
+
+	devicePath, connectErr := connector.Connect()
+	if connectErr != nil {
+		logger.StdLog.Error(connectErr)
+		return nil, connectErr
+	}
+
+	if devicePath == "" {
+		logger.StdLog.Error("connect reported success, but no path returned")
+		return nil, fmt.Errorf("connect reported success, but no path returned")
+	}
+
+	mountInfo.DevicePath = devicePath
+	//}
 
 	logger.StdLog.Info("node publish volume", podLVinfo, mountInfo)
 
