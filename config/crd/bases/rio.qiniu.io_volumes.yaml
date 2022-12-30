@@ -62,6 +62,8 @@ spec:
                 description: Capacity of the volume
                 minLength: 1
                 type: string
+              iscsi_acl_is_set:
+                type: boolean
               iscsi_block:
                 type: string
               iscsi_lun:
@@ -104,6 +106,7 @@ spec:
                 type: string
             required:
             - capacity
+            - iscsi_acl_is_set
             - iscsi_block
             - iscsi_lun
             - iscsi_portal

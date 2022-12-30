@@ -68,6 +68,8 @@ type VolumeSpec struct {
 	IscsiTarget string `json:"iscsi_target"`
 	// +kubebuilder:validation:Required
 	IscsiPortal string `json:"iscsi_portal"`
+	// +kubebuilder:validation:Required
+	IscsiACLIsSet bool `json:"iscsi_acl_is_set"`
 }
 
 // VolumeStatus defines the observed state of Volume
