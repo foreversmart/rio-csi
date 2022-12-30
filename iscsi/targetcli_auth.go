@@ -11,14 +11,14 @@ func SetDiscoveryAuth(username, password string) error {
 }
 
 // SetUpTargetAcl set target acl rules for client
-func SetUpTargetAcl(target, client, username, password string) (string, error) {
+func SetUpTargetAcl(target, initiator, username, password string) (string, error) {
 	cmd := NewExecCmd()
 	cmd.Add(openIscsiDir)
 	cmd.AddFormat(cdCmd, target)
 	cmd.Add(openAclsDir)
 	// create acls
-	cmd.AddFormat(createCmd, client)
-	cmd.AddFormat(cdCmd, client)
+	cmd.AddFormat(createCmd, initiator)
+	cmd.AddFormat(cdCmd, initiator)
 	// set username and password
 	cmd.AddFormat(setUserIDCmd, username)
 	cmd.AddFormat(setPasswordCmd, password)

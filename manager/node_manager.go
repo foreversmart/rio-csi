@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/client-go/dynamic/dynamiclister"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
+	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
 	"qiniu.io/rio-csi/lvm/common/errors"
@@ -115,6 +117,8 @@ func (m *NodeManager) Sync() error {
 		return err
 	}
 
+	m.Lister.Namespace(m.Namespace).List(labels.NewSelector())
+
 	var node *apis.RioNode
 	if cacheNode != nil {
 		nodeStruct, ok := getNodeStructuredObject(cacheNode)
@@ -131,6 +135,12 @@ func (m *NodeManager) Sync() error {
 		return err
 	}
 
+	initiatorName, err := iscsi.GetInitiatorName()
+	if err != nil {
+		logger.StdLog.Error("GetInitiatorName", err)
+		return err
+	}
+
 	// if it doesn't exists, create node object
 	if node == nil {
 		node = &apis.RioNode{
@@ -142,7 +152,8 @@ func (m *NodeManager) Sync() error {
 			VolumeGroups: vgs,
 			ISCSIInfo: apis.ISCSIInfo{
 				// TODO support custom define port
-				Portal: fmt.Sprintf("%s:3260", m.NodeIP),
+				Portal:        fmt.Sprintf("%s:3260", m.NodeIP),
+				InitiatorName: initiatorName,
 			},
 		}
 
@@ -171,6 +182,14 @@ func (m *NodeManager) Sync() error {
 		logger.StdLog.Infof("rio node controller: node volume groups updated current=%+v, required=%+v",
 			node.VolumeGroups, vgs)
 		node.VolumeGroups = vgs
+		isNeedUpdate = true
+	}
+
+	// validate if node volume groups are upto date.
+	if !equality.Semantic.DeepEqual(node.ISCSIInfo.InitiatorName, initiatorName) {
+		logger.StdLog.Infof("rio node controller: node initiatorName updated current=%+v, required=%+v",
+			node.ISCSIInfo.InitiatorName, initiatorName)
+		node.ISCSIInfo.InitiatorName = initiatorName
 		isNeedUpdate = true
 	}
 
