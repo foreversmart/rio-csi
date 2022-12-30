@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"qiniu.io/rio-csi/client"
@@ -8,15 +9,9 @@ import (
 	"qiniu.io/rio-csi/logger"
 )
 
-var hasCheckTargetAcl = false
-
-// CheckTargetAcl check target whether exist, if not create
+// CreateTargetAcl check target whether exist, if not create
 // TODO add initiator acl rules partial not all
-func CheckTargetAcl(namespace, target, username, password string) (err error) {
-	if hasCheckTargetAcl {
-		return nil
-	}
-
+func CreateTargetAcl(namespace, target, username, password string) (err error) {
 	nodes, listErr := client.DefaultClient.InternalClientSet.RioV1().RioNodes(namespace).List(context.TODO(), metav1.ListOptions{})
 	if listErr != nil {
 		logger.StdLog.Errorf("list %s rio node info error %v", namespace, err)
@@ -54,8 +49,8 @@ func CheckTargetAcl(namespace, target, username, password string) (err error) {
 
 	// if all initiator is set dot check anymore
 	if count == len(nodes.Items) {
-		hasCheckTargetAcl = true
+		return nil
 	}
 
-	return nil
+	return errors.New("acl not set all for the nodes")
 }

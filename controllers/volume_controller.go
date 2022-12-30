@@ -170,6 +170,22 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		}
 	}
 
+	if err == nil && !vol.Spec.IscsiACLIsSet {
+		// check ACL
+		err = CreateTargetAcl(vol.Namespace, vol.Spec.IscsiTarget, r.IscsiUsername, r.IscsiPassword)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("CreateTargetAcl %v", err))
+			return err
+		}
+
+		vol.Spec.IscsiACLIsSet = true
+		vol, err = lvm.UpdateVolume(vol)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
+				vol.Name, err))
+		}
+	}
+
 	// Iscsi publish volume
 	if err == nil && vol.Spec.IscsiBlock == "" {
 		device := getVolumeDevice(vol)
@@ -223,12 +239,6 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
-		}
-
-		// check ACL
-		err = CheckTargetAcl(vol.Namespace, vol.Spec.IscsiTarget, r.IscsiUsername, r.IscsiPassword)
-		if err != nil {
-			l.Error(err, fmt.Sprintf("CheckTargetAcl %v", err))
 		}
 
 	}
