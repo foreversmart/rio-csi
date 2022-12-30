@@ -30,6 +30,7 @@ import (
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=rionode
 // +kubebuilder:printcolumn:name="Portal",type=string,JSONPath=`.iscsi_info.portal`,description="node portal info"
+// +kubebuilder:printcolumn:name="InitiatorName",type=string,JSONPath=`.iscsi_info.initiator_name`,description="node iscsi initiator name"
 type RioNode struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -45,6 +46,10 @@ type ISCSIInfo struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength=1
 	Portal string `json:"portal"`
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	InitiatorName string `json:"initiator_name"`
 }
 
 // VolumeGroup specifies attributes of a given vg exists on node.

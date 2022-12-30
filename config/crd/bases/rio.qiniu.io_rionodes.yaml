@@ -22,6 +22,10 @@ spec:
       jsonPath: .iscsi_info.portal
       name: Portal
       type: string
+    - description: node iscsi initiator name
+      jsonPath: .iscsi_info.initiator_name
+      name: InitiatorName
+      type: string
     name: v1
     schema:
       openAPIV3Schema:
@@ -37,11 +41,15 @@ spec:
             properties:
               iface:
                 type: string
+              initiator_name:
+                minLength: 1
+                type: string
               portal:
                 minLength: 1
                 type: string
             required:
             - iface
+            - initiator_name
             - portal
             type: object
           kind:
