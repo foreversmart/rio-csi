@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	riov1 "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/iscsi"
+	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
 	"regexp"
 	"sort"
@@ -38,9 +39,10 @@ import (
 // VolumeReconciler reconciles a Volume object
 type VolumeReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	NodeID string
-	Target string
+	Scheme        *runtime.Scheme
+	NodeID        string
+	IscsiUsername string
+	IscsiPassword string
 }
 
 //+kubebuilder:rbac:groups=rio.qiniu.io,resources=volumes,verbs=get;list;watch;create;update;patch;delete
@@ -151,14 +153,31 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		}
 	}
 
+	if err == nil && vol.Spec.IscsiTarget == "" {
+		// create volume target
+		volumeTarget := iscsi.GenerateTargetName("volume", vol.Name)
+		_, err = iscsi.SetUpTarget(volumeTarget)
+		if err != nil {
+			logger.StdLog.Errorf("SetUpTarget %s error %v", volumeTarget, err)
+			return err
+		}
+
+		vol.Spec.IscsiTarget = volumeTarget
+		vol, err = lvm.UpdateVolume(vol)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
+				vol.Name, err))
+		}
+	}
+
 	// Iscsi publish volume
 	if err == nil && vol.Spec.IscsiBlock == "" {
 		device := getVolumeDevice(vol)
 		// TODO check device exist
-		_, err = iscsi.PublicBlockDevice(r.Target, vol.Name, device)
+		_, err = iscsi.PublicBlockDevice(vol.Spec.IscsiTarget, vol.Name, device)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("PublicBlockDevice target %s, vol %s, device %s error: %v",
-				r.Target, vol.Name, device, err))
+				vol.Spec.IscsiTarget, vol.Name, device, err))
 			return err
 		}
 
@@ -182,12 +201,13 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 
 	// Iscsi Mount lun device
 	if err == nil && vol.Spec.IscsiLun == -1 {
+
 		lunID := ""
 		// TODO handle already exist error
-		lunID, err = iscsi.MountLun(r.Target, vol.Name)
+		lunID, err = iscsi.MountLun(vol.Spec.IscsiTarget, vol.Name)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("MountLun target %s, vol %s,  error: %v",
-				r.Target, vol.Name, err))
+				vol.Spec.IscsiTarget, vol.Name, err))
 			return err
 		}
 
@@ -199,12 +219,18 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 
 		// TODO lun number
 		vol.Spec.IscsiLun = int32(lunIntID)
-		vol.Spec.IscsiTarget = r.Target
 		vol, err = lvm.UpdateVolume(vol)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
 		}
+
+		// check ACL
+		err = CheckTargetAcl(vol.Namespace, vol.Spec.IscsiTarget, r.IscsiUsername, r.IscsiPassword)
+		if err != nil {
+			l.Error(err, fmt.Sprintf("CheckTargetAcl %v", err))
+		}
+
 	}
 
 	if err == nil {

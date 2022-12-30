@@ -80,11 +80,6 @@ var (
 						return
 					}
 
-					_, err = iscsi.SetUpTargetAcl(target, iscsiUsername, iscsiPasswd)
-					if err != nil {
-						logger.StdLog.Error(err)
-						return
-					}
 				}
 
 				logger.StdLog.Info("iscsi target:", target)
@@ -103,7 +98,8 @@ var (
 					).Run()
 				}()
 
-				manager.StartManager(nodeID, namespace, target, metricsAddr, probeAddr, stopCh)
+				manager.StartManager(nodeID, namespace, metricsAddr,
+					probeAddr, iscsiUsername, iscsiPasswd, stopCh)
 
 			case DriverTypeControl:
 

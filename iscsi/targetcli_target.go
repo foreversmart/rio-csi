@@ -6,10 +6,9 @@ import (
 	"time"
 )
 
-func SetUpTarget(group, name string) (string, error) {
-	now := time.Now()
-	target := fmt.Sprintf("iqn.%d-%d.%s.srv:rio.%s", now.Year(), now.Month(), group, name)
+const targetFormat = "iqn.%d-%d.rio-csi:%s.%s"
 
+func SetUpTarget(target string) (string, error) {
 	cmd := NewExecCmd()
 	cmd.Add(openIscsiDir)
 	cmd.AddFormat(createCmd, target)
@@ -19,6 +18,11 @@ func SetUpTarget(group, name string) (string, error) {
 	}
 
 	return target, nil
+}
+
+func GenerateTargetName(group, name string) string {
+	now := time.Now()
+	return fmt.Sprintf(targetFormat, now.Year(), now.Month(), group, name)
 }
 
 func ListTarget() ([]string, error) {

@@ -49,7 +49,8 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartManager(nodeID, namespace, target, metricsAddr, probeAddr string, stopCh chan struct{}) {
+func StartManager(nodeID, namespace, metricsAddr, probeAddr, iscsiUsername, iscsiPassword string,
+	stopCh chan struct{}) {
 	nodeManager, err := NewNodeManager(nodeID, namespace, stopCh)
 	if err != nil {
 		logger.StdLog.Errorf("cant new node manager %s %s error %v", nodeID, namespace, err)
@@ -90,10 +91,11 @@ func StartManager(nodeID, namespace, target, metricsAddr, probeAddr string, stop
 	}
 
 	if err = (&controllers.VolumeReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		NodeID: nodeID,
-		Target: target,
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		NodeID:        nodeID,
+		IscsiUsername: iscsiUsername,
+		IscsiPassword: iscsiPassword,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Volume")
 		os.Exit(1)
