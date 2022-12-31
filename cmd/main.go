@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"qiniu.io/rio-csi/driver"
-	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/manager"
 	"syscall"
@@ -60,30 +59,6 @@ var (
 
 			switch driverType {
 			case DriverTypeNode:
-				// init iscsi server
-				target := ""
-				targets, err := iscsi.ListTarget()
-				if err != nil {
-					logger.StdLog.Error(err)
-					return
-				}
-
-				// pick default targets
-				if len(targets) > 0 {
-					target = targets[0]
-					// TODO check acl rules
-				} else {
-					// create a target and set up
-					target, err = iscsi.SetUpTarget("rio-csi", nodeID)
-					if err != nil {
-						logger.StdLog.Error(err)
-						return
-					}
-
-				}
-
-				logger.StdLog.Info("iscsi target:", target)
-
 				go func() {
 					driver.NewCSIDriver(
 						name,
