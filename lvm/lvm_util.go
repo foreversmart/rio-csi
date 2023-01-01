@@ -17,6 +17,7 @@ limitations under the License.
 package lvm
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -664,11 +665,23 @@ func ListVolumeGroup(reloadCache bool) ([]apis.VolumeGroup, error) {
 	}
 	cmd := exec.Command(VGList, args...)
 	output, err := cmd.CombinedOutput()
+
+	outputStr := string(output)
+	lines := strings.Split(outputStr, "\n")
+	b := &bytes.Buffer{}
+	// remove device not exist error
+	for _, line := range lines {
+		if strings.Contains(line, "No such device or address") {
+			continue
+		}
+		b.WriteString(line)
+	}
+
 	if err != nil {
 		klog.Errorf("lvm: list volume group cmd %v: %v", args, err)
 		return nil, err
 	}
-	return decodeVgsJSON(output)
+	return decodeVgsJSON(b.Bytes())
 }
 
 // Function to get LVM Logical volume device
