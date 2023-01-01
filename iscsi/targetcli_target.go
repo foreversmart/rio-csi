@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-const targetFormat = "iqn.%d-%d.rio-csi:%s.%s"
+const targetFormat = "iqn.%s.rio-csi:%s.%s"
+const targetTimeFormat = "2006-01"
 
 func SetUpTarget(target string) (string, error) {
 	cmd := NewExecCmd()
@@ -22,7 +23,8 @@ func SetUpTarget(target string) (string, error) {
 
 func GenerateTargetName(group, name string) string {
 	now := time.Now()
-	return fmt.Sprintf(targetFormat, now.Year(), now.Month(), group, name)
+	timeDate := now.Format(targetTimeFormat)
+	return fmt.Sprintf(targetFormat, timeDate, group, name)
 }
 
 func ListTarget() ([]string, error) {
