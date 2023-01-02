@@ -28,6 +28,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -77,13 +78,18 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if r.NodeID != vol.Spec.OwnerNodeID {
-		l.Error(fmt.Errorf("nodeid: %s, vol node id %s is not same", r.NodeID, vol.Spec.OwnerNodeID), "vol is not on this node")
+		// l.Error(fmt.Errorf("nodeid: %s, vol node id %s is not same", r.NodeID, vol.Spec.OwnerNodeID), "vol is not on this node")
 		return ctrl.Result{}, nil
 	}
 
 	err = r.syncVol(ctx, &vol)
 	if err != nil {
 		l.Error(err, "sync vol error")
+		// retry
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: time.Second * 10,
+		}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -142,6 +148,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 					l.Error(nil, fmt.Sprintf("failed to update volGroup to %v: %v", vg.Name, err))
 					return err
 				}
+
 				err = lvm.CreateLVMVolume(vol)
 				if err != nil {
 					l.Error(err, fmt.Sprintf("create lvm volume %s error %v", vol.Name, err))
@@ -204,15 +211,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
-			return err
 		}
-	}
-
-	if err != nil {
-		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
-		// the volume provisioning failed so that controller can reschedule it.
-		vol.Status.Error = r.transformLVMError(err)
-		return lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusFailed)
 	}
 
 	// Iscsi Mount lun device
@@ -227,10 +226,10 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 			return err
 		}
 
-		lunIntID, err := strconv.ParseInt(lunID, 10, 32)
-		if err != nil {
-			l.Error(err, fmt.Sprintf("MountLun ParseInt %s error: %v", lunID, err))
-			return err
+		lunIntID, parseErr := strconv.ParseInt(lunID, 10, 32)
+		if parseErr != nil {
+			l.Error(parseErr, fmt.Sprintf("MountLun ParseInt %s error: %v", lunID, parseErr))
+			err = parseErr
 		}
 
 		// TODO lun number
@@ -249,6 +248,13 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
 			return err
 		}
+	}
+
+	if err != nil {
+		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
+		// the volume provisioning failed so that controller can reschedule it.
+		vol.Status.Error = r.transformLVMError(err)
+		return lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusFailed)
 	}
 
 	return nil

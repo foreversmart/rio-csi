@@ -20,6 +20,7 @@ import (
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
+	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm/builder/volbuilder"
 	"strconv"
 	"time"
@@ -221,6 +222,7 @@ func UpdateVolInfoWithStatus(vol *apis.Volume, state string) error {
 
 	newVol, err = client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), newVol, metav1.UpdateOptions{})
 	if err != nil {
+		logger.StdLog.Error(err)
 		return err
 	}
 

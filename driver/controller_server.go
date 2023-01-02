@@ -70,7 +70,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		// before the creation of pv.
 
 		// TODO scheduler
-		volObj, err := volbuilder.NewBuilder().
+		volObj, buildErr := volbuilder.NewBuilder().
 			WithName(volName).
 			WithCapacity(capacity).
 			WithVgPattern(params.VgPattern.String()).
@@ -81,8 +81,8 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		// set default iscsi lun is -1 means no lun device
 		volObj.Spec.IscsiLun = -1
 
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+		if buildErr != nil {
+			return nil, status.Error(codes.Internal, buildErr.Error())
 		}
 
 		vol, err = lvm.ProvisionVolume(volObj)
