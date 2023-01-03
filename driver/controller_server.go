@@ -138,13 +138,19 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 		_, err = iscsi.UnmountLun(vol.Spec.IscsiTarget, fmt.Sprintf("%d", vol.Spec.IscsiLun))
 		if err != nil {
 			logger.StdLog.Error(volumeID, err)
-			return nil, errors.Wrapf(err, "failed to handle delete volume request for {%s}", volumeID)
+			return nil, errors.Wrapf(err, "UnmountLun for {%s}", volumeID)
 		}
 
 		_, err = iscsi.UnPublicBlockDevice(vol.Spec.IscsiTarget, volumeID)
 		if err != nil {
 			logger.StdLog.Error(volumeID, err)
-			return nil, errors.Wrapf(err, "failed to handle delete volume request for {%s}", volumeID)
+			return nil, errors.Wrapf(err, "UnPublicBlockDevice for {%s}", volumeID)
+		}
+
+		err = iscsi.DeleteTarget(vol.Spec.IscsiTarget)
+		if err != nil {
+			logger.StdLog.Error(volumeID, err)
+			return nil, errors.Wrapf(err, "DeleteTarget for {%s}", volumeID)
 		}
 
 		if err = lvm.DeleteVolume(volumeID); err != nil {

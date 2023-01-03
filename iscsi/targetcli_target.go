@@ -9,7 +9,7 @@ import (
 const targetFormat = "iqn.%s.rio-csi:%s.%s"
 const targetTimeFormat = "2006-01"
 
-func SetUpTarget(target string) (string, error) {
+func CreateTarget(target string) (string, error) {
 	cmd := NewExecCmd()
 	cmd.Add(openIscsiDir)
 	cmd.AddFormat(createCmd, target)
@@ -19,6 +19,19 @@ func SetUpTarget(target string) (string, error) {
 	}
 
 	return target, nil
+}
+
+func DeleteTarget(target string) error {
+	cmd := NewExecCmd()
+	cmd.Add(openIscsiDir)
+	cmd.AddFormat(deleteCmd, target)
+	_, err := cmd.Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func GenerateTargetName(group, name string) string {

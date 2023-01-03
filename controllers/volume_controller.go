@@ -163,9 +163,9 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	if err == nil && vol.Spec.IscsiTarget == "" {
 		// create volume target
 		volumeTarget := iscsi.GenerateTargetName("volume", vol.Name)
-		_, err = iscsi.SetUpTarget(volumeTarget)
+		_, err = iscsi.CreateTarget(volumeTarget)
 		if err != nil {
-			logger.StdLog.Errorf("SetUpTarget %s error %v", volumeTarget, err)
+			logger.StdLog.Errorf("CreateTarget %s error %v", volumeTarget, err)
 			return err
 		}
 

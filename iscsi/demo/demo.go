@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	//fmt.Println(iscsi.SetUpTarget("test", "xs2208"))
+	//fmt.Println(iscsi.CreateTarget("test", "xs2208"))
 	//fmt.Println("---------------------")
 	//fmt.Println(iscsi.ListTarget())
 	//fmt.Println("---------------------")
