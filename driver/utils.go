@@ -25,8 +25,8 @@ func NewControllerServer(d *RioCSI) *ControllerServer {
 	}
 }
 
-func NewNodeServer(n *RioCSI) *nodeServer {
-	return &nodeServer{
+func NewNodeServer(n *RioCSI) *NodeServer {
+	return &NodeServer{
 		Driver: n,
 	}
 }

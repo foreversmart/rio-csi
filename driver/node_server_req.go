@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func (ns *nodeServer) validateNodePublishReq(req *csi.NodePublishVolumeRequest) error {
+func (ns *NodeServer) validateNodePublishReq(req *csi.NodePublishVolumeRequest) error {
 	if req.GetVolumeCapability() == nil {
 		return status.Error(codes.InvalidArgument,
 			"Volume capability missing in request")
@@ -27,7 +27,7 @@ func (ns *nodeServer) validateNodePublishReq(req *csi.NodePublishVolumeRequest) 
 	return nil
 }
 
-func (ns *nodeServer) validateNodeUnPublishReq(req *csi.NodeUnpublishVolumeRequest) error {
+func (ns *NodeServer) validateNodeUnPublishReq(req *csi.NodeUnpublishVolumeRequest) error {
 	if req.GetVolumeId() == "" {
 		return status.Error(codes.InvalidArgument,
 			"Volume ID missing in request")
