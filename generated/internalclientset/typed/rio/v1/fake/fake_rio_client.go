@@ -31,6 +31,10 @@ func (c *FakeRioV1) RioNodes(namespace string) v1.RioNodeInterface {
 	return &FakeRioNodes{c, namespace}
 }
 
+func (c *FakeRioV1) Snapshots(namespace string) v1.SnapshotInterface {
+	return &FakeSnapshots{c, namespace}
+}
+
 func (c *FakeRioV1) Volumes(namespace string) v1.VolumeInterface {
 	return &FakeVolumes{c, namespace}
 }

@@ -19,4 +19,6 @@ package v1
 
 type RioNodeExpansion interface{}
 
+type SnapshotExpansion interface{}
+
 type VolumeExpansion interface{}
