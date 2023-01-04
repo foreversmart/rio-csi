@@ -43,7 +43,7 @@ const (
 	RioFinalizer string = "rio.qiniu.io/finalizer"
 	// VolGroupKey is key for LVM group name
 	VolGroupKey string = "rio/lvm-group"
-	// LVMVolKey for the LVMSnapshot CR to store Persistence Volume name
+	// LVMVolKey for the Snapshot CR to store Persistence Volume name
 	LVMVolKey string = "openebs.io/persistent-volume"
 	// LVMNodeKey will be used to insert Label in Volume CR
 	LVMNodeKey string = "kubernetes.io/nodename"
@@ -264,83 +264,3 @@ func ResizeVolume(vol *apis.Volume, newSize int64) error {
 	_, err := client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).Update(context.Background(), vol, metav1.UpdateOptions{})
 	return err
 }
-
-// ProvisionSnapshot creates a LVMSnapshot CR
-//func ProvisionSnapshot(snap *apis.LVMSnapshot) error {
-//	_, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Create(snap)
-//	if err == nil {
-//		klog.Infof("provosioned snapshot %s", snap.Name)
-//	}
-//	return err
-//}
-
-// DeleteSnapshot deletes the LVMSnapshot CR
-//func DeleteSnapshot(snapName string) error {
-//	err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Delete(snapName)
-//	if err == nil {
-//		klog.Infof("deprovisioned snapshot %s", snapName)
-//	}
-//
-//	return err
-//}
-
-//// GetLVMSnapshot fetches the given LVM snapshot
-//func GetLVMSnapshot(snapID string) (*apis.LVMSnapshot, error) {
-//	getOptions := metav1.GetOptions{}
-//	snap, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Get(snapID, getOptions)
-//	return snap, err
-//}
-//
-//// GetSnapshotForVolume fetches all the snapshots for the given volume
-//func GetSnapshotForVolume(volumeID string) (*apis.LVMSnapshotList, error) {
-//	listOptions := metav1.ListOptions{
-//		LabelSelector: LVMVolKey + "=" + volumeID,
-//	}
-//	snapList, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).List(listOptions)
-//	return snapList, err
-//}
-//
-//// GetLVMSnapshotStatus returns the status of LVMSnapshot
-//func GetLVMSnapshotStatus(snapID string) (string, error) {
-//	getOptions := metav1.GetOptions{}
-//	snap, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Get(snapID, getOptions)
-//	if err != nil {
-//		klog.Errorf("Get snapshot failed %s err: %s", snap.Name, err.Error())
-//		return "", err
-//	}
-//	return snap.Status.State, nil
-//}
-//
-//// UpdateSnapInfo updates LVMSnapshot CR with node id and finalizer
-//func UpdateSnapInfo(snap *apis.LVMSnapshot) error {
-//	finalizers := []string{RioFinalizer}
-//	labels := map[string]string{
-//		LVMNodeKey: NodeID,
-//	}
-//
-//	if snap.Finalizers != nil {
-//		return nil
-//	}
-//
-//	newSnap, err := snapbuilder.BuildFrom(snap).
-//		WithFinalizer(finalizers).
-//		WithLabels(labels).Build()
-//
-//	newSnap.Status.State = LVMStatusReady
-//
-//	if err != nil {
-//		klog.Errorf("Update snapshot failed %s err: %s", snap.Name, err.Error())
-//		return err
-//	}
-//
-//	_, err = snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Update(newSnap)
-//	return err
-//}
-//
-//// RemoveSnapFinalizer adds finalizer to LVMSnapshot CR
-//func RemoveSnapFinalizer(snap *apis.LVMSnapshot) error {
-//	snap.Finalizers = nil
-//
-//	_, err := snapbuilder.NewKubeclient().WithNamespace(RioNamespace).Update(snap)
-//	return err
-//}

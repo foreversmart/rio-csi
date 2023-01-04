@@ -449,7 +449,7 @@ func getLVSize(vol *apis.Volume) (uint64, error) {
 	return volSize, nil
 }
 
-//func buildLVMSnapCreateArgs(snap *apis.LVMSnapshot) []string {
+//func buildLVMSnapCreateArgs(snap *apis.Snapshot) []string {
 //	var LVMSnapArg []string
 //
 //	volName := snap.Labels[LVMVolKey]
@@ -477,7 +477,7 @@ func getLVSize(vol *apis.Volume) (uint64, error) {
 //	return LVMSnapArg
 //}
 
-//func buildLVMSnapDestroyArgs(snap *apis.LVMSnapshot) []string {
+//func buildLVMSnapDestroyArgs(snap *apis.Snapshot) []string {
 //	var LVMSnapArg []string
 //
 //	dev := DevPath + snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
@@ -488,7 +488,7 @@ func getLVSize(vol *apis.Volume) (uint64, error) {
 //}
 //
 //// CreateSnapshot creates the lvm volume snapshot
-//func CreateSnapshot(snap *apis.LVMSnapshot) error {
+//func CreateSnapshot(snap *apis.Snapshot) error {
 //
 //	volume := snap.Labels[LVMVolKey]
 //
@@ -509,7 +509,7 @@ func getLVSize(vol *apis.Volume) (uint64, error) {
 //}
 //
 //// DestroySnapshot deletes the lvm volume snapshot
-//func DestroySnapshot(snap *apis.LVMSnapshot) error {
+//func DestroySnapshot(snap *apis.Snapshot) error {
 //	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 //
 //	ok, err := isSnapshotExists(snap.Spec.VolGroup, getLVMSnapName(snap.Name))
