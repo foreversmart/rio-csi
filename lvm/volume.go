@@ -37,26 +37,22 @@ const (
 	//
 	// This environment variable is set via kubernetes downward API
 	RioNamespaceKey string = "RIO_CSI_NAMESPACE"
-	// GoogleAnalyticsKey This environment variable is set via env
-	GoogleAnalyticsKey string = "OPENEBS_IO_ENABLE_ANALYTICS"
 	// RioFinalizer for the Volume CR
-	RioFinalizer string = "rio.qiniu.io/finalizer"
+	RioFinalizer string = "rio.csi.io/finalizer"
 	// VolGroupKey is key for LVM group name
 	VolGroupKey string = "rio/lvm-group"
-	// LVMVolKey for the Snapshot CR to store Persistence Volume name
-	LVMVolKey string = "openebs.io/persistent-volume"
-	// LVMNodeKey will be used to insert Label in Volume CR
-	LVMNodeKey string = "kubernetes.io/nodename"
-	// LVMTopologyKey is supported topology key for the lvm driver
-	LVMTopologyKey string = "openebs.io/nodename"
-	// LVMStatusPending shows object has not handled yet
-	LVMStatusPending string = "Pending"
-	// LVMStatusFailed shows object operation has failed
-	LVMStatusFailed string = "Failed"
-	// LVMStatusReady shows object has been processed
-	LVMStatusReady string = "Ready"
-	// LVMCasTypeName for the name of the cas-type
-	LVMCasTypeName string = "localpv-lvm"
+	// VolKey for the Snapshot CR to store Persistence Volume name
+	VolKey string = "rio.csi.io/persistent-volume"
+	// NodeKey will be used to insert Label in Volume CR
+	NodeKey string = "kubernetes.io/nodename"
+	// TopologyKey is supported topology key for the lvm driver
+	TopologyKey string = "rio.csi.io/nodename"
+	// VolumeStatusPending shows object has not handled yet
+	VolumeStatusPending string = "Pending"
+	// VolumeStatusFailed shows object operation has failed
+	VolumeStatusFailed string = "Failed"
+	// VolumeStatusReady shows object has been processed
+	VolumeStatusReady string = "Ready"
 )
 
 var (
@@ -65,9 +61,6 @@ var (
 
 	// NodeID is the NodeID of the node on which the pod is present
 	NodeID string
-
-	// GoogleAnalyticsEnabled should send google analytics or not
-	GoogleAnalyticsEnabled string
 )
 
 func init() {
@@ -81,7 +74,6 @@ func init() {
 		klog.Fatalf("NodeID environment variable not set")
 	}
 
-	GoogleAnalyticsEnabled = os.Getenv(GoogleAnalyticsKey)
 }
 
 // ProvisionVolume creates a Volume CR,
@@ -93,7 +85,7 @@ func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 		return nil, err
 	}
 
-	result.Status.State = LVMStatusPending
+	result.Status.State = VolumeStatusPending
 	if err == nil {
 		klog.Infof("provisioned volume %s", vol.Name)
 	}
@@ -156,8 +148,8 @@ func WaitForVolumeProcessed(ctx context.Context, volumeID string) (*apis.Volume,
 			return nil, status.Errorf(codes.Aborted,
 				"lvm: wait failed, not able to get the volume %s %s", volumeID, err.Error())
 		}
-		if vol.Status.State == LVMStatusReady ||
-			vol.Status.State == LVMStatusFailed {
+		if vol.Status.State == VolumeStatusReady ||
+			vol.Status.State == VolumeStatusFailed {
 			return vol, nil
 		}
 		timer.Reset(1 * time.Second)
@@ -206,9 +198,9 @@ func UpdateVolInfoWithStatus(vol *apis.Volume, state string) error {
 	}
 
 	var finalizers []string
-	labels := map[string]string{LVMNodeKey: NodeID}
+	labels := map[string]string{NodeKey: NodeID}
 	switch state {
-	case LVMStatusReady:
+	case VolumeStatusReady:
 		finalizers = append(finalizers, RioFinalizer)
 	}
 

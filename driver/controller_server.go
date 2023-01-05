@@ -75,7 +75,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			WithCapacity(capacity).
 			WithVgPattern(params.VgPattern.String()).
 			WithOwnerNode(node).
-			WithVolumeStatus(lvm.LVMStatusPending).
+			WithVolumeStatus(lvm.VolumeStatusPending).
 			WithShared(params.Shared).
 			WithThinProvision(params.ThinProvision).Build()
 		// set default iscsi lun is -1 means no lun device
@@ -91,7 +91,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		}
 
 		// Wait Volume ready
-		if vol.Status.State == lvm.LVMStatusPending {
+		if vol.Status.State == lvm.VolumeStatusPending {
 			if vol, err = lvm.WaitForVolumeProcessed(ctx, vol.GetName()); err != nil {
 				return nil, err
 			}
@@ -100,7 +100,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 	//
 	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup}
-	topology := map[string]string{lvm.LVMTopologyKey: vol.Spec.OwnerNodeID}
+	topology := map[string]string{lvm.TopologyKey: vol.Spec.OwnerNodeID}
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      volName,

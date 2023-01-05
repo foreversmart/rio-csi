@@ -36,7 +36,7 @@ func GetLVMSnapshot(snapID string) (*apis.Snapshot, error) {
 // GetSnapshotForVolume fetches all the snapshots for the given volume
 func GetSnapshotForVolume(volumeID string) (*apis.SnapshotList, error) {
 	listOptions := metav1.ListOptions{
-		LabelSelector: LVMVolKey + "=" + volumeID,
+		LabelSelector: VolKey + "=" + volumeID,
 	}
 	snapList, err := client.DefaultClient.InternalClientSet.RioV1().Snapshots(RioNamespace).List(context.Background(), listOptions)
 	return snapList, err
@@ -57,7 +57,7 @@ func GetLVMSnapshotStatus(snapID string) (string, error) {
 func UpdateSnapInfo(snap *apis.Snapshot) (newSnap *apis.Snapshot, err error) {
 	finalizers := []string{RioFinalizer}
 	labels := map[string]string{
-		LVMNodeKey: NodeID,
+		NodeKey: NodeID,
 	}
 
 	if snap.Finalizers != nil {
@@ -67,7 +67,7 @@ func UpdateSnapInfo(snap *apis.Snapshot) (newSnap *apis.Snapshot, err error) {
 	snap.Labels = labels
 	snap.Finalizers = finalizers
 
-	snap.Status.State = LVMStatusReady
+	snap.Status.State = VolumeStatusReady
 
 	newSnap, err = client.DefaultClient.InternalClientSet.RioV1().Snapshots(RioNamespace).Update(context.Background(), snap, metav1.UpdateOptions{})
 	return

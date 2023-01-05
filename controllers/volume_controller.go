@@ -111,10 +111,10 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	// if status is Pending then it means we are creating the volume.
 	// Otherwise, we are just ignoring the event.
 	switch vol.Status.State {
-	case lvm.LVMStatusFailed:
+	case lvm.VolumeStatusFailed:
 		l.Error(nil, "Skipping retrying lvm volume provisioning as its already in failed state: %+v", vol.Status.Error)
 		return nil
-	case lvm.LVMStatusReady:
+	case lvm.VolumeStatusReady:
 		l.Info("lvm volume already provisioned")
 		return nil
 	}
@@ -243,7 +243,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	}
 
 	if err == nil {
-		err = lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusReady)
+		err = lvm.UpdateVolInfoWithStatus(vol, lvm.VolumeStatusReady)
 		if err != nil {
 			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
 			return err
@@ -254,7 +254,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
 		// the volume provisioning failed so that controller can reschedule it.
 		vol.Status.Error = r.transformLVMError(err)
-		return lvm.UpdateVolInfoWithStatus(vol, lvm.LVMStatusFailed)
+		return lvm.UpdateVolInfoWithStatus(vol, lvm.VolumeStatusFailed)
 	}
 
 	return nil
