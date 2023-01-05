@@ -32,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	riov1 "qiniu.io/rio-csi/api/v1"
 	"qiniu.io/rio-csi/controllers"
 	//+kubebuilder:scaffold:imports
 )

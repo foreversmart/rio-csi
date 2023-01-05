@@ -18,13 +18,12 @@ package controllers
 
 import (
 	"context"
+	riov1 "qiniu.io/rio-csi/api/rio/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	riov1 "qiniu.io/rio-csi/api/v1"
 )
 
 // SnapshotReconciler reconciles a Snapshot object
