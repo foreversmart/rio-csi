@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/mount"
+	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
@@ -203,11 +204,37 @@ func (cs *ControllerServer) ControllerGetCapabilities(_ context.Context, _ *csi.
 
 func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
 	logger.StdLog.Debugf("running CreateSnapshot...")
-	return nil, status.Error(codes.Unimplemented, "Unimplemented CreateSnapshot")
+
+	snapshot := &apis.Snapshot{}
+
+	vol, err := lvm.GetVolume(req.SourceVolumeId)
+	if err != nil {
+		logger.StdLog.Error(err)
+		return nil, err
+	}
+
+	snapshot.Spec.SnapSize = vol.Spec.Capacity
+	snapshot.Spec.VolGroup = vol.Spec.VolGroup
+	snapshot.Spec.OwnerNodeID = vol.Spec.OwnerNodeID
+	snapshot.Name = req.Name
+
+	err = lvm.ProvisionSnapshot(snapshot)
+	if err != nil {
+		logger.StdLog.Error(err)
+		return nil, err
+	}
+
+	return &csi.CreateSnapshotResponse{
+		Snapshot: &csi.Snapshot{
+			SnapshotId:     snapshot.Name,
+			SourceVolumeId: req.SourceVolumeId,
+		},
+	}, nil
 }
 
 func (cs *ControllerServer) DeleteSnapshot(_ context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
 	logger.StdLog.Debugf("running DeleteSnapshot...")
+
 	return nil, status.Error(codes.Unimplemented, "Unimplemented DeleteSnapshot")
 }
 
