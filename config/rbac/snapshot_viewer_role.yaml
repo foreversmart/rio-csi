@@ -1,0 +1,27 @@
+# permissions for end users to view snapshots.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: snapshot-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: rio-csi
+    app.kubernetes.io/part-of: rio-csi
+    app.kubernetes.io/managed-by: kustomize
+  name: snapshot-viewer-role
+rules:
+- apiGroups:
+  - rio.qiniu.io
+  resources:
+  - snapshots
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rio.qiniu.io
+  resources:
+  - snapshots/status
+  verbs:
+  - get

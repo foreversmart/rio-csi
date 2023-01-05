@@ -2,7 +2,6 @@ domain: qiniu.io
 layout:
 - go.kubebuilder.io/v3
 projectName: rio-csi
-multigroup: true
 repo: qiniu.io/rio-csi
 resources:
 - api:
@@ -22,5 +21,14 @@ resources:
   group: rio
   kind: Node
   path: qiniu.io/rio-csi/api/rio/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: qiniu.io
+  group: rio
+  kind: Snapshot
+  path: qiniu.io/rio-csi/api/v1
   version: v1
 version: "3"
