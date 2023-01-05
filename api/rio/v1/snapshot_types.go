@@ -20,22 +20,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // SnapshotSpec defines the desired state of Snapshot
 type SnapshotSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// OwnerNodeID is the Node ID where the volume group is present which is where
+	// the snapshot has been provisioned.
+	// OwnerNodeID can not be edited after the snapshot has been provisioned.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
+	OwnerNodeID string `json:"ownerNodeID"`
 
-	// Foo is an example field of Snapshot. Edit snapshot_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// VolGroup specifies the name of the volume group where the snapshot has been created.
+	// +kubebuilder:validation:Required
+	VolGroup string `json:"volGroup"`
+
+	// SnapSize specifies the space reserved for the snapshot
+	// +kubebuilder:validation:Required
+	SnapSize string `json:"snapSize,omitempty"`
 }
 
 // SnapshotStatus defines the observed state of Snapshot
 type SnapshotStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	State string `json:"state,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -51,6 +56,9 @@ type Snapshot struct {
 }
 
 //+kubebuilder:object:root=true
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +resource:path=lvmsnapshots
 
 // SnapshotList contains a list of Snapshot
 type SnapshotList struct {
