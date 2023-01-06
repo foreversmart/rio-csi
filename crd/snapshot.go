@@ -27,8 +27,8 @@ func DeleteSnapshot(snapName string) error {
 	return err
 }
 
-// GetLVMSnapshot fetches the given LVM snapshot
-func GetLVMSnapshot(snapID string) (*apis.Snapshot, error) {
+// GetSnapshot fetches the given LVM snapshot
+func GetSnapshot(snapID string) (*apis.Snapshot, error) {
 	snap, err := client.DefaultClient.InternalClientSet.RioV1().Snapshots(RioNamespace).Get(context.Background(), snapID, metav1.GetOptions{})
 	return snap, err
 }

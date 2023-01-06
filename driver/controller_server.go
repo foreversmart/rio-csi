@@ -233,9 +233,31 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 }
 
 func (cs *ControllerServer) DeleteSnapshot(_ context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
-	logger.StdLog.Debugf("running DeleteSnapshot...")
+	snapshotID := strings.ToLower(req.GetSnapshotId())
+	logger.StdLog.Infof("received request to delete snapshot", snapshotID)
 
-	return nil, status.Error(codes.Unimplemented, "Unimplemented DeleteSnapshot")
+	snapshot, err := crd.GetSnapshot(snapshotID)
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return nil, nil
+		}
+
+		logger.StdLog.Errorf("GetSnapshot %s error %v", snapshotID, err)
+
+		return nil, errors.Wrapf(err, "failed to get snapshot %s", snapshotID)
+	}
+
+	// if snapshot is not already triggered for deletion, delete the snapshot.
+	// otherwise, just wait for the existing deletion operation to complete.
+	if snapshot.GetDeletionTimestamp() == nil {
+		err = crd.DeleteSnapshot(snapshotID)
+		if err != nil {
+			logger.StdLog.Error(snapshotID, err)
+			return nil, errors.Wrapf(err, "failed to handle delete volume request for %s", snapshotID)
+		}
+	}
+
+	return &csi.DeleteSnapshotResponse{}, nil
 }
 
 func (cs *ControllerServer) ListSnapshots(_ context.Context, _ *csi.ListSnapshotsRequest) (*csi.ListSnapshotsResponse, error) {
