@@ -16,7 +16,7 @@ func buildLVMSnapCreateArgs(snap *apis.Snapshot) []string {
 	size := snap.Spec.SnapSize + "b"
 
 	LVMSnapArg = append(LVMSnapArg,
-		// snapshot argument
+		// snapshot argumen
 		"--snapshot",
 		// name of snapshot
 		"--name", getLVMSnapName(snap.Name),

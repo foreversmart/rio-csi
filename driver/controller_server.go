@@ -31,7 +31,7 @@ type ControllerServer struct {
 }
 
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	logger.StdLog.Debugf("running CreateLVMVolume...")
+	logger.StdLog.Infof("received request to create volume %s", req.GetName())
 
 	params, err := NewVolumeParams(req.GetParameters())
 	if err != nil {
@@ -47,9 +47,11 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	vol, err := crd.GetVolume(volName)
 	if err != nil {
 		if !k8serror.IsNotFound(err) {
+			logger.StdLog.Error(err)
 			return nil, status.Errorf(codes.Aborted,
 				"failed get lvm volume %v: %v", volName, err.Error())
 		}
+
 		vol, err = nil, nil
 	}
 
@@ -203,7 +205,22 @@ func (cs *ControllerServer) ControllerGetCapabilities(_ context.Context, _ *csi.
 }
 
 func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
-	logger.StdLog.Debugf("running CreateSnapshot...")
+	logger.StdLog.Infof("received request to create snapshot from volume %s", req.SourceVolumeId)
+	snapshotName := strings.ToLower(req.GetName())
+	snap, err := crd.GetSnapshot(snapshotName)
+	if err != nil {
+		if !k8serror.IsNotFound(err) {
+			logger.StdLog.Error(err)
+			return nil, status.Errorf(codes.Aborted, "failed get snapshot %s: error %v", snapshotName, err)
+		}
+
+		snap, err = nil, nil
+	}
+
+	if snap != nil {
+		return nil, status.Errorf(codes.AlreadyExists,
+			"snapshot %s already present", snapshotName)
+	}
 
 	snapshot := &apis.Snapshot{}
 
@@ -216,7 +233,7 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	snapshot.Spec.SnapSize = vol.Spec.Capacity
 	snapshot.Spec.VolGroup = vol.Spec.VolGroup
 	snapshot.Spec.OwnerNodeID = vol.Spec.OwnerNodeID
-	snapshot.Name = req.Name
+	snapshot.Name = snapshotName
 
 	err = crd.ProvisionSnapshot(snapshot)
 	if err != nil {
