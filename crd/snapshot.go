@@ -54,22 +54,34 @@ func GetSnapshotStatus(snapID string) (string, error) {
 }
 
 // UpdateSnapInfo updates Snapshot CR with node id and finalizer
-func UpdateSnapInfo(snap *apis.Snapshot) (newSnap *apis.Snapshot, err error) {
-	finalizers := []string{RioFinalizer}
-	labels := map[string]string{
-		NodeKey: NodeID,
-	}
-
+func UpdateSnapInfo(snap *apis.Snapshot, state string) (newSnap *apis.Snapshot, err error) {
 	if snap.Finalizers != nil {
 		return nil, nil
 	}
 
+	labels := map[string]string{
+		NodeKey: NodeID,
+	}
 	snap.Labels = labels
-	snap.Finalizers = finalizers
 
-	snap.Status.State = VolumeStatusReady
+	switch state {
+	case StatusReady:
+		finalizers := []string{RioFinalizer}
+		snap.Finalizers = finalizers
+	}
 
 	newSnap, err = client.DefaultClient.InternalClientSet.RioV1().Snapshots(RioNamespace).Update(context.Background(), snap, metav1.UpdateOptions{})
+	if err != nil {
+		logger.StdLog.Error(err)
+		return nil, err
+	}
+
+	// update snap status
+	if newSnap.Status.State != state {
+		newSnap.Status.State = state
+		newSnap, err = client.DefaultClient.InternalClientSet.RioV1().Snapshots(RioNamespace).UpdateStatus(context.Background(), newSnap, metav1.UpdateOptions{})
+	}
+
 	return
 }
 
