@@ -76,7 +76,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			WithCapacity(capacity).
 			WithVgPattern(params.VgPattern.String()).
 			WithOwnerNode(node).
-			WithVolumeStatus(crd.VolumeStatusPending).
+			WithVolumeStatus(crd.StatusPending).
 			WithShared(params.Shared).
 			WithThinProvision(params.ThinProvision).Build()
 		// set default iscsi lun is -1 means no lun device
@@ -92,7 +92,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		}
 
 		// Wait Volume ready
-		if vol.Status.State == crd.VolumeStatusPending {
+		if vol.Status.State == crd.StatusPending {
 			if vol, err = crd.WaitForVolumeProcessed(ctx, vol.GetName()); err != nil {
 				return nil, err
 			}

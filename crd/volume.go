@@ -47,12 +47,13 @@ const (
 	NodeKey string = "kubernetes.io/nodename"
 	// TopologyKey is supported topology key for the lvm driver
 	TopologyKey string = "rio.csi.io/nodename"
-	// VolumeStatusPending shows object has not handled yet
-	VolumeStatusPending string = "Pending"
-	// VolumeStatusFailed shows object operation has failed
-	VolumeStatusFailed string = "Failed"
-	// VolumeStatusReady shows object has been processed
-	VolumeStatusReady string = "Ready"
+
+	// StatusPending shows object has not handled yet
+	StatusPending string = "Pending"
+	// StatusFailed shows object operation has failed
+	StatusFailed string = "Failed"
+	// StatusReady shows object has been processed
+	StatusReady string = "Ready"
 )
 
 var (
@@ -85,7 +86,7 @@ func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 		return nil, err
 	}
 
-	result.Status.State = VolumeStatusPending
+	result.Status.State = StatusPending
 	if err == nil {
 		klog.Infof("provisioned volume %s", vol.Name)
 	}
@@ -148,8 +149,8 @@ func WaitForVolumeProcessed(ctx context.Context, volumeID string) (*apis.Volume,
 			return nil, status.Errorf(codes.Aborted,
 				"lvm: wait failed, not able to get the volume %s %s", volumeID, err.Error())
 		}
-		if vol.Status.State == VolumeStatusReady ||
-			vol.Status.State == VolumeStatusFailed {
+		if vol.Status.State == StatusReady ||
+			vol.Status.State == StatusFailed {
 			return vol, nil
 		}
 		timer.Reset(1 * time.Second)
@@ -200,7 +201,7 @@ func UpdateVolInfoWithStatus(vol *apis.Volume, state string) error {
 	var finalizers []string
 	labels := map[string]string{NodeKey: NodeID}
 	switch state {
-	case VolumeStatusReady:
+	case StatusReady:
 		finalizers = append(finalizers, RioFinalizer)
 	}
 

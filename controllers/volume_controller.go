@@ -64,7 +64,7 @@ type VolumeReconciler struct {
 func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
 	var vol riov1.Volume
-	l.Info("hello" + req.Name + "||||" + req.Namespace)
+	l.Info("reconcile volume" + req.Name + " " + req.Namespace)
 
 	err := r.Get(ctx, client.ObjectKey{
 		Namespace: req.Namespace,
@@ -112,10 +112,10 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	// if status is Pending then it means we are creating the volume.
 	// Otherwise, we are just ignoring the event.
 	switch vol.Status.State {
-	case crd.VolumeStatusFailed:
+	case crd.StatusFailed:
 		l.Error(nil, "Skipping retrying lvm volume provisioning as its already in failed state: %+v", vol.Status.Error)
 		return nil
-	case crd.VolumeStatusReady:
+	case crd.StatusReady:
 		l.Info("lvm volume already provisioned")
 		return nil
 	}
@@ -244,7 +244,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	}
 
 	if err == nil {
-		err = crd.UpdateVolInfoWithStatus(vol, crd.VolumeStatusReady)
+		err = crd.UpdateVolInfoWithStatus(vol, crd.StatusReady)
 		if err != nil {
 			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
 			return err
@@ -255,7 +255,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
 		// the volume provisioning failed so that controller can reschedule it.
 		vol.Status.Error = r.transformLVMError(err)
-		return crd.UpdateVolInfoWithStatus(vol, crd.VolumeStatusFailed)
+		return crd.UpdateVolInfoWithStatus(vol, crd.StatusFailed)
 	}
 
 	return nil
