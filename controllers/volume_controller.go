@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"path/filepath"
 	riov1 "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
@@ -103,7 +104,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	if r.isDeletionCandidate(vol) {
 		err = lvm.DeleteLVMVolume(vol)
 		if err == nil {
-			err = lvm.RemoveVolFinalizer(vol)
+			err = crd.RemoveVolFinalizer(vol)
 		}
 		return err
 	}
@@ -111,10 +112,10 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	// if status is Pending then it means we are creating the volume.
 	// Otherwise, we are just ignoring the event.
 	switch vol.Status.State {
-	case lvm.VolumeStatusFailed:
+	case crd.VolumeStatusFailed:
 		l.Error(nil, "Skipping retrying lvm volume provisioning as its already in failed state: %+v", vol.Status.Error)
 		return nil
-	case lvm.VolumeStatusReady:
+	case crd.VolumeStatusReady:
 		l.Info("lvm volume already provisioned")
 		return nil
 	}
@@ -144,7 +145,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 			for _, vg := range vgs {
 				// first update volGroup field in lvm volume resource for ensuring
 				// idempotency and avoiding volume leaks during crash.
-				if vol, err = lvm.UpdateVolGroup(vol, vg.Name); err != nil {
+				if vol, err = crd.UpdateVolGroup(vol, vg.Name); err != nil {
 					l.Error(nil, fmt.Sprintf("failed to update volGroup to %v: %v", vg.Name, err))
 					return err
 				}
@@ -170,7 +171,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		}
 
 		vol.Spec.IscsiTarget = volumeTarget
-		vol, err = lvm.UpdateVolume(vol)
+		vol, err = crd.UpdateVolume(vol)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
@@ -186,7 +187,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		}
 
 		vol.Spec.IscsiACLIsSet = true
-		vol, err = lvm.UpdateVolume(vol)
+		vol, err = crd.UpdateVolume(vol)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
@@ -207,7 +208,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		// TODO block path
 		// TODO update fail recover
 		vol.Spec.IscsiBlock = vol.Name
-		vol, err = lvm.UpdateVolume(vol)
+		vol, err = crd.UpdateVolume(vol)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
@@ -234,7 +235,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 
 		// TODO lun number
 		vol.Spec.IscsiLun = int32(lunIntID)
-		vol, err = lvm.UpdateVolume(vol)
+		vol, err = crd.UpdateVolume(vol)
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
@@ -243,7 +244,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	}
 
 	if err == nil {
-		err = lvm.UpdateVolInfoWithStatus(vol, lvm.VolumeStatusReady)
+		err = crd.UpdateVolInfoWithStatus(vol, crd.VolumeStatusReady)
 		if err != nil {
 			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
 			return err
@@ -254,7 +255,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
 		// the volume provisioning failed so that controller can reschedule it.
 		vol.Status.Error = r.transformLVMError(err)
-		return lvm.UpdateVolInfoWithStatus(vol, lvm.VolumeStatusFailed)
+		return crd.UpdateVolInfoWithStatus(vol, crd.VolumeStatusFailed)
 	}
 
 	return nil

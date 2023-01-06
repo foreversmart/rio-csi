@@ -1,4 +1,4 @@
-package lvm
+package crd
 
 import (
 	"golang.org/x/net/context"
@@ -42,8 +42,8 @@ func GetSnapshotForVolume(volumeID string) (*apis.SnapshotList, error) {
 	return snapList, err
 }
 
-// GetLVMSnapshotStatus returns the status of Snapshot
-func GetLVMSnapshotStatus(snapID string) (string, error) {
+// GetSnapshotStatus returns the status of Snapshot
+func GetSnapshotStatus(snapID string) (string, error) {
 	getOptions := metav1.GetOptions{}
 	snap, err := client.DefaultClient.InternalClientSet.RioV1().Snapshots(RioNamespace).Get(context.Background(), snapID, getOptions)
 	if err != nil {

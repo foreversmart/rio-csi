@@ -17,6 +17,7 @@ import (
 	"k8s.io/client-go/dynamic/dynamiclister"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
+	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
@@ -49,7 +50,7 @@ func NewNodeManager(nodeID, namespace string, stopCh chan struct{}) (m *NodeMana
 	k8sNode, err := client.DefaultClient.ClientSet.CoreV1().Nodes().Get(context.TODO(), nodeID, metav1.GetOptions{})
 	if err != nil {
 		logger.StdLog.Error(err)
-		return nil, errors.Wrapf(err, "fetch k8s node %s", lvm.NodeID)
+		return nil, errors.Wrapf(err, "fetch k8s node %s", crd.NodeID)
 	}
 
 	nodeIP := ""

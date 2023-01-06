@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
-	"qiniu.io/rio-csi/lvm"
+	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/mount"
 	"strings"
 )
@@ -56,7 +56,7 @@ func GetVolAndMountInfo(req *csi.NodePublishVolumeRequest) (*apis.Volume, *mount
 
 	volName := strings.ToLower(req.GetVolumeId())
 
-	vol, err := lvm.GetVolume(volName)
+	vol, err := crd.GetVolume(volName)
 	if err != nil {
 		return nil, nil, err
 	}

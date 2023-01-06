@@ -3,6 +3,7 @@ package lvm
 import (
 	"os/exec"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/logger"
 	"strings"
 )
@@ -10,7 +11,7 @@ import (
 func buildLVMSnapCreateArgs(snap *apis.Snapshot) []string {
 	var LVMSnapArg []string
 
-	volName := snap.Labels[VolKey]
+	volName := snap.Labels[crd.VolKey]
 	volPath := DevPath + snap.Spec.VolGroup + "/" + volName
 	size := snap.Spec.SnapSize + "b"
 
@@ -48,7 +49,7 @@ func buildLVMSnapDestroyArgs(snap *apis.Snapshot) []string {
 // CreateSnapshot creates the lvm volume snapshot
 func CreateSnapshot(snap *apis.Snapshot) error {
 
-	volume := snap.Labels[VolKey]
+	volume := snap.Labels[crd.VolKey]
 
 	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
 

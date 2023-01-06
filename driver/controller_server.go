@@ -9,9 +9,9 @@ import (
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/mount"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
-	"qiniu.io/rio-csi/lvm"
 	"qiniu.io/rio-csi/lvm/builder/volbuilder"
 	"qiniu.io/rio-csi/lvm/common/errors"
 	"strconv"
@@ -44,7 +44,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	size := getRoundedCapacity(req.GetCapacityRange().RequiredBytes)
 	capacity := strconv.FormatInt(size, 10)
 
-	vol, err := lvm.GetVolume(volName)
+	vol, err := crd.GetVolume(volName)
 	if err != nil {
 		if !k8serror.IsNotFound(err) {
 			return nil, status.Errorf(codes.Aborted,
@@ -76,7 +76,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			WithCapacity(capacity).
 			WithVgPattern(params.VgPattern.String()).
 			WithOwnerNode(node).
-			WithVolumeStatus(lvm.VolumeStatusPending).
+			WithVolumeStatus(crd.VolumeStatusPending).
 			WithShared(params.Shared).
 			WithThinProvision(params.ThinProvision).Build()
 		// set default iscsi lun is -1 means no lun device
@@ -86,22 +86,22 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			return nil, status.Error(codes.Internal, buildErr.Error())
 		}
 
-		vol, err = lvm.ProvisionVolume(volObj)
+		vol, err = crd.ProvisionVolume(volObj)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "not able to provision the volume %s", err.Error())
 		}
 
 		// Wait Volume ready
-		if vol.Status.State == lvm.VolumeStatusPending {
-			if vol, err = lvm.WaitForVolumeProcessed(ctx, vol.GetName()); err != nil {
+		if vol.Status.State == crd.VolumeStatusPending {
+			if vol, err = crd.WaitForVolumeProcessed(ctx, vol.GetName()); err != nil {
 				return nil, err
 			}
 		}
 	}
 
 	//
-	cntx := map[string]string{lvm.VolGroupKey: vol.Spec.VolGroup}
-	topology := map[string]string{lvm.TopologyKey: vol.Spec.OwnerNodeID}
+	cntx := map[string]string{crd.VolGroupKey: vol.Spec.VolGroup}
+	topology := map[string]string{crd.TopologyKey: vol.Spec.OwnerNodeID}
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      volName,
@@ -125,7 +125,7 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 
 	volumeID := strings.ToLower(req.GetVolumeId())
 	logger.StdLog.Infof("received request to delete volume %q", volumeID)
-	vol, err := lvm.GetVolume(volumeID)
+	vol, err := crd.GetVolume(volumeID)
 	if err != nil {
 		if k8serror.IsNotFound(err) {
 			return nil, nil
@@ -154,14 +154,14 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 			return nil, errors.Wrapf(err, "DeleteTarget for {%s}", volumeID)
 		}
 
-		if err = lvm.DeleteVolume(volumeID); err != nil {
+		if err = crd.DeleteVolume(volumeID); err != nil {
 			logger.StdLog.Error(volumeID, err)
 			return nil, errors.Wrapf(err,
 				"failed to handle delete volume request for {%s}", volumeID)
 		}
 	}
 
-	if err = lvm.WaitForVolumeDestroy(ctx, volumeID); err != nil {
+	if err = crd.WaitForVolumeDestroy(ctx, volumeID); err != nil {
 		return nil, err
 	}
 
@@ -207,7 +207,7 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 
 	snapshot := &apis.Snapshot{}
 
-	vol, err := lvm.GetVolume(req.SourceVolumeId)
+	vol, err := crd.GetVolume(req.SourceVolumeId)
 	if err != nil {
 		logger.StdLog.Error(err)
 		return nil, err
@@ -218,7 +218,7 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	snapshot.Spec.OwnerNodeID = vol.Spec.OwnerNodeID
 	snapshot.Name = req.Name
 
-	err = lvm.ProvisionSnapshot(snapshot)
+	err = crd.ProvisionSnapshot(snapshot)
 	if err != nil {
 		logger.StdLog.Error(err)
 		return nil, err

@@ -9,9 +9,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
+	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/iscsi"
 	"qiniu.io/rio-csi/logger"
-	"qiniu.io/rio-csi/lvm"
 	"qiniu.io/rio-csi/mount"
 )
 
@@ -123,7 +123,7 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 	targetPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
-	if vol, err = lvm.GetVolume(volumeID); err != nil {
+	if vol, err = crd.GetVolume(volumeID); err != nil {
 		return nil, status.Errorf(codes.Internal,
 			"not able to get the LVMVolume %s err : %s",
 			volumeID, err.Error())
