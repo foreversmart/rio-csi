@@ -112,6 +112,7 @@ func StartManager(nodeID, namespace, metricsAddr, probeAddr, iscsiUsername, iscs
 	if err = (&controllers.SnapshotReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		NodeID: nodeID,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Snapshot")
 		os.Exit(1)
