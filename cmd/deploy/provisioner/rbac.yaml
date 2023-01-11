@@ -28,7 +28,7 @@ rules:
     resources: ["namespaces"]
     verbs: ["get", "list", "watch"]
   - apiGroups: [""]
-    resources: ["persistentvolumes", "volumesnapshotcontents", "services"]
+    resources: ["persistentvolumes", "volumesnapshotcontents", "volumesnapshotclasses", "services"]
     verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
