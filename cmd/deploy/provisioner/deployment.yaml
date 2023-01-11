@@ -46,6 +46,19 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/rio
+        - name: csi-snapshotter
+          image: k8s.gcr.io/sig-storage/csi-snapshotter:v5.0.1
+          args:
+            - "--csi-address=$(CSI_ENDPOINT)"
+            - "--v=5"
+            - "--timeout=150s"
+          env:
+            - name: CSI_ENDPOINT
+              value: /var/lib/csi/sockets/rio/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/rio
         - name: rio-csi
           securityContext:
             privileged: true
