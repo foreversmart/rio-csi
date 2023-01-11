@@ -130,7 +130,7 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 	vol, err := crd.GetVolume(volumeID)
 	if err != nil {
 		if k8serror.IsNotFound(err) {
-			return nil, nil
+			return &csi.DeleteVolumeResponse{}, nil
 		}
 		return nil, errors.Wrapf(err, "failed to get volume for {%s}", volumeID)
 	}
