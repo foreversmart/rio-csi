@@ -23,6 +23,7 @@ import (
 	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/lvm"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -68,6 +69,16 @@ func (r *SnapshotReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	if r.NodeID != snap.Spec.OwnerNodeID {
 		return ctrl.Result{}, nil
+	}
+
+	err = r.syncSnapshot(ctx, &snap)
+	if err != nil {
+		logger.StdLog.Errorf("sync snapshot %s error %v", req.Name, err)
+		// retry
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: time.Second * 10,
+		}, nil
 	}
 
 	return ctrl.Result{}, nil
