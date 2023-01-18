@@ -235,10 +235,16 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 		return nil, err
 	}
 
+	// TODO control snapshot snapshot size
 	snapshot.Spec.SnapSize = vol.Spec.Capacity
 	snapshot.Spec.VolGroup = vol.Spec.VolGroup
 	snapshot.Spec.OwnerNodeID = vol.Spec.OwnerNodeID
 	snapshot.Name = snapshotName
+
+	labels := map[string]string{
+		crd.VolKey: vol.Name,
+	}
+	snapshot.Labels = labels
 
 	err = crd.ProvisionSnapshot(snapshot)
 	if err != nil {
