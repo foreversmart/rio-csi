@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -142,9 +143,43 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (ns *NodeServer) NodeGetVolumeStats(_ context.Context, _ *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
-	logger.StdLog.Debugf("running NodeGetVolumeStats...")
-	return nil, status.Error(codes.Unimplemented, "Unimplemented NodeGetVolumeStats")
+func (ns *NodeServer) NodeGetVolumeStats(_ context.Context, req *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
+
+	volID := req.GetVolumeId()
+	path := req.GetVolumePath()
+	logger.StdLog.Infof("receive request NodeGetVolumeStats volume id: %s, path: %s", volID, path)
+
+	if len(volID) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "volume id is not provided")
+	}
+	if len(path) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "path is not provided")
+	}
+
+	if !mount.IsMountPath(path) {
+		return nil, status.Error(codes.NotFound, "path is not a mount path")
+	}
+
+	var sfs unix.Statfs_t
+	if err := unix.Statfs(path, &sfs); err != nil {
+		return nil, status.Errorf(codes.Internal, "statfs on %s failed: %v", path, err)
+	}
+
+	var usage []*csi.VolumeUsage
+	usage = append(usage, &csi.VolumeUsage{
+		Unit:      csi.VolumeUsage_BYTES,
+		Total:     int64(sfs.Blocks) * int64(sfs.Bsize),
+		Used:      int64(sfs.Blocks-sfs.Bfree) * int64(sfs.Bsize),
+		Available: int64(sfs.Bavail) * int64(sfs.Bsize),
+	})
+	usage = append(usage, &csi.VolumeUsage{
+		Unit:      csi.VolumeUsage_INODES,
+		Total:     int64(sfs.Files),
+		Used:      int64(sfs.Files - sfs.Ffree),
+		Available: int64(sfs.Ffree),
+	})
+
+	return &csi.NodeGetVolumeStatsResponse{Usage: usage}, nil
 }
 
 func (ns *NodeServer) NodeUnstageVolume(_ context.Context, _ *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
@@ -178,7 +213,7 @@ func (ns *NodeServer) NodeGetCapabilities(_ context.Context, _ *csi.NodeGetCapab
 			{
 				Type: &csi.NodeServiceCapability_Rpc{
 					Rpc: &csi.NodeServiceCapability_RPC{
-						Type: csi.NodeServiceCapability_RPC_UNKNOWN,
+						Type: csi.NodeServiceCapability_RPC_GET_VOLUME_STATS,
 					},
 				},
 			},
