@@ -218,8 +218,13 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	}
 
 	if snap != nil {
-		return nil, status.Errorf(codes.AlreadyExists,
-			"snapshot %s already present", snapshotName)
+		logger.StdLog.Errorf("snapshot %s already present", snapshotName)
+		return &csi.CreateSnapshotResponse{
+			Snapshot: &csi.Snapshot{
+				SnapshotId:     snap.Name,
+				SourceVolumeId: req.SourceVolumeId,
+			},
+		}, nil
 	}
 
 	snapshot := &apis.Snapshot{}
