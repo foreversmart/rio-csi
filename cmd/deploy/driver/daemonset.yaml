@@ -166,7 +166,7 @@ rules:
     resources: [ "pods" ]
     verbs: [ "get", "list", "watch", "update", "patch" ]
   - apiGroups: ["rio.qiniu.io"]
-    resources: ["volumes", "volumes/status", "snapshots", "rionodes"]
+    resources: ["volumes", "volumes/status", "snapshots", "snapshots/status", "rionodes"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
 
 ---
