@@ -62,7 +62,8 @@ func UpdateSnapInfo(snap *apis.Snapshot, state string) (newSnap *apis.Snapshot, 
 	labels := map[string]string{
 		NodeKey: NodeID,
 	}
-	snap.Labels = labels
+
+	WithLabels(snap, labels)
 
 	switch state {
 	case StatusReady:
@@ -91,4 +92,19 @@ func RemoveSnapFinalizer(snap *apis.Snapshot) (newSnap *apis.Snapshot, err error
 
 	newSnap, err = client.DefaultClient.InternalClientSet.RioV1().Snapshots(RioNamespace).Update(context.Background(), snap, metav1.UpdateOptions{})
 	return
+}
+
+func WithLabels(snap *apis.Snapshot, labels map[string]string) {
+	if len(labels) == 0 {
+		return
+	}
+
+	if snap.Labels == nil {
+		snap.Labels = map[string]string{}
+	}
+
+	for key, value := range labels {
+		snap.Labels[key] = value
+	}
+
 }

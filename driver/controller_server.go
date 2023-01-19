@@ -244,7 +244,8 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	labels := map[string]string{
 		crd.VolKey: vol.Name,
 	}
-	snapshot.Labels = labels
+
+	crd.WithLabels(snapshot, labels)
 
 	err = crd.ProvisionSnapshot(snapshot)
 	if err != nil {
