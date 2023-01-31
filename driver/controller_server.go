@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/mount"
 	apis "qiniu.io/rio-csi/api/rio/v1"
@@ -235,6 +236,12 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 		return nil, err
 	}
 
+	sizeBytes, err := strconv.ParseInt(vol.Spec.Capacity, 10, 64)
+	if err != nil {
+		logger.StdLog.Errorf("cant parse vol %s capacity %s", vol.Name, vol.Spec.Capacity)
+		return nil, err
+	}
+
 	// TODO control snapshot snapshot size
 	snapshot.Spec.SnapSize = vol.Spec.Capacity
 	snapshot.Spec.VolGroup = vol.Spec.VolGroup
@@ -253,10 +260,14 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 		return nil, err
 	}
 
+	// TODO ready to use vsc when snapshot is ready
 	return &csi.CreateSnapshotResponse{
 		Snapshot: &csi.Snapshot{
+			SizeBytes:      sizeBytes,
 			SnapshotId:     snapshot.Name,
 			SourceVolumeId: req.SourceVolumeId,
+			CreationTime:   timestamppb.Now(),
+			ReadyToUse:     true,
 		},
 	}, nil
 }
