@@ -93,6 +93,8 @@ func (r *SnapshotReconciler) syncSnapshot(ctx context.Context, snap *riov1.Snaps
 			_, err = crd.RemoveSnapFinalizer(snap)
 		}
 
+		r.Get()
+
 		return err
 	}
 
