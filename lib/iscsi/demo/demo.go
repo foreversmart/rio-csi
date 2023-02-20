@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"qiniu.io/rio-csi/iscsi"
+	"qiniu.io/rio-csi/lib/iscsi"
 )
 
 func main() {

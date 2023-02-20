@@ -5,7 +5,7 @@ import (
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"qiniu.io/rio-csi/client"
-	"qiniu.io/rio-csi/iscsi"
+	"qiniu.io/rio-csi/lib/iscsi"
 	"qiniu.io/rio-csi/logger"
 )
 

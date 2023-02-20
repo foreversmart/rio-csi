@@ -34,8 +34,6 @@ import (
 
 // lvm related constants
 const (
-	DevPath       = "/dev/"
-	DevMapperPath = "/dev/mapper/"
 	// MinExtentRoundOffSize represents minimum size (256Mi) to roundoff the volume
 	// group size in case of thin pool provisioning
 	MinExtentRoundOffSize = 268435456
@@ -322,7 +320,7 @@ func DeleteLVMVolume(vol *apis.Volume) error {
 func buildLVMDeleteArgs(vol *apis.Volume) []string {
 	var LVMVolArg []string
 
-	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
+	dev := GetVolumeDevPath(vol)
 
 	LVMVolArg = append(LVMVolArg, "-y", dev)
 
@@ -331,11 +329,8 @@ func buildLVMDeleteArgs(vol *apis.Volume) []string {
 
 // CheckVolumeExists validates if lvm volume exists
 func CheckVolumeExists(vol *apis.Volume) (bool, error) {
-	devPath, err := GetVolumeDevPath(vol)
-	if err != nil {
-		return false, err
-	}
-	if _, err = os.Stat(devPath); err != nil {
+	devPath := GetVolumeDevMapperPath(vol)
+	if _, err := os.Stat(devPath); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
@@ -344,23 +339,11 @@ func CheckVolumeExists(vol *apis.Volume) (bool, error) {
 	return true, nil
 }
 
-// GetVolumeDevPath returns devpath for the given volume
-func GetVolumeDevPath(vol *apis.Volume) (string, error) {
-	// LVM doubles the hiphen for the mapper device name
-	// and uses single hiphen to separate volume group from volume
-	vg := strings.Replace(vol.Spec.VolGroup, "-", "--", -1)
-
-	lv := strings.Replace(vol.Name, "-", "--", -1)
-	dev := DevMapperPath + vg + "-" + lv
-
-	return dev, nil
-}
-
 // builldVolumeResizeArgs returns resize command for the lvm volume
 func buildVolumeResizeArgs(vol *apis.Volume, resizefs bool) []string {
 	var LVMVolArg []string
 
-	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
+	dev := GetVolumeDevPath(vol)
 	size := vol.Spec.Capacity + "b"
 
 	LVMVolArg = append(LVMVolArg, dev, "-L", size)

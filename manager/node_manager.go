@@ -18,10 +18,10 @@ import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/crd"
-	"qiniu.io/rio-csi/iscsi"
+	"qiniu.io/rio-csi/lib/iscsi"
+	"qiniu.io/rio-csi/lib/lvm"
+	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/logger"
-	"qiniu.io/rio-csi/lvm"
-	"qiniu.io/rio-csi/lvm/common/errors"
 	"reflect"
 	"time"
 )

@@ -18,7 +18,7 @@ package volbuilder
 
 import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
-	"qiniu.io/rio-csi/lvm/common/errors"
+	"qiniu.io/rio-csi/lib/lvm/common/errors"
 )
 
 // Builder is the builder object for Volume

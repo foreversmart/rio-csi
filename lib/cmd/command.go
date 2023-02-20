@@ -1,4 +1,4 @@
-package iscsi
+package cmd
 
 import (
 	"bytes"
@@ -9,13 +9,22 @@ import (
 )
 
 type ExecCmd struct {
-	cmds []string
+	mainCmd string
+	cmds    []string
+	exitCmd string
 }
 
-func NewExecCmd() *ExecCmd {
-	return &ExecCmd{
-		cmds: make([]string, 0, 5),
+func NewExecCmd(mainCmd string, exitCmd ...string) *ExecCmd {
+	c := &ExecCmd{
+		mainCmd: mainCmd,
+		cmds:    make([]string, 0, 5),
 	}
+
+	if len(exitCmd) > 0 {
+		c.exitCmd = exitCmd[0]
+	}
+
+	return c
 }
 
 func (c *ExecCmd) Add(cmd string) {
@@ -35,7 +44,7 @@ func (c *ExecCmd) String() string {
 }
 
 func (c *ExecCmd) Exec() (res string, err error) {
-	cmd := exec.Command("targetcli")
+	cmd := exec.Command(c.mainCmd)
 
 	in, err := cmd.StdinPipe()
 	if err != nil {
@@ -46,7 +55,7 @@ func (c *ExecCmd) Exec() (res string, err error) {
 	go func() {
 		io.WriteString(in, c.String())
 		// auto exit
-		io.WriteString(in, exitCmd)
+		io.WriteString(in, c.exitCmd)
 	}()
 
 	var out bytes.Buffer

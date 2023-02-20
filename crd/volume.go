@@ -20,8 +20,8 @@ import (
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
+	"qiniu.io/rio-csi/lib/lvm/builder/volbuilder"
 	"qiniu.io/rio-csi/logger"
-	"qiniu.io/rio-csi/lvm/builder/volbuilder"
 	"strconv"
 	"time"
 
@@ -50,10 +50,14 @@ const (
 
 	// StatusPending shows object has not handled yet
 	StatusPending string = "Pending"
-	// StatusFailed shows object operation has failed
-	StatusFailed string = "Failed"
+	// StatusCreated shows volume has finished created
+	StatusCreated string = "Created"
+	// StatusCloning shows volume is cloning data
+	StatusCloning string = "Cloning"
 	// StatusReady shows object has been processed
 	StatusReady string = "Ready"
+	// StatusFailed shows object operation has failed
+	StatusFailed string = "Failed"
 )
 
 var (

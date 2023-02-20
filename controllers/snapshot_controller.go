@@ -21,8 +21,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	riov1 "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/crd"
+	"qiniu.io/rio-csi/lib/lvm"
 	"qiniu.io/rio-csi/logger"
-	"qiniu.io/rio-csi/lvm"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -92,8 +92,6 @@ func (r *SnapshotReconciler) syncSnapshot(ctx context.Context, snap *riov1.Snaps
 		if err != nil {
 			_, err = crd.RemoveSnapFinalizer(snap)
 		}
-
-		r.Get()
 
 		return err
 	}

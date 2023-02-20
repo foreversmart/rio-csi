@@ -10,7 +10,7 @@ import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/crd"
-	"qiniu.io/rio-csi/mount"
+	"qiniu.io/rio-csi/lib/mount"
 	"strings"
 )
 

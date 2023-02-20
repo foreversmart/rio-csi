@@ -22,9 +22,11 @@ import (
 	"path/filepath"
 	riov1 "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/crd"
-	"qiniu.io/rio-csi/iscsi"
+	"qiniu.io/rio-csi/enums"
+	"qiniu.io/rio-csi/lib/dd"
+	"qiniu.io/rio-csi/lib/iscsi"
+	"qiniu.io/rio-csi/lib/lvm"
 	"qiniu.io/rio-csi/logger"
-	"qiniu.io/rio-csi/lvm"
 	"regexp"
 	"sort"
 	"strconv"
@@ -118,7 +120,34 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	case crd.StatusReady:
 		l.Info("lvm volume already provisioned")
 		return nil
+	case crd.StatusCreated:
+		return nil
 	}
+
+	// TODO copy data
+
+	err = r.createVolume(ctx, vol)
+	if err == nil {
+		err = crd.UpdateVolInfoWithStatus(vol, crd.StatusCreated)
+		if err != nil {
+			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+			return err
+		}
+	}
+
+	// TODO retry check
+	if err != nil {
+		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
+		// the volume provisioning failed so that controller can reschedule it.
+		vol.Status.Error = r.transformLVMError(err)
+		return crd.UpdateVolInfoWithStatus(vol, crd.StatusFailed)
+	}
+
+	return nil
+}
+
+func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) (err error) {
+	l := log.FromContext(ctx)
 
 	// if there is already a volGroup field set for lvmvolume resource,
 	// we'll first try to create a volume in that volume group.
@@ -141,6 +170,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 			err = fmt.Errorf("no vg available to serve volume request having regex=%q & capacity=%q",
 				vol.Spec.VgPattern, vol.Spec.Capacity)
 			l.Error(nil, fmt.Sprintf("lvm volume %v - %v", vol.Name, err))
+			return
 		} else {
 			for _, vg := range vgs {
 				// first update volGroup field in lvm volume resource for ensuring
@@ -152,16 +182,18 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 
 				err = lvm.CreateLVMVolume(vol)
 				if err != nil {
+					// try next vgs to create volume
 					l.Error(err, fmt.Sprintf("create lvm volume %s error %v", vol.Name, err))
-					return err
+					continue
 				}
 
+				// create lvm volume exist
 				break
 			}
 		}
 	}
 
-	if err == nil && vol.Spec.IscsiTarget == "" {
+	if vol.Spec.IscsiTarget == "" {
 		// create volume target
 		volumeTarget := iscsi.GenerateTargetName("volume", vol.Name)
 		_, err = iscsi.CreateTarget(volumeTarget)
@@ -175,6 +207,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
+			return err
 		}
 	}
 
@@ -191,6 +224,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
+			return err
 		}
 	}
 
@@ -212,11 +246,12 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
+			return err
 		}
 	}
 
 	// Iscsi Mount lun device
-	if err == nil && vol.Spec.IscsiLun == -1 {
+	if vol.Spec.IscsiLun == -1 {
 
 		lunID := ""
 		// TODO handle already exist error
@@ -231,6 +266,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		if parseErr != nil {
 			l.Error(parseErr, fmt.Sprintf("MountLun ParseInt %s error: %v", lunID, parseErr))
 			err = parseErr
+			return
 		}
 
 		// TODO lun number
@@ -239,27 +275,30 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		if err != nil {
 			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
-		}
-
-	}
-
-	if err == nil {
-		err = crd.UpdateVolInfoWithStatus(vol, crd.StatusReady)
-		if err != nil {
-			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
 			return err
 		}
 	}
 
-	if err != nil {
-		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
-		// the volume provisioning failed so that controller can reschedule it.
-		vol.Status.Error = r.transformLVMError(err)
-		return crd.UpdateVolInfoWithStatus(vol, crd.StatusFailed)
+	return nil
+}
+
+func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volume) (err error) {
+	l := log.FromContext(ctx)
+
+	if vol.Spec.DataSourceType == enums.DataSourceTypeSnapshot || vol.Spec.DataSource == "" {
+		return nil
+	}
+
+	switch vol.Spec.DataSourceType {
+	case enums.DataSourceTypeSnapshot:
+		snapshotId := vol.Spec.DataSource
+		volumeId :=
+			dd.DiskDump()
+	default:
+		return nil
 	}
 
 	return nil
-
 }
 
 func (r *VolumeReconciler) transformLVMError(err error) *riov1.VolumeError {

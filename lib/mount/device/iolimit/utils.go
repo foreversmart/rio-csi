@@ -18,8 +18,8 @@ package iolimit
 
 import (
 	"io/ioutil"
-	"qiniu.io/rio-csi/lvm/common/errors"
-	"qiniu.io/rio-csi/lvm/common/helpers"
+	"qiniu.io/rio-csi/lib/lvm/common/errors"
+	"qiniu.io/rio-csi/lib/lvm/common/helpers"
 	"strconv"
 	"strings"
 	"syscall"

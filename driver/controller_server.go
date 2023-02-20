@@ -11,10 +11,10 @@ import (
 	"k8s.io/utils/mount"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/crd"
-	"qiniu.io/rio-csi/iscsi"
+	iscsi2 "qiniu.io/rio-csi/lib/iscsi"
+	"qiniu.io/rio-csi/lib/lvm/builder/volbuilder"
+	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/logger"
-	"qiniu.io/rio-csi/lvm/builder/volbuilder"
-	"qiniu.io/rio-csi/lvm/common/errors"
 	"strconv"
 	"strings"
 )
@@ -45,7 +45,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	size := getRoundedCapacity(req.GetCapacityRange().RequiredBytes)
 	capacity := strconv.FormatInt(size, 10)
 
-	vol, err := crd.GetVolume(volName)
+	existVol, err := crd.GetVolume(volName)
 	if err != nil {
 		if !k8serror.IsNotFound(err) {
 			logger.StdLog.Error(err)
@@ -53,58 +53,67 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 				"failed get lvm volume %v: %v", volName, err.Error())
 		}
 
-		vol, err = nil, nil
+		existVol, err = nil, nil
 	}
 
 	// TODO
-	if vol != nil {
+	if existVol != nil {
 		return nil, status.Errorf(codes.AlreadyExists,
 			"volume %s already present", volName)
 	}
 
-	// TODO Schedule Node
+	// TODO Schedule
 	node := "xs2298"
-	contentSource := req.GetVolumeContentSource()
-	if contentSource != nil && contentSource.GetSnapshot() != nil {
-		return nil, status.Error(codes.Unimplemented, "")
-	} else if contentSource != nil && contentSource.GetVolume() != nil {
-		return nil, status.Error(codes.Unimplemented, "")
-	} else {
-		// TODO mark volume for leak protection if pvc gets deleted
-		// before the creation of pv.
 
-		// TODO scheduler
-		volObj, buildErr := volbuilder.NewBuilder().
-			WithName(volName).
-			WithCapacity(capacity).
-			WithVgPattern(params.VgPattern.String()).
-			WithOwnerNode(node).
-			WithVolumeStatus(crd.StatusPending).
-			WithShared(params.Shared).
-			WithThinProvision(params.ThinProvision).Build()
-		// set default iscsi lun is -1 means no lun device
-		volObj.Spec.IscsiLun = -1
+	// TODO scheduler
+	newVol, buildErr := volbuilder.NewBuilder().
+		WithName(volName).
+		WithCapacity(capacity).
+		WithVgPattern(params.VgPattern.String()).
+		WithOwnerNode(node).
+		WithVolumeStatus(crd.StatusPending).
+		WithShared(params.Shared).
+		WithThinProvision(params.ThinProvision).Build()
+	// set default iscsi lun is -1 means no lun device
+	newVol.Spec.IscsiLun = -1
 
-		if buildErr != nil {
-			return nil, status.Error(codes.Internal, buildErr.Error())
-		}
+	if buildErr != nil {
+		return nil, status.Error(codes.Internal, buildErr.Error())
+	}
 
-		vol, err = crd.ProvisionVolume(volObj)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "not able to provision the volume %s", err.Error())
-		}
+	volumeSource := req.GetVolumeContentSource()
+	cntx := map[string]string{crd.VolGroupKey: newVol.Spec.VolGroup}
 
-		// Wait Volume ready
-		if vol.Status.State == crd.StatusPending {
-			if vol, err = crd.WaitForVolumeProcessed(ctx, vol.GetName()); err != nil {
-				return nil, err
+	if volumeSource != nil {
+		switch volumeSource.Type.(type) {
+		case *csi.VolumeContentSource_Snapshot:
+			if snapshot := volumeSource.GetSnapshot(); snapshot != nil {
+				cntx["dataSource"] = snapshot.SnapshotId
+				newVol.Spec.DataSource = snapshot.SnapshotId
+				newVol.Spec.DataSourceType = "Snapshot"
 			}
+		case *csi.VolumeContentSource_Volume:
+			return nil, status.Error(codes.Unimplemented, "")
+		}
+	}
+
+	// TODO mark volume for leak protection if pvc gets deleted
+	// before the creation of pv.
+
+	newVol, err = crd.ProvisionVolume(newVol)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "not able to provision the volume %s", err.Error())
+	}
+
+	// Wait Volume ready
+	if newVol.Status.State == crd.StatusPending {
+		if newVol, err = crd.WaitForVolumeProcessed(ctx, newVol.GetName()); err != nil {
+			return nil, err
 		}
 	}
 
 	//
-	cntx := map[string]string{crd.VolGroupKey: vol.Spec.VolGroup}
-	topology := map[string]string{crd.TopologyKey: vol.Spec.OwnerNodeID}
+	topology := map[string]string{crd.TopologyKey: newVol.Spec.OwnerNodeID}
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      volName,
@@ -114,7 +123,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			},
 			},
 			VolumeContext: cntx,
-			ContentSource: contentSource,
+			ContentSource: volumeSource,
 		},
 	}, nil
 }
@@ -139,19 +148,19 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 	// if volume is not already triggered for deletion, delete the volume.
 	// otherwise, just wait for the existing deletion operation to complete.
 	if vol.GetDeletionTimestamp() == nil {
-		_, err = iscsi.UnmountLun(vol.Spec.IscsiTarget, fmt.Sprintf("%d", vol.Spec.IscsiLun))
+		_, err = iscsi2.UnmountLun(vol.Spec.IscsiTarget, fmt.Sprintf("%d", vol.Spec.IscsiLun))
 		if err != nil {
 			logger.StdLog.Error(volumeID, err)
 			return nil, errors.Wrapf(err, "UnmountLun for {%s}", volumeID)
 		}
 
-		_, err = iscsi.UnPublicBlockDevice(vol.Spec.IscsiTarget, volumeID)
+		_, err = iscsi2.UnPublicBlockDevice(vol.Spec.IscsiTarget, volumeID)
 		if err != nil {
 			logger.StdLog.Error(volumeID, err)
 			return nil, errors.Wrapf(err, "UnPublicBlockDevice for {%s}", volumeID)
 		}
 
-		err = iscsi.DeleteTarget(vol.Spec.IscsiTarget)
+		err = iscsi2.DeleteTarget(vol.Spec.IscsiTarget)
 		if err != nil {
 			logger.StdLog.Error(volumeID, err)
 			return nil, errors.Wrapf(err, "DeleteTarget for {%s}", volumeID)

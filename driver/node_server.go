@@ -11,9 +11,9 @@ import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/crd"
-	"qiniu.io/rio-csi/iscsi"
+	iscsi2 "qiniu.io/rio-csi/lib/iscsi"
+	mount2 "qiniu.io/rio-csi/lib/mount"
 	"qiniu.io/rio-csi/logger"
-	"qiniu.io/rio-csi/mount"
 )
 
 type NodeServer struct {
@@ -62,13 +62,13 @@ func (ns *NodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 	}
 
 	// mount on different nodes using iscsi
-	connector := iscsi.Connector{
+	connector := iscsi2.Connector{
 		AuthType:      "chap",
 		VolumeName:    vol.Name,
 		TargetIqn:     vol.Spec.IscsiTarget,
 		TargetPortals: []string{node.ISCSIInfo.Portal},
 		Lun:           vol.Spec.IscsiLun,
-		DiscoverySecrets: iscsi.Secrets{
+		DiscoverySecrets: iscsi2.Secrets{
 			SecretsType: "chap",
 			UserName:    ns.Driver.iscsiUsername,
 			Password:    ns.Driver.iscsiPassword,
@@ -96,10 +96,10 @@ func (ns *NodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
 		// attempt block mount operation on the requested path
-		err = mount.MountBlock(vol, mountInfo, podLVinfo)
+		err = mount2.MountBlock(vol, mountInfo, podLVinfo)
 	case *csi.VolumeCapability_Mount:
 		// attempt filesystem mount operation on the requested path
-		err = mount.MountFilesystem(vol, mountInfo, podLVinfo)
+		err = mount2.MountFilesystem(vol, mountInfo, podLVinfo)
 	}
 
 	if err != nil {
@@ -130,7 +130,7 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 			volumeID, err.Error())
 	}
 
-	err = mount.UmountVolume(vol, targetPath)
+	err = mount2.UmountVolume(vol, targetPath)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
@@ -156,7 +156,7 @@ func (ns *NodeServer) NodeGetVolumeStats(_ context.Context, req *csi.NodeGetVolu
 		return nil, status.Error(codes.InvalidArgument, "path is not provided")
 	}
 
-	if !mount.IsMountPath(path) {
+	if !mount2.IsMountPath(path) {
 		return nil, status.Error(codes.NotFound, "path is not a mount path")
 	}
 

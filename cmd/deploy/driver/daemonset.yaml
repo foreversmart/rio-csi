@@ -85,6 +85,8 @@ spec:
               mountPath: /run/lvm
             - name: udev-dir
               mountPath: /run/udev
+            - name: iscsi-cmd
+              mountPath: /usr/bin/iscsiadm
             - name: initiator-dir
               mountPath: /etc/iscsi
             - name: initiator-socket
@@ -127,6 +129,10 @@ spec:
           hostPath:
             path: /run/udev
             type: Directory
+        - name: iscsi-cmd
+          hostPath:
+            path: /usr/bin/iscsiadm
+            type: File
         - name: initiator-dir
           hostPath:
             path: /etc/iscsi

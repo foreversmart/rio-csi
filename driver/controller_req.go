@@ -5,7 +5,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"qiniu.io/rio-csi/lvm/common/errors"
+	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"strings"
 )
 

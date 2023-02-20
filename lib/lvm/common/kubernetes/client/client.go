@@ -17,7 +17,7 @@ limitations under the License.
 package client
 
 import (
-	"qiniu.io/rio-csi/lvm/common/env"
+	"qiniu.io/rio-csi/lib/lvm/common/env"
 	"strings"
 	"sync"
 
