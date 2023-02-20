@@ -7,7 +7,7 @@ var (
 	dumpCmd = "if=%s of=%s"
 )
 
-func DiskDump(in, out, args string) error {
+func DiskDump(in, out string) error {
 	c := cmd.NewExecCmd(mainCmd)
 	c.AddFormat(dumpCmd, in, out)
 	_, err := c.Exec()

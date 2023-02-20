@@ -1,6 +1,7 @@
 package lvm
 
 import (
+	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"strings"
 )
@@ -24,6 +25,23 @@ func GetVolumeDevMapperPath(vol *apis.Volume) string {
 
 // GetVolumeDevPath returns dev path for the given volume
 func GetVolumeDevPath(vol *apis.Volume) string {
-	dev := DevPath + vol.Spec.VolGroup + "/" + vol.Name
+	dev := GetDevPath(vol.Spec.VolGroup, vol.Name)
 	return dev
+}
+
+// GetDevPath returns dev path for the given vg name and volume name
+func GetDevPath(vgName, volName string) string {
+	dev := DevPath + vgName + "/" + volName
+	return dev
+}
+
+// CheckPathExist check the given path exist in os
+func CheckPathExist(path string) (bool, error) {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

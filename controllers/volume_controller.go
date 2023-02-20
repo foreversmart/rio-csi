@@ -121,18 +121,31 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		l.Info("lvm volume already provisioned")
 		return nil
 	case crd.StatusCreated:
+		err = r.cloneFromSource(ctx, vol)
+		if err != nil {
+			l.Error(err, "cloneFromSource", vol.Name)
+			return err
+		}
+
 		return nil
 	}
 
-	// TODO copy data
-
 	err = r.createVolume(ctx, vol)
-	if err == nil {
-		err = crd.UpdateVolInfoWithStatus(vol, crd.StatusCreated)
-		if err != nil {
-			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
-			return err
-		}
+	if err != nil {
+		l.Error(err, "cloneFromSource", vol.Name)
+		return err
+	}
+
+	err = crd.UpdateVolInfoWithStatus(vol, crd.StatusCreated)
+	if err != nil {
+		l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+		return err
+	}
+
+	err = r.cloneFromSource(ctx, vol)
+	if err != nil {
+		l.Error(err, "cloneFromSource", vol.Name)
+		return err
 	}
 
 	// TODO retry check
@@ -285,15 +298,37 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volume) (err error) {
 	l := log.FromContext(ctx)
 
-	if vol.Spec.DataSourceType == enums.DataSourceTypeSnapshot || vol.Spec.DataSource == "" {
+	if vol.Spec.DataSourceType == enums.DataSourceTypeEmpty || vol.Spec.DataSource == "" {
 		return nil
 	}
 
 	switch vol.Spec.DataSourceType {
 	case enums.DataSourceTypeSnapshot:
-		snapshotId := vol.Spec.DataSource
-		volumeId :=
-			dd.DiskDump()
+		snapshotDevPath := lvm.GetDevPath(vol.Spec.VolGroup, vol.Spec.DataSource)
+		volumeDevPath := lvm.GetVolumeDevPath(vol)
+		// check path exist
+		if exist, exErr := lvm.CheckPathExist(snapshotDevPath); !exist {
+			l.Error(exErr, "snapshot dev path %s not exist", snapshotDevPath)
+			return exErr
+		}
+
+		if exist, exErr := lvm.CheckPathExist(volumeDevPath); !exist {
+			l.Error(exErr, "volume dev path %s not exist", snapshotDevPath)
+			return exErr
+		}
+
+		err = dd.DiskDump(snapshotDevPath, volumeDevPath)
+		if err != nil {
+			l.Error(err, "DiskDump error %s and %s", snapshotDevPath, volumeDevPath)
+			return err
+		}
+
+		err = crd.UpdateVolInfoWithStatus(vol, crd.StatusReady)
+		if err != nil {
+			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+			return err
+		}
+
 	default:
 		return nil
 	}
