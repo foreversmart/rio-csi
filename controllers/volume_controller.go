@@ -91,7 +91,7 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// retry
 		return ctrl.Result{
 			Requeue:      true,
-			RequeueAfter: time.Second * 10,
+			RequeueAfter: time.Second * 20,
 		}, nil
 	}
 
@@ -136,19 +136,13 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 		return err
 	}
 
-	err = crd.UpdateVolInfoWithStatus(vol, crd.StatusCreated)
-	if err != nil {
-		l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
-		return err
-	}
-
 	err = r.cloneFromSource(ctx, vol)
 	if err != nil {
 		l.Error(err, "cloneFromSource", vol.Name)
 		return err
 	}
 
-	// TODO retry check
+	// TODO retry check and turn into failed status
 	if err != nil {
 		// In case no vg available or lvm.CreateLVMVolume fails for all vgs, mark
 		// the volume provisioning failed so that controller can reschedule it.
@@ -292,18 +286,25 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 		}
 	}
 
+	err = crd.UpdateVolInfoWithStatus(vol, crd.StatusCreated)
+	if err != nil {
+		l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+		return err
+	}
+
 	return nil
 }
 
 func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volume) (err error) {
 	l := log.FromContext(ctx)
 
-	if vol.Spec.DataSourceType == enums.DataSourceTypeEmpty || vol.Spec.DataSource == "" {
-		return nil
-	}
-
 	switch vol.Spec.DataSourceType {
 	case enums.DataSourceTypeSnapshot:
+		// empty data source skip to ready
+		if vol.Spec.DataSource == "" {
+			break
+		}
+
 		snapshotDevPath := lvm.GetDevPath(vol.Spec.VolGroup, vol.Spec.DataSource)
 		volumeDevPath := lvm.GetVolumeDevPath(vol)
 		// check path exist
@@ -322,15 +323,12 @@ func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volum
 			l.Error(err, "DiskDump error %s and %s", snapshotDevPath, volumeDevPath)
 			return err
 		}
+	}
 
-		err = crd.UpdateVolInfoWithStatus(vol, crd.StatusReady)
-		if err != nil {
-			l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
-			return err
-		}
-
-	default:
-		return nil
+	err = crd.UpdateVolInfoWithStatus(vol, crd.StatusReady)
+	if err != nil {
+		l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+		return err
 	}
 
 	return nil
