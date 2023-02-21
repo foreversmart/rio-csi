@@ -11,6 +11,7 @@ import (
 	"k8s.io/utils/mount"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/crd"
+	"qiniu.io/rio-csi/enums"
 	iscsi2 "qiniu.io/rio-csi/lib/iscsi"
 	"qiniu.io/rio-csi/lib/lvm/builder/volbuilder"
 	"qiniu.io/rio-csi/lib/lvm/common/errors"
@@ -90,7 +91,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 			if snapshot := volumeSource.GetSnapshot(); snapshot != nil {
 				cntx["dataSource"] = snapshot.SnapshotId
 				newVol.Spec.DataSource = snapshot.SnapshotId
-				newVol.Spec.DataSourceType = "Snapshot"
+				newVol.Spec.DataSourceType = enums.DataSourceTypeSnapshot
 			}
 		case *csi.VolumeContentSource_Volume:
 			return nil, status.Error(codes.Unimplemented, "")

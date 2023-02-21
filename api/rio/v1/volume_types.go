@@ -82,7 +82,7 @@ type VolumeStatus struct {
 	// processed yet. The state "Ready" means that the volume has been created
 	// and it is ready for the use. "Failed" means that volume provisioning
 	// has been failed and will not be retried by node agent controller.
-	// +kubebuilder:validation:Enum=Pending;Ready;Failed
+	// +kubebuilder:validation:Enum=Pending;Created;Ready;Failed
 	State string `json:"state,omitempty"`
 
 	// Error denotes the error occurred during provisioning/expanding a volume.

@@ -62,6 +62,10 @@ spec:
                 description: Capacity of the volume
                 minLength: 1
                 type: string
+              data_source:
+                type: string
+              data_source_type:
+                type: string
               iscsi_acl_is_set:
                 type: boolean
               iscsi_block:
@@ -106,6 +110,8 @@ spec:
                 type: string
             required:
             - capacity
+            - data_source
+            - data_source_type
             - iscsi_acl_is_set
             - iscsi_block
             - iscsi_lun
@@ -138,6 +144,7 @@ spec:
                   controller.
                 enum:
                 - Pending
+                - Created
                 - Ready
                 - Failed
                 type: string
