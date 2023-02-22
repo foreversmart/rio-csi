@@ -81,13 +81,13 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if r.NodeID != vol.Spec.OwnerNodeID {
-		// l.Error(fmt.Errorf("nodeid: %s, vol node id %s is not same", r.NodeID, vol.Spec.OwnerNodeID), "vol is not on this node")
+		// logger.StdLog.Error(fmt.Errorf("nodeid: %s, vol node id %s is not same", r.NodeID, vol.Spec.OwnerNodeID), "vol is not on this node")
 		return ctrl.Result{}, nil
 	}
 
 	err = r.syncVol(ctx, &vol)
 	if err != nil {
-		l.Error(err, "sync vol error")
+		logger.StdLog.Error(err, "sync vol error")
 		// retry
 		return ctrl.Result{
 			Requeue:      true,
@@ -115,7 +115,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	// Otherwise, we are just ignoring the event.
 	switch vol.Status.State {
 	case crd.StatusFailed:
-		l.Error(nil, "Skipping retrying lvm volume provisioning as its already in failed state: %+v", vol.Status.Error)
+		logger.StdLog.Error(nil, "Skipping retrying lvm volume provisioning as its already in failed state: %+v", vol.Status.Error)
 		return nil
 	case crd.StatusReady:
 		l.Info("lvm volume already provisioned")
@@ -123,7 +123,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	case crd.StatusCreated:
 		err = r.cloneFromSource(ctx, vol)
 		if err != nil {
-			l.Error(err, "cloneFromSource", vol.Name)
+			logger.StdLog.Error(err, "cloneFromSource", vol.Name)
 			return err
 		}
 
@@ -132,13 +132,13 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 
 	err = r.createVolume(ctx, vol)
 	if err != nil {
-		l.Error(err, "cloneFromSource", vol.Name)
+		logger.StdLog.Error(err, "cloneFromSource", vol.Name)
 		return err
 	}
 
 	err = r.cloneFromSource(ctx, vol)
 	if err != nil {
-		l.Error(err, "cloneFromSource", vol.Name)
+		logger.StdLog.Error(err, "cloneFromSource", vol.Name)
 		return err
 	}
 
@@ -154,14 +154,12 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 }
 
 func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) (err error) {
-	l := log.FromContext(ctx)
-
 	// if there is already a volGroup field set for lvmvolume resource,
 	// we'll first try to create a volume in that volume group.
 	if vol.Spec.VolGroup != "" {
 		err = lvm.CreateLVMVolume(vol)
 		if err != nil {
-			l.Error(err, fmt.Sprintf("create lvm volume %s error %v", vol.Name, err))
+			logger.StdLog.Errorf("create lvm volume %s error %v", vol.Name, err)
 		}
 	}
 
@@ -169,28 +167,28 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 	if (vol.Spec.VolGroup != "" && err != nil) || vol.Spec.VolGroup == "" {
 		vgs, vgErr := r.getVgPriorityList(vol)
 		if vgErr != nil {
-			l.Error(vgErr, fmt.Sprintf("getVgPriorityList %s error %v", vol.Name, err))
+			logger.StdLog.Errorf("getVgPriorityList %s error %v", vol.Name, vgErr)
 			return vgErr
 		}
 
 		if len(vgs) == 0 {
 			err = fmt.Errorf("no vg available to serve volume request having regex=%q & capacity=%q",
 				vol.Spec.VgPattern, vol.Spec.Capacity)
-			l.Error(nil, fmt.Sprintf("lvm volume %v - %v", vol.Name, err))
+			logger.StdLog.Errorf("lvm volume %v - %v", vol.Name, err)
 			return
 		} else {
 			for _, vg := range vgs {
 				// first update volGroup field in lvm volume resource for ensuring
 				// idempotency and avoiding volume leaks during crash.
 				if vol, err = crd.UpdateVolGroup(vol, vg.Name); err != nil {
-					l.Error(nil, fmt.Sprintf("failed to update volGroup to %v: %v", vg.Name, err))
+					logger.StdLog.Errorf("failed to update volGroup to %v: %v", vg.Name, err)
 					return err
 				}
 
 				err = lvm.CreateLVMVolume(vol)
 				if err != nil {
 					// try next vgs to create volume
-					l.Error(err, fmt.Sprintf("create lvm volume %s error %v", vol.Name, err))
+					logger.StdLog.Errorf("create lvm volume %s error %v", vol.Name, err)
 					continue
 				}
 
@@ -212,7 +210,7 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 		vol.Spec.IscsiTarget = volumeTarget
 		vol, err = crd.UpdateVolume(vol)
 		if err != nil {
-			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
+			logger.StdLog.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
 			return err
 		}
@@ -222,14 +220,14 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 		// check ACL
 		err = CreateTargetAcl(vol.Namespace, vol.Spec.IscsiTarget, r.IscsiUsername, r.IscsiPassword)
 		if err != nil {
-			l.Error(err, fmt.Sprintf("CreateTargetAcl %v", err))
+			logger.StdLog.Error(err, fmt.Sprintf("CreateTargetAcl %v", err))
 			return err
 		}
 
 		vol.Spec.IscsiACLIsSet = true
 		vol, err = crd.UpdateVolume(vol)
 		if err != nil {
-			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
+			logger.StdLog.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
 			return err
 		}
@@ -241,7 +239,7 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 		// TODO check device exist
 		_, err = iscsi.PublicBlockDevice(vol.Spec.IscsiTarget, vol.Name, device)
 		if err != nil {
-			l.Error(err, fmt.Sprintf("PublicBlockDevice target %s, vol %s, device %s error: %v",
+			logger.StdLog.Error(err, fmt.Sprintf("PublicBlockDevice target %s, vol %s, device %s error: %v",
 				vol.Spec.IscsiTarget, vol.Name, device, err))
 			return err
 		}
@@ -251,7 +249,7 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 		vol.Spec.IscsiBlock = vol.Name
 		vol, err = crd.UpdateVolume(vol)
 		if err != nil {
-			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
+			logger.StdLog.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
 			return err
 		}
@@ -264,14 +262,14 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 		// TODO handle already exist error
 		lunID, err = iscsi.MountLun(vol.Spec.IscsiTarget, vol.Name)
 		if err != nil {
-			l.Error(err, fmt.Sprintf("MountLun target %s, vol %s,  error: %v",
+			logger.StdLog.Error(err, fmt.Sprintf("MountLun target %s, vol %s,  error: %v",
 				vol.Spec.IscsiTarget, vol.Name, err))
 			return err
 		}
 
 		lunIntID, parseErr := strconv.ParseInt(lunID, 10, 32)
 		if parseErr != nil {
-			l.Error(parseErr, fmt.Sprintf("MountLun ParseInt %s error: %v", lunID, parseErr))
+			logger.StdLog.Error(parseErr, fmt.Sprintf("MountLun ParseInt %s error: %v", lunID, parseErr))
 			err = parseErr
 			return
 		}
@@ -280,7 +278,7 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 		vol.Spec.IscsiLun = int32(lunIntID)
 		vol, err = crd.UpdateVolume(vol)
 		if err != nil {
-			l.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
+			logger.StdLog.Error(err, fmt.Sprintf("UpdateVolume vol %s error:  %v",
 				vol.Name, err))
 			return err
 		}
@@ -288,7 +286,7 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 
 	err = crd.UpdateVolInfoWithStatus(vol, crd.StatusCreated)
 	if err != nil {
-		l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+		logger.StdLog.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
 		return err
 	}
 
@@ -296,8 +294,6 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 }
 
 func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volume) (err error) {
-	l := log.FromContext(ctx)
-
 	switch vol.Spec.DataSourceType {
 	case enums.DataSourceTypeSnapshot:
 		// empty data source skip to ready
@@ -309,25 +305,25 @@ func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volum
 		volumeDevPath := lvm.GetVolumeDevPath(vol)
 		// check path exist
 		if exist, exErr := lvm.CheckPathExist(snapshotDevPath); !exist {
-			l.Error(exErr, "snapshot dev path %s not exist", snapshotDevPath)
+			logger.StdLog.Error(exErr, "snapshot dev path %s not exist", snapshotDevPath)
 			return exErr
 		}
 
 		if exist, exErr := lvm.CheckPathExist(volumeDevPath); !exist {
-			l.Error(exErr, "volume dev path %s not exist", snapshotDevPath)
+			logger.StdLog.Error(exErr, "volume dev path %s not exist", snapshotDevPath)
 			return exErr
 		}
 
 		err = dd.DiskDump(snapshotDevPath, volumeDevPath)
 		if err != nil {
-			l.Error(err, "DiskDump error %s and %s", snapshotDevPath, volumeDevPath)
+			logger.StdLog.Error(err, "DiskDump error %s and %s", snapshotDevPath, volumeDevPath)
 			return err
 		}
 	}
 
 	err = crd.UpdateVolInfoWithStatus(vol, crd.StatusReady)
 	if err != nil {
-		l.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
+		logger.StdLog.Error(err, "UpdateVolInfoWithStatus:", vol.Name)
 		return err
 	}
 
