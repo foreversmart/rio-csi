@@ -328,7 +328,8 @@ func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volum
 			break
 		}
 
-		snapshotDevPath := lvm.GetDevPath(vol.Spec.VolGroup, vol.Spec.DataSource)
+		snapshotName := lvm.GetLVMSnapName(vol.Spec.DataSource)
+		snapshotDevPath := lvm.GetDevPath(vol.Spec.VolGroup, snapshotName)
 		volumeDevPath := lvm.GetVolumeDevPath(vol)
 		// check path exist
 		if exist, exErr := lvm.CheckPathExist(snapshotDevPath); !exist {

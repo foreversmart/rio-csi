@@ -19,7 +19,7 @@ func buildLVMSnapCreateArgs(snap *apis.Snapshot) []string {
 		// snapshot argument
 		"--snapshot",
 		// name of snapshot
-		"--name", getLVMSnapName(snap.Name),
+		"--name", GetLVMSnapName(snap.Name),
 		// set the permission to make the snapshot read-only. By default LVM snapshots are RW
 		"--permission", "r",
 		// volume to snapshot
@@ -39,7 +39,7 @@ func buildLVMSnapCreateArgs(snap *apis.Snapshot) []string {
 func buildLVMSnapDestroyArgs(snap *apis.Snapshot) []string {
 	var LVMSnapArg []string
 
-	dev := DevPath + snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
+	dev := DevPath + snap.Spec.VolGroup + "/" + GetLVMSnapName(snap.Name)
 
 	LVMSnapArg = append(LVMSnapArg, "-y", dev)
 
@@ -51,7 +51,7 @@ func CreateSnapshot(snap *apis.Snapshot) error {
 
 	volume := snap.Labels[crd.VolKey]
 
-	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
+	snapVolume := snap.Spec.VolGroup + "/" + GetLVMSnapName(snap.Name)
 
 	args := buildLVMSnapCreateArgs(snap)
 	cmd := exec.Command(LVCreate, args...)
@@ -69,9 +69,9 @@ func CreateSnapshot(snap *apis.Snapshot) error {
 
 // DestroySnapshot deletes the lvm volume snapshot
 func DestroySnapshot(snap *apis.Snapshot) error {
-	snapVolume := snap.Spec.VolGroup + "/" + getLVMSnapName(snap.Name)
+	snapVolume := snap.Spec.VolGroup + "/" + GetLVMSnapName(snap.Name)
 
-	ok, err := isSnapshotExists(snap.Spec.VolGroup, getLVMSnapName(snap.Name))
+	ok, err := isSnapshotExists(snap.Spec.VolGroup, GetLVMSnapName(snap.Name))
 	if !ok {
 		logger.StdLog.Infof("lvm: snapshot %s does not exist, skipping deletion", snapVolume)
 		return nil
@@ -96,8 +96,8 @@ func DestroySnapshot(snap *apis.Snapshot) error {
 
 }
 
-// getSnapName is used to remove the snapshot prefix from the snapname. since names starting
+// GetLVMSnapName is used to remove the snapshot prefix from the snapname. since names starting
 // with "snapshot" are reserved in lvm2
-func getLVMSnapName(snapName string) string {
+func GetLVMSnapName(snapName string) string {
 	return strings.TrimPrefix(snapName, "snapshot-")
 }
