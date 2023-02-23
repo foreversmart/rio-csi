@@ -15,6 +15,9 @@ func CreateTarget(target string) (string, error) {
 	cmd.AddFormat(createCmd, target)
 	_, err := cmd.Exec()
 	if err != nil {
+		if strings.Contains(err.Error(), "Target already exists") {
+			return target, nil
+		}
 		return "", err
 	}
 
@@ -27,6 +30,11 @@ func DeleteTarget(target string) error {
 	cmd.AddFormat(deleteCmd, target)
 	_, err := cmd.Exec()
 	if err != nil {
+		// repeat delete
+		if strings.Contains(err.Error(), "No such Target") {
+			return nil
+		}
+
 		return err
 	}
 

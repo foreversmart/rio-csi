@@ -22,7 +22,14 @@ func SetUpTargetAcl(target, initiator, username, password string) (string, error
 	// set username and password
 	cmd.AddFormat(setUserIDCmd, username)
 	cmd.AddFormat(setPasswordCmd, password)
-	return cmd.Exec()
+	res, err := cmd.Exec()
+	if err != nil {
+		if strings.Contains(err.Error(), "This NodeACL already exists") {
+			return res, nil
+		}
+	}
+
+	return res, err
 }
 
 // ListTargetAcl get target acl rules
