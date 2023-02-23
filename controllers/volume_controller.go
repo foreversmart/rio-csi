@@ -104,11 +104,7 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	// :remove
 	// LVM Volume should be deleted. Check if deletion timestamp is set
 	if r.isDeletionCandidate(vol) {
-		err = lvm.DeleteLVMVolume(vol)
-		if err == nil {
-			err = crd.RemoveVolFinalizer(vol)
-		}
-		return err
+		return r.removeVolume(ctx, vol)
 	}
 
 	// if status is Pending then it means we are creating the volume.
@@ -151,6 +147,37 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 	}
 
 	return nil
+}
+
+func (r *VolumeReconciler) removeVolume(ctx context.Context, vol *riov1.Volume) (err error) {
+	// Unmount iscsi device
+	lunStr := fmt.Sprintf("%d", vol.Spec.IscsiLun)
+	_, err = iscsi.UnmountLun(vol.Spec.IscsiTarget, lunStr)
+	if err != nil {
+		logger.StdLog.Error(err)
+		return err
+	}
+
+	// UnPublish volume
+	_, err = iscsi.UnPublicBlockDevice(vol.Name)
+	if err != nil {
+		logger.StdLog.Error(err)
+		return err
+	}
+
+	// remove disk iscsi target
+	err = iscsi.DeleteTarget(vol.Spec.IscsiTarget)
+	if err != nil {
+		logger.StdLog.Error(err)
+		return err
+	}
+
+	// remove lvm lv
+	err = lvm.DeleteLVMVolume(vol)
+	if err == nil {
+		err = crd.RemoveVolFinalizer(vol)
+	}
+	return err
 }
 
 func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) (err error) {
@@ -237,7 +264,7 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 	if err == nil && vol.Spec.IscsiBlock == "" {
 		device := getVolumeDevice(vol)
 		// TODO check device exist
-		_, err = iscsi.PublicBlockDevice(vol.Spec.IscsiTarget, vol.Name, device)
+		_, err = iscsi.PublicBlockDevice(vol.Name, device)
 		if err != nil {
 			logger.StdLog.Error(err, fmt.Sprintf("PublicBlockDevice target %s, vol %s, device %s error: %v",
 				vol.Spec.IscsiTarget, vol.Name, device, err))
