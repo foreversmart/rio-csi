@@ -12,7 +12,7 @@ import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/enums"
-	iscsi2 "qiniu.io/rio-csi/lib/iscsi"
+	"qiniu.io/rio-csi/lib/iscsi"
 	"qiniu.io/rio-csi/lib/lvm/builder/volbuilder"
 	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/logger"
@@ -149,19 +149,19 @@ func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 	// if volume is not already triggered for deletion, delete the volume.
 	// otherwise, just wait for the existing deletion operation to complete.
 	if vol.GetDeletionTimestamp() == nil {
-		_, err = iscsi2.UnmountLun(vol.Spec.IscsiTarget, fmt.Sprintf("%d", vol.Spec.IscsiLun))
+		_, err = iscsi.UnmountLun(vol.Spec.IscsiTarget, fmt.Sprintf("%d", vol.Spec.IscsiLun))
 		if err != nil {
 			logger.StdLog.Error(volumeID, err)
 			return nil, errors.Wrapf(err, "UnmountLun for {%s}", volumeID)
 		}
 
-		_, err = iscsi2.UnPublicBlockDevice(vol.Spec.IscsiTarget, volumeID)
+		_, err = iscsi.UnPublicBlockDevice(volumeID)
 		if err != nil {
 			logger.StdLog.Error(volumeID, err)
 			return nil, errors.Wrapf(err, "UnPublicBlockDevice for {%s}", volumeID)
 		}
 
-		err = iscsi2.DeleteTarget(vol.Spec.IscsiTarget)
+		err = iscsi.DeleteTarget(vol.Spec.IscsiTarget)
 		if err != nil {
 			logger.StdLog.Error(volumeID, err)
 			return nil, errors.Wrapf(err, "DeleteTarget for {%s}", volumeID)
