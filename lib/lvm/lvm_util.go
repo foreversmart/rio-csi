@@ -255,6 +255,7 @@ func CreateLVMVolume(vol *apis.Volume) error {
 	if err != nil {
 		return err
 	}
+
 	if volExists {
 		klog.Infof("lvm: volume (%s) already exists, skipping its creation", volume)
 		return nil

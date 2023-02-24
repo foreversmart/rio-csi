@@ -87,11 +87,11 @@ func (r *VolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	err = r.syncVol(ctx, &vol)
 	if err != nil {
-		logger.StdLog.Error(err, "sync vol error")
+		logger.StdLog.Error("sync vol error", err)
 		// retry
 		return ctrl.Result{
 			Requeue:      true,
-			RequeueAfter: time.Second * 20,
+			RequeueAfter: time.Second * 30,
 		}, nil
 	}
 
@@ -128,13 +128,13 @@ func (r *VolumeReconciler) syncVol(ctx context.Context, vol *riov1.Volume) error
 
 	err = r.createVolume(ctx, vol)
 	if err != nil {
-		logger.StdLog.Error(err, "cloneFromSource", vol.Name)
+		logger.StdLog.Errorf("createVolume %s, error %v", vol.Name, err)
 		return err
 	}
 
 	err = r.cloneFromSource(ctx, vol)
 	if err != nil {
-		logger.StdLog.Error(err, "cloneFromSource", vol.Name)
+		logger.StdLog.Errorf("cloneFromSource %s, error %v", vol.Name, err)
 		return err
 	}
 
@@ -203,6 +203,7 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 				vol.Spec.VgPattern, vol.Spec.Capacity)
 			logger.StdLog.Errorf("lvm volume %v - %v", vol.Name, err)
 			return
+
 		} else {
 			for _, vg := range vgs {
 				// first update volGroup field in lvm volume resource for ensuring
@@ -321,6 +322,7 @@ func (r *VolumeReconciler) createVolume(ctx context.Context, vol *riov1.Volume) 
 }
 
 func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volume) (err error) {
+	logger.StdLog.Infof("disk %s cloneFromSource", vol.Name)
 	switch vol.Spec.DataSourceType {
 	case enums.DataSourceTypeSnapshot:
 		// empty data source skip to ready
@@ -342,11 +344,13 @@ func (r *VolumeReconciler) cloneFromSource(ctx context.Context, vol *riov1.Volum
 			return exErr
 		}
 
+		logger.StdLog.Infof("disk dump %s to volume %s", snapshotDevPath, volumeDevPath)
 		err = dd.DiskDump(snapshotDevPath, volumeDevPath)
 		if err != nil {
 			logger.StdLog.Error(err, "DiskDump error %s and %s", snapshotDevPath, volumeDevPath)
 			return err
 		}
+		logger.StdLog.Infof("finish disk %s cloneFromSource", vol.Name)
 	}
 
 	err = crd.UpdateVolInfoWithStatus(vol, crd.StatusReady)
