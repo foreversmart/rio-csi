@@ -8,7 +8,7 @@ var (
 )
 
 func DiskDump(in, out string) error {
-	c := cmd.NewExecCmd(mainCmd)
+	c := cmd.NewInteractCmd(mainCmd)
 	c.AddFormat(dumpCmd, in, out)
 	_, err := c.Exec()
 	return err

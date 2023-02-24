@@ -6,6 +6,6 @@ const (
 	targetCliCmd = "targetcli"
 )
 
-func NewExecCmd() *cmd.ExecCmd {
-	return cmd.NewExecCmd(targetCliCmd, exitCmd)
+func NewExecCmd() *cmd.InteractCmd {
+	return cmd.NewInteractCmd(targetCliCmd, exitCmd)
 }

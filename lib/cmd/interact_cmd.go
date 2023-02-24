@@ -8,14 +8,14 @@ import (
 	"os/exec"
 )
 
-type ExecCmd struct {
+type InteractCmd struct {
 	mainCmd string
 	cmds    []string
 	exitCmd string
 }
 
-func NewExecCmd(mainCmd string, exitCmd ...string) *ExecCmd {
-	c := &ExecCmd{
+func NewInteractCmd(mainCmd string, exitCmd ...string) *InteractCmd {
+	c := &InteractCmd{
 		mainCmd: mainCmd,
 		cmds:    make([]string, 0, 5),
 	}
@@ -27,15 +27,15 @@ func NewExecCmd(mainCmd string, exitCmd ...string) *ExecCmd {
 	return c
 }
 
-func (c *ExecCmd) Add(cmd string) {
+func (c *InteractCmd) Add(cmd string) {
 	c.cmds = append(c.cmds, cmd+"\n")
 }
 
-func (c *ExecCmd) AddFormat(cmd string, params ...interface{}) {
+func (c *InteractCmd) AddFormat(cmd string, params ...interface{}) {
 	c.cmds = append(c.cmds, fmt.Sprintf(cmd+"\n", params...))
 }
 
-func (c *ExecCmd) String() string {
+func (c *InteractCmd) String() string {
 	b := &bytes.Buffer{}
 	for _, cmd := range c.cmds {
 		b.WriteString(cmd)
@@ -43,7 +43,7 @@ func (c *ExecCmd) String() string {
 	return b.String()
 }
 
-func (c *ExecCmd) Exec() (res string, err error) {
+func (c *InteractCmd) Exec() (res string, err error) {
 	cmd := exec.Command(c.mainCmd)
 
 	in, err := cmd.StdinPipe()
