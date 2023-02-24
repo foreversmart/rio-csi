@@ -55,7 +55,9 @@ func (c *ExecCmd) Exec() (res string, err error) {
 	go func() {
 		io.WriteString(in, c.String())
 		// auto exit
-		io.WriteString(in, c.exitCmd)
+		if len(c.exitCmd) > 0 {
+			io.WriteString(in, c.exitCmd)
+		}
 	}()
 
 	var out bytes.Buffer
