@@ -1,7 +1,7 @@
 package dd
 
 import (
-	"fmt"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,6 +12,5 @@ func TestDiskDump(t *testing.T) {
 	input := filepath.Join(pwd, "testfile")
 	output := filepath.Join(pwd, "testfile1")
 	err := DiskDump(input, output)
-	fmt.Println("finish exec", err)
-
+	assert.Nil(t, err)
 }
