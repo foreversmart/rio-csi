@@ -8,7 +8,7 @@ var (
 	mainCmd     = "dd"
 	inputParam  = "if=%s"
 	outputParam = "of=%s"
-	noneStatus  = "status='none'"
+	noneStatus  = "status=none"
 )
 
 // DiskDump exec dd command to dump disk Partition
