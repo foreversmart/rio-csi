@@ -40,11 +40,13 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, status.Errorf(codes.InvalidArgument,
 			"failed to parse csi volume params: %v", err)
 	}
+
 	logger.StdLog.Info("create volume parameters:", req.GetParameters())
 
 	volName := strings.ToLower(req.GetName())
 	size := getRoundedCapacity(req.GetCapacityRange().RequiredBytes)
 	capacity := strconv.FormatInt(size, 10)
+	volumeSource := req.GetVolumeContentSource()
 
 	existVol, err := crd.GetVolume(volName)
 	if err != nil {
@@ -57,10 +59,21 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		existVol, err = nil, nil
 	}
 
-	// TODO
+	// if exist return success
 	if existVol != nil {
-		return nil, status.Errorf(codes.AlreadyExists,
-			"volume %s already present", volName)
+		topology := map[string]string{crd.TopologyKey: existVol.Spec.OwnerNodeID}
+		return &csi.CreateVolumeResponse{
+			Volume: &csi.Volume{
+				VolumeId:      volName,
+				CapacityBytes: size,
+				AccessibleTopology: []*csi.Topology{{
+					Segments: topology,
+				},
+				},
+				VolumeContext: map[string]string{crd.VolGroupKey: existVol.Spec.VolGroup},
+				ContentSource: volumeSource,
+			},
+		}, nil
 	}
 
 	// TODO Schedule
@@ -82,7 +95,6 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		return nil, status.Error(codes.Internal, buildErr.Error())
 	}
 
-	volumeSource := req.GetVolumeContentSource()
 	cntx := map[string]string{crd.VolGroupKey: newVol.Spec.VolGroup}
 
 	if volumeSource != nil {

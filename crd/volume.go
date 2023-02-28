@@ -91,10 +91,6 @@ func ProvisionVolume(vol *apis.Volume) (*apis.Volume, error) {
 	}
 
 	result.Status.State = StatusPending
-	if err == nil {
-		klog.Infof("provisioned volume %s", vol.Name)
-	}
-
 	return UpdateVolumeStatus(result)
 }
 
@@ -154,7 +150,8 @@ func WaitForVolumeProcessed(ctx context.Context, volumeID string) (*apis.Volume,
 				"lvm: wait failed, not able to get the volume %s %s", volumeID, err.Error())
 		}
 		if vol.Status.State == StatusReady ||
-			vol.Status.State == StatusFailed {
+			vol.Status.State == StatusFailed ||
+			vol.Status.State == StatusCreated {
 			return vol, nil
 		}
 		timer.Reset(1 * time.Second)
