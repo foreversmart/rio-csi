@@ -46,6 +46,14 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+.PHONY: tools-install
+tools-install: clientset-install lister-install informer-install ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+.PHONY: clientset-install
+clientset-install:
+	@go install ./vendor/k8s.io/code-generator/cmd/client-gen
+
 .PHONY: clientset
 clientset:
 	@client-gen --fake-clientset=true  \
@@ -54,6 +62,31 @@ clientset:
 	--output-package qiniu.io/rio-csi/generated \
 	--trim-path-prefix qiniu.io/rio-csi \
 	--go-header-file ./hack/boilerplate.go.txt -v 7
+.PHONY: lister-install
+lister-install:
+	@go install ./vendor/k8s.io/code-generator/cmd/lister-gen
+
+.PHONY: lister
+lister:
+	@echo "+ Generating lister for $(GEN_SRC)"
+	@lister-gen \
+		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
+		--output-package $(SRC_PKG)/generated/lister \
+		--go-header-file ./buildscripts/custom-boilerplate.go.txt
+
+.PHONY: informer-install
+informer-install:
+	@go install ./vendor/k8s.io/code-generator/cmd/informer-gen
+
+.PHONY: informer
+informer:
+	@echo "+ Generating informer for $(GEN_SRC)"
+	@informer-gen \
+		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
+		--versioned-clientset-package $(SRC_PKG)/generated/clientset/internalclientset \
+		--listers-package $(SRC_PKG)/generated/lister \
+		--output-package $(SRC_PKG)/generated/informer \
+		--go-header-file ./buildscripts/custom-boilerplate.go.txt
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
