@@ -11,6 +11,7 @@ import (
 	"k8s.io/utils/mount"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/crd"
+	"qiniu.io/rio-csi/driver/dparams"
 	"qiniu.io/rio-csi/enums"
 	"qiniu.io/rio-csi/lib/iscsi"
 	"qiniu.io/rio-csi/lib/lvm/builder/volbuilder"
@@ -35,7 +36,7 @@ type ControllerServer struct {
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	logger.StdLog.Infof("received request to create volume %s", req.GetName())
 
-	params, err := NewVolumeParams(req.GetParameters())
+	params, err := dparams.NewVolumeParams(req.GetParameters())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"failed to parse csi volume params: %v", err)
