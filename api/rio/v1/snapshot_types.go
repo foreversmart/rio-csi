@@ -43,6 +43,7 @@ type SnapshotStatus struct {
 	State string `json:"state,omitempty"`
 }
 
+// +genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
