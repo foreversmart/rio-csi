@@ -4,6 +4,10 @@ IMG ?=docker.qiniu.io:32500/controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
 
+GEN_SRC=rio/v1
+SRC_PKG=qiniu.io/rio-csi
+
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -58,10 +62,10 @@ clientset-install:
 .PHONY: clientset
 clientset:
 	@client-gen --fake-clientset=true  \
-	--input rio/v1 \
-	--input-base qiniu.io/rio-csi/api \
-	--output-package qiniu.io/rio-csi/generated \
-	--trim-path-prefix qiniu.io/rio-csi \
+	--input $(GEN_SRC) \
+	--input-base $(SRC_PKG)/api \
+	--output-package $(SRC_PKG)/generated \
+	--trim-path-prefix $(SRC_PKG) \
 	--go-header-file ./hack/boilerplate.go.txt -v 7
 .PHONY: lister-install
 lister-install:
@@ -72,9 +76,10 @@ lister-install:
 lister:
 	@echo "+ Generating lister for $(GEN_SRC)"
 	@lister-gen \
-		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
+		--input-dirs $(SRC_PKG)/api/$(GEN_SRC) \
 		--output-package $(SRC_PKG)/generated/lister \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
+		--trim-path-prefix qiniu.io/rio-csi \
+		--go-header-file  ./hack/boilerplate.go.txt
 
 .PHONY: informer-install
 informer-install:
@@ -85,11 +90,12 @@ informer-install:
 informer:
 	@echo "+ Generating informer for $(GEN_SRC)"
 	@informer-gen \
-		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
-		--versioned-clientset-package $(SRC_PKG)/generated/clientset/internalclientset \
+		--input-dirs $(SRC_PKG)/api/$(GEN_SRC) \
+		--versioned-clientset-package $(SRC_PKG)/generated/internalclientset \
 		--listers-package $(SRC_PKG)/generated/lister \
 		--output-package $(SRC_PKG)/generated/informer \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
+		--trim-path-prefix $(SRC_PKG) \
+		--go-header-file ./hack/boilerplate.go.txt
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
