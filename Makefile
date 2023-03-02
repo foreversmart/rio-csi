@@ -52,7 +52,8 @@ tools-install: clientset-install lister-install informer-install ## Generate cod
 
 .PHONY: clientset-install
 clientset-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/client-gen
+	@go get k8s.io/code-generator/cmd/client-gen
+	@go install k8s.io/code-generator/cmd/client-gen
 
 .PHONY: clientset
 clientset:
@@ -64,7 +65,8 @@ clientset:
 	--go-header-file ./hack/boilerplate.go.txt -v 7
 .PHONY: lister-install
 lister-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/lister-gen
+	@go get k8s.io/code-generator/cmd/lister-gen
+	@go install k8s.io/code-generator/cmd/lister-gen
 
 .PHONY: lister
 lister:
@@ -76,7 +78,8 @@ lister:
 
 .PHONY: informer-install
 informer-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/informer-gen
+	@go get k8s.io/code-generator/cmd/informer-gen
+	@go install k8s.io/code-generator/cmd/informer-gen
 
 .PHONY: informer
 informer:
