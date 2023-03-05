@@ -7,7 +7,7 @@ import (
 	"qiniu.io/rio-csi/logger"
 )
 
-func filterTopologyRequirement(topologyReq *csi.TopologyRequirement) ([]string, error) {
+func filterTopologyRequirement(topologyReq *csi.TopologyRequirement) (map[string]bool, error) {
 	if topologyReq == nil {
 		return nil, nil
 	}
@@ -28,8 +28,8 @@ func filterTopologyRequirement(topologyReq *csi.TopologyRequirement) ([]string, 
 }
 
 // filterTopology gets the node list which satisfies the topology info
-func filterTopology(topo []*csi.Topology) ([]string, error) {
-	var nodeList []string
+func filterTopology(topo []*csi.Topology) (map[string]bool, error) {
+	nodeMap := make(map[string]bool)
 
 	list, err := client.DefaultClient.ClientSet.CoreV1().Nodes().List(nil, metav1.ListOptions{})
 	if err != nil {
@@ -46,11 +46,11 @@ func filterTopology(topo []*csi.Topology) ([]string, error) {
 				}
 			}
 			if !nodeFiltered {
-				nodeList = append(nodeList, node.Name)
+				nodeMap[node.Name] = true
 				break
 			}
 		}
 	}
 
-	return nodeList, nil
+	return nodeMap, nil
 }

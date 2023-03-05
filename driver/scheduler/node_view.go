@@ -8,13 +8,15 @@ import (
 )
 
 type NodeView struct {
-	NodeName    string            `json:"node_name"`
-	VolumeNum   int64             `json:"volume_num"`
-	SnapshotNum int64             `json:"snapshot_num"`
-	TotalSize   resource.Quantity `json:"total_size"`
-	TotalFree   resource.Quantity `json:"total_free"`
-	MaxFree     resource.Quantity `json:"max_free"`
-	Score       int64             `json:"score"`
+	NodeName           string            `json:"node_name"`
+	VolumeNum          int64             `json:"volume_num"`
+	SnapshotNum        int64             `json:"snapshot_num"`
+	PendingVolumeNum   int64             `json:"pending_num"`
+	PendingSnapshotNum int64             `json:"pending_snapshot_num"`
+	TotalSize          resource.Quantity `json:"total_size"`
+	TotalFree          resource.Quantity `json:"total_free"`
+	MaxFree            resource.Quantity `json:"max_free"`
+	Score              int64             `json:"score"`
 }
 
 // CalcScore calc node score used storage weight is -1 free storage weight 1
