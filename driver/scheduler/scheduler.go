@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/client-go/tools/cache"
+	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/logger"
 	"sort"
 	"sync"
@@ -17,6 +19,17 @@ type VolumeScheduler struct {
 }
 
 func NewVolumeScheduler() {
+	client.DefaultInformer.Rio().V1().RioNodes().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    addNode,
+		UpdateFunc: updateNode,
+		DeleteFunc: deleteNode,
+	})
+
+	client.DefaultInformer.Rio().V1().Volumes().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    addVolume,
+		UpdateFunc: updateVolume,
+		DeleteFunc: deleteVolume,
+	})
 
 }
 
