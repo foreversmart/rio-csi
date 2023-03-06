@@ -19,6 +19,27 @@ type NodeView struct {
 	Score              int64             `json:"score"`
 }
 
+func NewNodeView(n *apis.RioNode, vgPattern *regexp.Regexp) *NodeView {
+	nodeView := &NodeView{
+		NodeName: n.Name,
+	}
+
+	maxFree := resource.Quantity{}
+	for _, vg := range n.VolumeGroups {
+		if vgPattern.MatchString(vg.Name) {
+			nodeView.VolumeNum = nodeView.VolumeNum + int64(vg.LVCount)
+			nodeView.SnapshotNum = nodeView.SnapshotNum + int64(vg.SnapCount)
+			nodeView.TotalSize.Add(vg.Size)
+			nodeView.TotalFree.Add(vg.Free)
+			if maxFree.Cmp(vg.Free) < 0 {
+				maxFree = vg.Free
+			}
+		}
+	}
+	nodeView.MaxFree = maxFree
+	return nodeView
+}
+
 // CalcScore calc node score used storage weight is -1 free storage weight 1
 // volume Num weight is -1 * 100 Gi, snapshot Num is -1 * 100 Gi
 // the more lv num the score is lower
@@ -44,24 +65,7 @@ func init() {
 // SyncNodeView Sync NodeView cache TODO support more algorithm
 func SyncNodeView(nodes []*apis.RioNode, vgPattern *regexp.Regexp) {
 	for _, n := range nodes {
-		nodeView := &NodeView{
-			NodeName: n.Name,
-		}
-
-		maxFree := resource.Quantity{}
-		for _, vg := range n.VolumeGroups {
-			if vgPattern.MatchString(vg.Name) {
-				nodeView.VolumeNum = nodeView.VolumeNum + int64(vg.LVCount)
-				nodeView.SnapshotNum = nodeView.SnapshotNum + int64(vg.SnapCount)
-				nodeView.TotalSize.Add(vg.Size)
-				nodeView.TotalFree.Add(vg.Free)
-				if maxFree.Cmp(vg.Free) < 0 {
-					maxFree = vg.Free
-				}
-			}
-		}
-		nodeView.MaxFree = maxFree
-		NodeViewMap[n.Name] = nodeView
+		NodeViewMap[n.Name] = NewNodeView(n, vgPattern)
 	}
 
 	return
