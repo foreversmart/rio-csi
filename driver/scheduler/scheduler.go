@@ -44,7 +44,7 @@ func NewVolumeScheduler() {
 //
 //		return
 //	}
-//
+
 // ScheduleVolume volume to a specific node
 // TODO support multi Vg allocate
 func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName string, err error) {
@@ -82,11 +82,45 @@ func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName
 	return "", fmt.Errorf("cant find a suitable node")
 }
 
+// NodeSort calc node score and sort at desc
 func (s *VolumeScheduler) NodeSort(req *csi.CreateVolumeRequest) (nodes []*NodeView) {
+	Lock.Lock()
+	defer Lock.Unlock()
+
+	// clear caching data
+	for _, node := range NodeViewMap {
+		node.ClearCacheData()
+	}
+
+	// recalculate caching data
+	for _, v := range CacheVolumeMap {
+		NodeViewMap[v.NodeName].PendingVolumeNum = NodeViewMap[v.NodeName].PendingVolumeNum + 1
+		NodeViewMap[v.NodeName].PendingVolumeSize = NodeViewMap[v.NodeName].PendingVolumeSize + v.RequiredStorage.Value()
+	}
+
+	for _, v := range CacheSnapshotMap {
+		NodeViewMap[v.NodeName].PendingSnapshotNum = NodeViewMap[v.NodeName].PendingSnapshotNum + 1
+		NodeViewMap[v.NodeName].PendingSnapshotSize = NodeViewMap[v.NodeName].PendingSnapshotSize + v.RequiredStorage.Value()
+	}
+
+	// recalculate node view score
 	nodes = make([]*NodeView, len(NodeViewMap))
 	for _, node := range NodeViewMap {
 		node.CalcScore()
-		nodes = append(nodes, node)
+		// deep copy to result
+		nodes = append(nodes, &NodeView{
+			NodeName:            node.NodeName,
+			VolumeNum:           node.VolumeNum,
+			SnapshotNum:         node.SnapshotNum,
+			PendingVolumeNum:    node.PendingVolumeNum,
+			PendingVolumeSize:   node.PendingVolumeSize,
+			PendingSnapshotNum:  node.PendingSnapshotNum,
+			PendingSnapshotSize: node.PendingSnapshotSize,
+			TotalSize:           node.TotalSize,
+			TotalFree:           node.TotalFree,
+			MaxFree:             node.MaxFree,
+			Score:               node.Score,
+		})
 	}
 
 	//

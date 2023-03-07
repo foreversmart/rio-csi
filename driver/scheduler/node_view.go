@@ -7,16 +7,26 @@ import (
 	"regexp"
 )
 
+var (
+	NodeViewMap map[string]*NodeView
+)
+
+func init() {
+	NodeViewMap = make(map[string]*NodeView)
+}
+
 type NodeView struct {
-	NodeName           string            `json:"node_name"`
-	VolumeNum          int64             `json:"volume_num"`
-	SnapshotNum        int64             `json:"snapshot_num"`
-	PendingVolumeNum   int64             `json:"pending_num"`
-	PendingSnapshotNum int64             `json:"pending_snapshot_num"`
-	TotalSize          resource.Quantity `json:"total_size"`
-	TotalFree          resource.Quantity `json:"total_free"`
-	MaxFree            resource.Quantity `json:"max_free"`
-	Score              int64             `json:"score"`
+	NodeName            string            `json:"node_name"`
+	VolumeNum           int64             `json:"volume_num"`
+	SnapshotNum         int64             `json:"snapshot_num"`
+	PendingVolumeNum    int64             `json:"pending_num"`
+	PendingVolumeSize   int64             `json:"pending_volume_size"` // byte
+	PendingSnapshotNum  int64             `json:"pending_snapshot_num"`
+	PendingSnapshotSize int64             `json:"pending_snapshot_size"` // byte
+	TotalSize           resource.Quantity `json:"total_size"`
+	TotalFree           resource.Quantity `json:"total_free"`
+	MaxFree             resource.Quantity `json:"max_free"`
+	Score               int64             `json:"score"`
 }
 
 func NewNodeView(n *apis.RioNode, vgPattern *regexp.Regexp) *NodeView {
@@ -40,6 +50,14 @@ func NewNodeView(n *apis.RioNode, vgPattern *regexp.Regexp) *NodeView {
 	return nodeView
 }
 
+// ClearCacheData clear node cache data value to zero
+func (n *NodeView) ClearCacheData() {
+	n.PendingVolumeNum = 0
+	n.PendingVolumeSize = 0
+	n.PendingSnapshotNum = 0
+	n.PendingSnapshotSize = 0
+}
+
 // CalcScore calc node score used storage weight is -1 free storage weight 1
 // volume Num weight is -1 * 100 Gi, snapshot Num is -1 * 100 Gi
 // the more lv num the score is lower
@@ -52,14 +70,6 @@ func (n *NodeView) CalcScore() {
 	free.Sub(used)
 	score := free.Value() - 100*driver.Gi*(n.VolumeNum+n.SnapshotNum)
 	n.Score = score
-}
-
-var (
-	NodeViewMap map[string]*NodeView
-)
-
-func init() {
-	NodeViewMap = make(map[string]*NodeView)
 }
 
 // SyncNodeView Sync NodeView cache TODO support more algorithm
