@@ -21,9 +21,9 @@ func updateSnapshot(oldObj, newObj interface{}) {
 
 	switch newSnapshot.Status.State {
 	case crd.StatusReady:
+		Lock.Lock()
+		defer Lock.Unlock()
 		if s, ok := CacheSnapshotMap[newSnapshot.Name]; ok {
-			Lock.Lock()
-			defer Lock.Unlock()
 			s.IsCreated = true
 		}
 	}

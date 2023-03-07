@@ -18,7 +18,7 @@ var (
 type VolumeScheduler struct {
 }
 
-func NewVolumeScheduler() {
+func NewVolumeScheduler() (s *VolumeScheduler, err error) {
 	client.DefaultInformer.Rio().V1().RioNodes().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    addNode,
 		UpdateFunc: updateNode,
@@ -36,6 +36,14 @@ func NewVolumeScheduler() {
 		UpdateFunc: updateSnapshot,
 		DeleteFunc: deleteSnapshot,
 	})
+
+	nodes, err := client.DefaultInformer.Rio().V1().RioNodes().Lister().List(nil)
+	if err != nil {
+		logger.StdLog.Errorf("list node error", err)
+		return nil, err
+	}
+
+	SyncNodeView(nodes, nil)
 
 }
 
