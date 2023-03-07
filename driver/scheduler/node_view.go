@@ -68,7 +68,11 @@ func (n *NodeView) CalcScore() {
 	used.Sub(n.TotalFree)
 	free := n.TotalFree
 	free.Sub(used)
-	score := free.Value() - 100*driver.Gi*(n.VolumeNum+n.SnapshotNum)
+	score := free.Value() - n.PendingSnapshotSize - n.PendingVolumeSize
+	score = score - 100*driver.Gi*n.VolumeNum
+	score = score - 100*driver.Gi*n.SnapshotNum
+	score = score - 100*driver.Gi*n.PendingVolumeNum
+	score = score - 100*driver.Gi*n.PendingSnapshotNum
 	n.Score = score
 }
 

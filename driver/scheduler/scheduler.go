@@ -60,6 +60,9 @@ func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName
 		return
 	}
 
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	sortNodes := s.NodeSort(req)
 	for _, node := range sortNodes {
 
@@ -84,9 +87,6 @@ func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName
 
 // NodeSort calc node score and sort at desc
 func (s *VolumeScheduler) NodeSort(req *csi.CreateVolumeRequest) (nodes []*NodeView) {
-	Lock.Lock()
-	defer Lock.Unlock()
-
 	// clear caching data
 	for _, node := range NodeViewMap {
 		node.ClearCacheData()
