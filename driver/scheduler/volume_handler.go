@@ -23,11 +23,13 @@ func updateVolume(oldObj, newObj interface{}) {
 
 	switch newVolume.Status.State {
 	case crd.StatusReady, crd.StatusCreated, crd.StatusCloning:
+		Lock.Lock()
+		defer Lock.Unlock()
 		if volumeView, ok := CacheVolumeMap[newVolume.Name]; ok {
-			Lock.Lock()
-			defer Lock.Unlock()
 			volumeView.IsCreated = true
 		}
+	case crd.StatusFailed:
+		// TODO check error msg to decide whether space should be freed
 	}
 
 }
