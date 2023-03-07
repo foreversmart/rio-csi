@@ -22,8 +22,22 @@ func updateNode(oldObj, newObj interface{}) {
 	Lock.Lock()
 	defer Lock.Unlock()
 	var vgPattern *regexp.Regexp
+	// update node view
 	NodeViewMap[newNode.Name] = NewNodeView(newNode, vgPattern)
 	// free finish volume space cache
+	for name, volume := range CacheVolumeMap {
+		if volume.NodeName == newNode.Name && volume.IsCreated {
+			delete(CacheVolumeMap, name)
+		}
+	}
+
+	// free finish snapshot space cache
+	for name, snapshot := range CacheSnapshotMap {
+		if snapshot.NodeName == newNode.Name && snapshot.IsCreated {
+			delete(CacheSnapshotMap, name)
+		}
+	}
+
 }
 
 func deleteNode(obj interface{}) {

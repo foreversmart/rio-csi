@@ -23,10 +23,10 @@ func updateVolume(oldObj, newObj interface{}) {
 
 	switch newVolume.Status.State {
 	case crd.StatusReady, crd.StatusCreated, crd.StatusCloning:
-		if _, ok := CacheVolumeMap[newVolume.Name]; ok {
+		if volumeView, ok := CacheVolumeMap[newVolume.Name]; ok {
 			Lock.Lock()
 			defer Lock.Unlock()
-			CreatedVolumeList = append(CreatedVolumeList, newVolume.Name)
+			volumeView.IsCreated = true
 		}
 	}
 

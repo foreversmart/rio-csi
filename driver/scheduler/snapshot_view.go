@@ -14,4 +14,5 @@ type SnapshotView struct {
 	NodeName        string            `json:"node_name"`
 	RequiredStorage resource.Quantity `json:"required_storage"`
 	VgName          string            `json:"vg_name"`
+	IsCreated       bool              `json:"is_created"`
 }

@@ -31,6 +31,12 @@ func NewVolumeScheduler() {
 		DeleteFunc: deleteVolume,
 	})
 
+	client.DefaultInformer.Rio().V1().Snapshots().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    addSnapshot,
+		UpdateFunc: updateSnapshot,
+		DeleteFunc: deleteSnapshot,
+	})
+
 }
 
 // // GetNode BalancedResourceAllocation

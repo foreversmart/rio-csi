@@ -8,8 +8,6 @@ import (
 	"qiniu.io/rio-csi/logger"
 )
 
-var CreatedSnapshotList []string
-
 func addSnapshot(obj interface{}) {
 
 }
@@ -23,10 +21,10 @@ func updateSnapshot(oldObj, newObj interface{}) {
 
 	switch newSnapshot.Status.State {
 	case crd.StatusReady:
-		if _, ok := CacheSnapshotMap[newSnapshot.Name]; ok {
+		if s, ok := CacheSnapshotMap[newSnapshot.Name]; ok {
 			Lock.Lock()
 			defer Lock.Unlock()
-			CreatedSnapshotList = append(CreatedSnapshotList, newSnapshot.Name)
+			s.IsCreated = true
 		}
 	}
 
