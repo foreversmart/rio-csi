@@ -7,13 +7,15 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/logger"
+	"regexp"
 	"sort"
 	"sync"
 )
 
 type VolumeScheduler struct {
-	VgPartten   string
-	NodeViewMap map[string]*NodeView
+	VgPatternStr string
+	VgPattern    *regexp.Regexp
+	NodeViewMap  map[string]*NodeView
 	// CacheVolumeMap to record volume which didn't success to create
 	CacheVolumeMap map[string]*VolumeView
 	// CacheSnapshotMap to record Snapshot which didn't success to create
@@ -21,8 +23,18 @@ type VolumeScheduler struct {
 	Lock             sync.Mutex
 }
 
-func NewVolumeScheduler() (s *VolumeScheduler, err error) {
-	s = &VolumeScheduler{}
+func NewVolumeScheduler(vgPatternStr string) (s *VolumeScheduler, err error) {
+	s = &VolumeScheduler{
+		VgPatternStr:     vgPatternStr,
+		NodeViewMap:      make(map[string]*NodeView),
+		CacheVolumeMap:   make(map[string]*VolumeView),
+		CacheSnapshotMap: make(map[string]*SnapshotView),
+	}
+
+	if s.VgPattern, err = regexp.Compile(s.VgPatternStr); err != nil {
+		return nil, fmt.Errorf("invalid vgpattern format  %v: %v", s.VgPatternStr, err)
+	}
+
 	client.DefaultInformer.Rio().V1().RioNodes().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    s.addNode,
 		UpdateFunc: s.updateNode,
