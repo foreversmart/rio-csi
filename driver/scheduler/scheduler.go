@@ -11,53 +11,67 @@ import (
 	"sync"
 )
 
-var (
-	Lock sync.Mutex
-)
-
 type VolumeScheduler struct {
+	VgPartten   string
+	NodeViewMap map[string]*NodeView
+	// CacheVolumeMap to record volume which didn't success to create
+	CacheVolumeMap map[string]*VolumeView
+	// CacheSnapshotMap to record Snapshot which didn't success to create
+	CacheSnapshotMap map[string]*SnapshotView
+	Lock             sync.Mutex
 }
 
 func NewVolumeScheduler() (s *VolumeScheduler, err error) {
+	s = &VolumeScheduler{}
 	client.DefaultInformer.Rio().V1().RioNodes().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    addNode,
-		UpdateFunc: updateNode,
-		DeleteFunc: deleteNode,
+		AddFunc:    s.addNode,
+		UpdateFunc: s.updateNode,
+		DeleteFunc: s.deleteNode,
 	})
 
 	client.DefaultInformer.Rio().V1().Volumes().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    addVolume,
-		UpdateFunc: updateVolume,
-		DeleteFunc: deleteVolume,
+		AddFunc:    s.addVolume,
+		UpdateFunc: s.updateVolume,
+		DeleteFunc: s.deleteVolume,
 	})
 
 	client.DefaultInformer.Rio().V1().Snapshots().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    addSnapshot,
-		UpdateFunc: updateSnapshot,
-		DeleteFunc: deleteSnapshot,
+		AddFunc:    s.addSnapshot,
+		UpdateFunc: s.updateSnapshot,
+		DeleteFunc: s.deleteSnapshot,
 	})
 
+	err = s.Sync()
+	return
+}
+
+func (s *VolumeScheduler) Sync() error {
 	nodes, err := client.DefaultInformer.Rio().V1().RioNodes().Lister().List(nil)
 	if err != nil {
 		logger.StdLog.Errorf("list node error", err)
-		return nil, err
+		return err
 	}
 
-	SyncNodeView(nodes, nil)
+	s.SyncNodeView(nodes, nil)
+
+	volumes, err := client.DefaultInformer.Rio().V1().Volumes().Lister().List(nil)
+	if err != nil {
+		logger.StdLog.Errorf("list node error", err)
+		return err
+	}
+
+	s.SyncVolumeView(volumes)
+
+	snapshots, err := client.DefaultInformer.Rio().V1().Snapshots().Lister().List(nil)
+	if err != nil {
+		logger.StdLog.Errorf("list node error", err)
+		return err
+	}
+
+	s.SyncSnapshotView(snapshots)
+	return nil
 
 }
-
-// // GetNode BalancedResourceAllocation
-//
-//	func (s *VolumeScheduler) GetNode(req *csi.CreateVolumeRequest, param *dparams.VolumeParams) (node *apis.RioNode, err error) {
-//		nodes, err := client.DefaultInformer.Rio().V1().RioNodes().Lister().List(nil)
-//		if err != nil {
-//			logger.StdLog.Errorf("list node error", err)
-//			return nil, err
-//		}
-//
-//		return
-//	}
 
 // ScheduleVolume volume to a specific node
 // TODO support multi Vg allocate
@@ -74,8 +88,8 @@ func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName
 		return
 	}
 
-	Lock.Lock()
-	defer Lock.Unlock()
+	s.Lock.Lock()
+	defer s.Lock.Unlock()
 
 	sortNodes := s.NodeSort(req)
 	for _, node := range sortNodes {
@@ -87,7 +101,7 @@ func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName
 		requiredStorage := resource.NewQuantity(req.CapacityRange.RequiredBytes, resource.BinarySI)
 		if node.MaxFree.Cmp(*requiredStorage) > 0 {
 			// cache pending volume data
-			CacheVolumeMap[req.Name] = &VolumeView{
+			s.CacheVolumeMap[req.Name] = &VolumeView{
 				Name:            req.Name,
 				NodeName:        node.NodeName,
 				RequiredStorage: *requiredStorage,
@@ -102,24 +116,24 @@ func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName
 // NodeSort calc node score and sort at desc
 func (s *VolumeScheduler) NodeSort(req *csi.CreateVolumeRequest) (nodes []*NodeView) {
 	// clear caching data
-	for _, node := range NodeViewMap {
+	for _, node := range s.NodeViewMap {
 		node.ClearCacheData()
 	}
 
 	// recalculate caching data
-	for _, v := range CacheVolumeMap {
-		NodeViewMap[v.NodeName].PendingVolumeNum = NodeViewMap[v.NodeName].PendingVolumeNum + 1
-		NodeViewMap[v.NodeName].PendingVolumeSize = NodeViewMap[v.NodeName].PendingVolumeSize + v.RequiredStorage.Value()
+	for _, v := range s.CacheVolumeMap {
+		s.NodeViewMap[v.NodeName].PendingVolumeNum = s.NodeViewMap[v.NodeName].PendingVolumeNum + 1
+		s.NodeViewMap[v.NodeName].PendingVolumeSize = s.NodeViewMap[v.NodeName].PendingVolumeSize + v.RequiredStorage.Value()
 	}
 
-	for _, v := range CacheSnapshotMap {
-		NodeViewMap[v.NodeName].PendingSnapshotNum = NodeViewMap[v.NodeName].PendingSnapshotNum + 1
-		NodeViewMap[v.NodeName].PendingSnapshotSize = NodeViewMap[v.NodeName].PendingSnapshotSize + v.RequiredStorage.Value()
+	for _, v := range s.CacheSnapshotMap {
+		s.NodeViewMap[v.NodeName].PendingSnapshotNum = s.NodeViewMap[v.NodeName].PendingSnapshotNum + 1
+		s.NodeViewMap[v.NodeName].PendingSnapshotSize = s.NodeViewMap[v.NodeName].PendingSnapshotSize + v.RequiredStorage.Value()
 	}
 
 	// recalculate node view score
-	nodes = make([]*NodeView, len(NodeViewMap))
-	for _, node := range NodeViewMap {
+	nodes = make([]*NodeView, len(s.NodeViewMap))
+	for _, node := range s.NodeViewMap {
 		node.CalcScore()
 		// deep copy to result
 		nodes = append(nodes, &NodeView{

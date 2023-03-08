@@ -8,11 +8,11 @@ import (
 	"qiniu.io/rio-csi/logger"
 )
 
-func addSnapshot(obj interface{}) {
+func (s *VolumeScheduler) addSnapshot(obj interface{}) {
 
 }
 
-func updateSnapshot(oldObj, newObj interface{}) {
+func (s *VolumeScheduler) updateSnapshot(oldObj, newObj interface{}) {
 	newSnapshot, ok := SnapshotStructuredObject(newObj)
 	if !ok {
 		logger.StdLog.Errorf("cant get new Snapshot info %v", newObj)
@@ -21,16 +21,16 @@ func updateSnapshot(oldObj, newObj interface{}) {
 
 	switch newSnapshot.Status.State {
 	case crd.StatusReady:
-		Lock.Lock()
-		defer Lock.Unlock()
-		if s, ok := CacheSnapshotMap[newSnapshot.Name]; ok {
-			s.IsCreated = true
+		s.Lock.Lock()
+		defer s.Lock.Unlock()
+		if snap, ok := s.CacheSnapshotMap[newSnapshot.Name]; ok {
+			snap.IsCreated = true
 		}
 	}
 
 }
 
-func deleteSnapshot(obj interface{}) {
+func (s *VolumeScheduler) deleteSnapshot(obj interface{}) {
 
 }
 

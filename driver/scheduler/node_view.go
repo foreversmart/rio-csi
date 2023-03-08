@@ -7,14 +7,6 @@ import (
 	"regexp"
 )
 
-var (
-	NodeViewMap map[string]*NodeView
-)
-
-func init() {
-	NodeViewMap = make(map[string]*NodeView)
-}
-
 type NodeView struct {
 	NodeName            string            `json:"node_name"`
 	VolumeNum           int64             `json:"volume_num"`
@@ -77,9 +69,9 @@ func (n *NodeView) CalcScore() {
 }
 
 // SyncNodeView Sync NodeView cache TODO support more algorithm
-func SyncNodeView(nodes []*apis.RioNode, vgPattern *regexp.Regexp) {
+func (s *VolumeScheduler) SyncNodeView(nodes []*apis.RioNode, vgPattern *regexp.Regexp) {
 	for _, n := range nodes {
-		NodeViewMap[n.Name] = NewNodeView(n, vgPattern)
+		s.NodeViewMap[n.Name] = NewNodeView(n, vgPattern)
 	}
 
 	return

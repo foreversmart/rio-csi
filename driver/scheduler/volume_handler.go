@@ -8,13 +8,11 @@ import (
 	"qiniu.io/rio-csi/logger"
 )
 
-var CreatedVolumeList []string
-
-func addVolume(obj interface{}) {
+func (s *VolumeScheduler) addVolume(obj interface{}) {
 
 }
 
-func updateVolume(oldObj, newObj interface{}) {
+func (s *VolumeScheduler) updateVolume(oldObj, newObj interface{}) {
 	newVolume, ok := VolumeStructuredObject(newObj)
 	if !ok {
 		logger.StdLog.Errorf("cant get new volume info %v", newObj)
@@ -23,9 +21,9 @@ func updateVolume(oldObj, newObj interface{}) {
 
 	switch newVolume.Status.State {
 	case crd.StatusReady, crd.StatusCreated, crd.StatusCloning:
-		Lock.Lock()
-		defer Lock.Unlock()
-		if volumeView, ok := CacheVolumeMap[newVolume.Name]; ok {
+		s.Lock.Lock()
+		defer s.Lock.Unlock()
+		if volumeView, ok := s.CacheVolumeMap[newVolume.Name]; ok {
 			volumeView.IsCreated = true
 		}
 	case crd.StatusFailed:
@@ -34,7 +32,7 @@ func updateVolume(oldObj, newObj interface{}) {
 
 }
 
-func deleteVolume(obj interface{}) {
+func (s *VolumeScheduler) deleteVolume(obj interface{}) {
 
 }
 

@@ -7,11 +7,6 @@ import (
 	"strconv"
 )
 
-var (
-	// CacheSnapshotMap to record Snapshot which didn't success to create
-	CacheSnapshotMap map[string]*SnapshotView
-)
-
 type SnapshotView struct {
 	Name            string            `json:"name"`
 	NodeName        string            `json:"node_name"`
@@ -20,22 +15,21 @@ type SnapshotView struct {
 	IsCreated       bool              `json:"is_created"`
 }
 
-func SyncSnapshotView(snapshots []*apis.Snapshot) {
-	Lock.Lock()
-	defer Lock.Unlock()
-	for _, s := range snapshots {
-		switch s.Status.State {
+func (s *VolumeScheduler) SyncSnapshotView(snapshots []*apis.Snapshot) {
+	s.Lock.Lock()
+	defer s.Lock.Unlock()
+	for _, snap := range snapshots {
+		switch snap.Status.State {
 		case crd.StatusPending:
-			storageSize, _ := strconv.ParseInt(s.Spec.SnapSize, 10, 64)
+			storageSize, _ := strconv.ParseInt(snap.Spec.SnapSize, 10, 64)
 			storage := resource.NewQuantity(storageSize, resource.BinarySI)
-			CacheSnapshotMap[s.Name] = &SnapshotView{
-				Name:            s.Name,
-				NodeName:        s.Spec.OwnerNodeID,
+			s.CacheSnapshotMap[snap.Name] = &SnapshotView{
+				Name:            snap.Name,
+				NodeName:        snap.Spec.OwnerNodeID,
 				RequiredStorage: *storage,
-				VgName:          s.Spec.VolGroup,
+				VgName:          snap.Spec.VolGroup,
 				IsCreated:       false,
 			}
-
 		}
 	}
 }
