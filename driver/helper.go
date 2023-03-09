@@ -1,24 +1,5 @@
 package driver
 
-import "strings"
-
-// GetCaseInsensitiveMap coercs the map's keys to lower case, which only works
-// when unicode char is in ASCII subset. May overwrite key-value pairs on
-// different permutations of key case as in Key and key. DON'T force values to the
-// lower case unconditionally, because values for keys such as mountpoint or
-// keylocation are case-sensitive.
-// Note that although keys such as 'comPREssion' are accepted and processed,
-// even if they are technically invalid, updates to rectify such typing will be
-// prohibited as a forbidden update.
-func GetCaseInsensitiveMap(dict *map[string]string) map[string]string {
-	insensitiveDict := map[string]string{}
-
-	for k, v := range *dict {
-		insensitiveDict[strings.ToLower(k)] = v
-	}
-	return insensitiveDict
-}
-
 // size constants
 const (
 	MB = 1000 * 1000

@@ -2,8 +2,8 @@ package dparams
 
 import (
 	"fmt"
-	"qiniu.io/rio-csi/driver"
 	"regexp"
+	"strings"
 )
 
 // scheduling algorithm constants
@@ -48,7 +48,7 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	// the storageclass, which kubectl validation will not catch. Because
 	// parameter keys (not values!) are all lowercase, keys may safely be forced
 	// to the lower case.
-	m = driver.GetCaseInsensitiveMap(&m)
+	m = GetCaseInsensitiveMap(&m)
 
 	// for ensuring backward compatibility, we first check if
 	// there is any volgroup param exists for storage class.
@@ -83,4 +83,21 @@ func NewVolumeParams(m map[string]string) (*VolumeParams, error) {
 	params.PVName = m["csi.storage.k8s.io/pv/name"]
 
 	return params, nil
+}
+
+// GetCaseInsensitiveMap coercs the map's keys to lower case, which only works
+// when unicode char is in ASCII subset. May overwrite key-value pairs on
+// different permutations of key case as in Key and key. DON'T force values to the
+// lower case unconditionally, because values for keys such as mountpoint or
+// keylocation are case-sensitive.
+// Note that although keys such as 'comPREssion' are accepted and processed,
+// even if they are technically invalid, updates to rectify such typing will be
+// prohibited as a forbidden update.
+func GetCaseInsensitiveMap(dict *map[string]string) map[string]string {
+	insensitiveDict := map[string]string{}
+
+	for k, v := range *dict {
+		insensitiveDict[strings.ToLower(k)] = v
+	}
+	return insensitiveDict
 }
