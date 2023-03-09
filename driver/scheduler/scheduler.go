@@ -64,7 +64,7 @@ func (s *VolumeScheduler) Sync() error {
 		return err
 	}
 
-	s.SyncNodeView(nodes, nil)
+	s.SyncNodeView(nodes)
 
 	volumes, err := client.DefaultInformer.Rio().V1().Volumes().Lister().List(nil)
 	if err != nil {

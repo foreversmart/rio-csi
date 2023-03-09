@@ -19,6 +19,10 @@ func (s *VolumeScheduler) SyncVolumeView(volumes []*apis.Volume) {
 	s.Lock.Lock()
 	defer s.Lock.Unlock()
 	for _, volume := range volumes {
+		if volume.Spec.VgPattern != s.VgPatternStr {
+			continue
+		}
+
 		switch volume.Status.State {
 		case crd.StatusPending:
 			storageSize, _ := strconv.ParseInt(volume.Spec.Capacity, 10, 64)

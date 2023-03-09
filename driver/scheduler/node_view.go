@@ -69,9 +69,9 @@ func (n *NodeView) CalcScore() {
 }
 
 // SyncNodeView Sync NodeView cache TODO support more algorithm
-func (s *VolumeScheduler) SyncNodeView(nodes []*apis.RioNode, vgPattern *regexp.Regexp) {
+func (s *VolumeScheduler) SyncNodeView(nodes []*apis.RioNode) {
 	for _, n := range nodes {
-		s.NodeViewMap[n.Name] = NewNodeView(n, vgPattern)
+		s.NodeViewMap[n.Name] = NewNodeView(n, s.VgPattern)
 	}
 
 	return

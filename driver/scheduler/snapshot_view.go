@@ -19,16 +19,18 @@ func (s *VolumeScheduler) SyncSnapshotView(snapshots []*apis.Snapshot) {
 	s.Lock.Lock()
 	defer s.Lock.Unlock()
 	for _, snap := range snapshots {
-		switch snap.Status.State {
-		case crd.StatusPending:
-			storageSize, _ := strconv.ParseInt(snap.Spec.SnapSize, 10, 64)
-			storage := resource.NewQuantity(storageSize, resource.BinarySI)
-			s.CacheSnapshotMap[snap.Name] = &SnapshotView{
-				Name:            snap.Name,
-				NodeName:        snap.Spec.OwnerNodeID,
-				RequiredStorage: *storage,
-				VgName:          snap.Spec.VolGroup,
-				IsCreated:       false,
+		if (snap.Spec.VgPattern != "" && snap.Spec.VgPattern == s.VgPatternStr) || s.VgPattern.MatchString(snap.Spec.VolGroup) {
+			switch snap.Status.State {
+			case crd.StatusPending:
+				storageSize, _ := strconv.ParseInt(snap.Spec.SnapSize, 10, 64)
+				storage := resource.NewQuantity(storageSize, resource.BinarySI)
+				s.CacheSnapshotMap[snap.Name] = &SnapshotView{
+					Name:            snap.Name,
+					NodeName:        snap.Spec.OwnerNodeID,
+					RequiredStorage: *storage,
+					VgName:          snap.Spec.VolGroup,
+					IsCreated:       false,
+				}
 			}
 		}
 	}
