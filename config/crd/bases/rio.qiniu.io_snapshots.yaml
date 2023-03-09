@@ -44,12 +44,17 @@ spec:
               snapSize:
                 description: SnapSize specifies the space reserved for the snapshot
                 type: string
+              vgPattern:
+                description: VgPattern specifies the regex volume VgPattern is needs
+                  to be created.
+                type: string
               volGroup:
                 description: VolGroup specifies the name of the volume group where
                   the snapshot has been created.
                 type: string
             required:
             - ownerNodeID
+            - vgPattern
             - volGroup
             type: object
           status:

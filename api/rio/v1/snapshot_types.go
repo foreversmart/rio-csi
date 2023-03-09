@@ -33,6 +33,10 @@ type SnapshotSpec struct {
 	// +kubebuilder:validation:Required
 	VolGroup string `json:"volGroup"`
 
+	// VgPattern specifies the regex volume VgPattern is
+	// needs to be created.
+	VgPattern string `json:"vgPattern"`
+
 	// SnapSize specifies the space reserved for the snapshot
 	// +kubebuilder:validation:Required
 	SnapSize string `json:"snapSize,omitempty"`

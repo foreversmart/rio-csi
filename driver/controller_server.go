@@ -268,6 +268,7 @@ func (cs *ControllerServer) CreateSnapshot(ctx context.Context, req *csi.CreateS
 	// TODO control snapshot snapshot size
 	snapshot.Spec.SnapSize = vol.Spec.Capacity
 	snapshot.Spec.VolGroup = vol.Spec.VolGroup
+	snapshot.Spec.VolGroup = vol.Spec.VolGroup
 	snapshot.Spec.OwnerNodeID = vol.Spec.OwnerNodeID
 	snapshot.Name = snapshotName
 
