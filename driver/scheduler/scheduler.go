@@ -31,6 +31,8 @@ func NewVolumeScheduler(vgPatternStr string) (s *VolumeScheduler, err error) {
 		CacheSnapshotMap: make(map[string]*SnapshotView),
 	}
 
+	err = s.Sync()
+
 	if s.VgPattern, err = regexp.Compile(s.VgPatternStr); err != nil {
 		return nil, fmt.Errorf("invalid vgpattern format  %v: %v", s.VgPatternStr, err)
 	}
@@ -53,7 +55,6 @@ func NewVolumeScheduler(vgPatternStr string) (s *VolumeScheduler, err error) {
 		DeleteFunc: s.deleteSnapshot,
 	})
 
-	err = s.Sync()
 	return
 }
 

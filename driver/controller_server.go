@@ -12,6 +12,7 @@ import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/driver/dparams"
+	"qiniu.io/rio-csi/driver/scheduler"
 	"qiniu.io/rio-csi/enums"
 	"qiniu.io/rio-csi/lib/iscsi"
 	"qiniu.io/rio-csi/lib/lvm/builder/volbuilder"
@@ -30,7 +31,8 @@ type ControllerServer struct {
 	//
 	// In the CSI implementation of other storage vendors, you may need to add other
 	// instances, such as the api client of Alibaba Cloud Storage.
-	mounter mount.Interface
+	mounter          mount.Interface
+	schedulerManager *scheduler.Manager
 }
 
 func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
@@ -77,10 +79,14 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 		}, nil
 	}
 
-	// TODO Schedule
-	node := "xs2298"
+	node, err := cs.schedulerManager.ScheduleVolume(req, params)
+	if err != nil {
+		logger.StdLog.Errorf("ScheduleVolume %s vgPattern %s with error %v", volName, params.VgPattern.String(), err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
-	// TODO scheduler
+	logger.StdLog.Info("scheduler volume", volName, "on node", node)
+
 	newVol, buildErr := volbuilder.NewBuilder().
 		WithName(volName).
 		WithCapacity(capacity).
