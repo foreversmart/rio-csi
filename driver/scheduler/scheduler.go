@@ -89,12 +89,6 @@ func (s *VolumeScheduler) Sync() error {
 // ScheduleVolume volume to a specific node
 // TODO support multi Vg allocate
 func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName string, err error) {
-	//nodes, err := client.DefaultInformer.Rio().V1().RioNodes().Lister().List(nil)
-	//if err != nil {
-	//	logger.StdLog.Errorf("list node error", err)
-	//	return nil, err
-	//}
-
 	filterNodesMap, err := filterTopologyRequirement(req.AccessibilityRequirements)
 	if err != nil {
 		logger.StdLog.Errorf("filterTopologyRequirement %v", err)
@@ -163,8 +157,6 @@ func (s *VolumeScheduler) NodeSort(req *csi.CreateVolumeRequest) (nodes []*NodeV
 			Score:               node.Score,
 		})
 	}
-
-	//
 
 	// sort the filtered node map
 	sort.Slice(nodes, func(i, j int) bool {
