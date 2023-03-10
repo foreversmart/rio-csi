@@ -3,7 +3,7 @@ package scheduler
 import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	apis "qiniu.io/rio-csi/api/rio/v1"
-	"qiniu.io/rio-csi/driver"
+	"qiniu.io/rio-csi/utils"
 	"regexp"
 )
 
@@ -61,10 +61,10 @@ func (n *NodeView) CalcScore() {
 	free := n.TotalFree
 	free.Sub(used)
 	score := free.Value() - n.PendingSnapshotSize - n.PendingVolumeSize
-	score = score - 100*driver.Gi*n.VolumeNum
-	score = score - 100*driver.Gi*n.SnapshotNum
-	score = score - 100*driver.Gi*n.PendingVolumeNum
-	score = score - 100*driver.Gi*n.PendingSnapshotNum
+	score = score - 100*utils.Gi*n.VolumeNum
+	score = score - 100*utils.Gi*n.SnapshotNum
+	score = score - 100*utils.Gi*n.PendingVolumeNum
+	score = score - 100*utils.Gi*n.PendingSnapshotNum
 	n.Score = score
 }
 

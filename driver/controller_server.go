@@ -18,6 +18,7 @@ import (
 	"qiniu.io/rio-csi/lib/lvm/builder/volbuilder"
 	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/logger"
+	"qiniu.io/rio-csi/utils"
 	"strconv"
 	"strings"
 )
@@ -47,7 +48,7 @@ func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	logger.StdLog.Info("create volume parameters:", req.GetParameters())
 
 	volName := strings.ToLower(req.GetName())
-	size := getRoundedCapacity(req.GetCapacityRange().RequiredBytes)
+	size := utils.GetRoundedCapacity(req.GetCapacityRange().RequiredBytes)
 	capacity := strconv.FormatInt(size, 10)
 	volumeSource := req.GetVolumeContentSource()
 

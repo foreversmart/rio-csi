@@ -1,4 +1,4 @@
-package driver
+package utils
 
 // size constants
 const (
@@ -8,8 +8,8 @@ const (
 	Gi = 1024 * 1024 * 1024
 )
 
-// getRoundedCapacity rounds the capacity on 1024 base
-func getRoundedCapacity(size int64) int64 {
+// GetRoundedCapacity rounds the capacity on 1024 base
+func GetRoundedCapacity(size int64) int64 {
 
 	/*
 	 * volblocksize and recordsize must be power of 2 from 512B to 1M
