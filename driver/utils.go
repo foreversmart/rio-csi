@@ -3,6 +3,7 @@ package driver
 import (
 	"fmt"
 	"k8s.io/utils/mount"
+	"qiniu.io/rio-csi/driver/scheduler"
 	"qiniu.io/rio-csi/logger"
 	"strings"
 
@@ -20,8 +21,9 @@ func NewIdentityServer(d *RioCSI) *IdentityServer {
 
 func NewControllerServer(d *RioCSI) *ControllerServer {
 	return &ControllerServer{
-		Driver:  d,
-		mounter: mount.New(""),
+		Driver:           d,
+		mounter:          mount.New(""),
+		schedulerManager: scheduler.NewManager(),
 	}
 }
 
