@@ -33,6 +33,9 @@ func NewVolumeScheduler(vgPatternStr string) (s *VolumeScheduler, err error) {
 	}
 
 	err = s.Sync()
+	if err != nil {
+		logger.StdLog.Error("sync error", err)
+	}
 
 	if s.VgPattern, err = regexp.Compile(s.VgPatternStr); err != nil {
 		return nil, fmt.Errorf("invalid vgpattern format  %v: %v", s.VgPatternStr, err)
@@ -60,27 +63,31 @@ func NewVolumeScheduler(vgPatternStr string) (s *VolumeScheduler, err error) {
 }
 
 func (s *VolumeScheduler) Sync() error {
-	nodes, err := client.DefaultInformer.Rio().V1().RioNodes().Lister().List(labels.NewSelector())
+	nodes, err := client.DefaultInformer.Rio().V1().RioNodes().Lister().List(labels.Everything())
 	if err != nil {
 		logger.StdLog.Errorf("list node error", err)
 		return err
 	}
+
+	logger.StdLog.Infof("get nodes list %d", len(nodes))
 
 	s.SyncNodeView(nodes)
 
-	volumes, err := client.DefaultInformer.Rio().V1().Volumes().Lister().List(labels.NewSelector())
+	volumes, err := client.DefaultInformer.Rio().V1().Volumes().Lister().List(labels.Everything())
 	if err != nil {
 		logger.StdLog.Errorf("list node error", err)
 		return err
 	}
+	logger.StdLog.Infof("get volume list %d", len(nodes))
 
 	s.SyncVolumeView(volumes)
 
-	snapshots, err := client.DefaultInformer.Rio().V1().Snapshots().Lister().List(labels.NewSelector())
+	snapshots, err := client.DefaultInformer.Rio().V1().Snapshots().Lister().List(labels.Everything())
 	if err != nil {
 		logger.StdLog.Errorf("list node error", err)
 		return err
 	}
+	logger.StdLog.Infof("get snapshot list %d", len(nodes))
 
 	s.SyncSnapshotView(snapshots)
 	return nil
