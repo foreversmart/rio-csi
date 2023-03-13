@@ -32,8 +32,8 @@ func (m *Manager) ScheduleVolume(req *csi.CreateVolumeRequest, params *dparams.V
 		}
 
 		m.SchedulerMap[vgPatternStr] = scheduler
-		m.Lock.Unlock()
 	}
+	m.Lock.Unlock()
 
 	return scheduler.ScheduleVolume(req)
 }
