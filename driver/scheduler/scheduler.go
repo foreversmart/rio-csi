@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/logger"
@@ -59,7 +60,7 @@ func NewVolumeScheduler(vgPatternStr string) (s *VolumeScheduler, err error) {
 }
 
 func (s *VolumeScheduler) Sync() error {
-	nodes, err := client.DefaultInformer.Rio().V1().RioNodes().Lister().List(nil)
+	nodes, err := client.DefaultInformer.Rio().V1().RioNodes().Lister().List(labels.NewSelector())
 	if err != nil {
 		logger.StdLog.Errorf("list node error", err)
 		return err
@@ -67,7 +68,7 @@ func (s *VolumeScheduler) Sync() error {
 
 	s.SyncNodeView(nodes)
 
-	volumes, err := client.DefaultInformer.Rio().V1().Volumes().Lister().List(nil)
+	volumes, err := client.DefaultInformer.Rio().V1().Volumes().Lister().List(labels.NewSelector())
 	if err != nil {
 		logger.StdLog.Errorf("list node error", err)
 		return err
@@ -75,7 +76,7 @@ func (s *VolumeScheduler) Sync() error {
 
 	s.SyncVolumeView(volumes)
 
-	snapshots, err := client.DefaultInformer.Rio().V1().Snapshots().Lister().List(nil)
+	snapshots, err := client.DefaultInformer.Rio().V1().Snapshots().Lister().List(labels.NewSelector())
 	if err != nil {
 		logger.StdLog.Errorf("list node error", err)
 		return err
