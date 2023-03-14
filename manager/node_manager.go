@@ -9,7 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -117,8 +116,6 @@ func (m *NodeManager) Sync() error {
 		logger.StdLog.Error(err)
 		return err
 	}
-
-	m.Lister.Namespace(m.Namespace).List(labels.NewSelector())
 
 	var node *apis.RioNode
 	if cacheNode != nil {

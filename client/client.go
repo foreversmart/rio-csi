@@ -44,6 +44,11 @@ func initInformer() {
 		close(stopCh)
 	}()
 
+	// add register
+	DefaultInformer.Rio().V1().RioNodes().Informer()
+	DefaultInformer.Rio().V1().Snapshots().Informer()
+	DefaultInformer.Rio().V1().Volumes().Informer()
+
 	DefaultInformer.Start(stopCh)
 	DefaultInformer.WaitForCacheSync(stopCh)
 }
