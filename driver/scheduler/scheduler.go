@@ -78,7 +78,7 @@ func (s *VolumeScheduler) Sync() error {
 		logger.StdLog.Errorf("list node error", err)
 		return err
 	}
-	logger.StdLog.Infof("get volume list %d", len(nodes))
+	logger.StdLog.Infof("get volume list %d", len(volumes))
 
 	s.SyncVolumeView(volumes)
 
@@ -87,7 +87,7 @@ func (s *VolumeScheduler) Sync() error {
 		logger.StdLog.Errorf("list node error", err)
 		return err
 	}
-	logger.StdLog.Infof("get snapshot list %d", len(nodes))
+	logger.StdLog.Infof("get snapshot list %d", len(snapshots))
 
 	s.SyncSnapshotView(snapshots)
 	return nil
@@ -148,10 +148,11 @@ func (s *VolumeScheduler) NodeSort(req *csi.CreateVolumeRequest) (nodes []*NodeV
 
 	// recalculate node view score
 	nodes = make([]*NodeView, len(s.NodeViewMap))
+	index := 0
 	for _, node := range s.NodeViewMap {
 		node.CalcScore()
 		// deep copy to result
-		nodes = append(nodes, &NodeView{
+		nodes[index] = &NodeView{
 			NodeName:            node.NodeName,
 			VolumeNum:           node.VolumeNum,
 			SnapshotNum:         node.SnapshotNum,
@@ -163,7 +164,8 @@ func (s *VolumeScheduler) NodeSort(req *csi.CreateVolumeRequest) (nodes []*NodeV
 			TotalFree:           node.TotalFree,
 			MaxFree:             node.MaxFree,
 			Score:               node.Score,
-		})
+		}
+		index++
 	}
 
 	// sort the filtered node map
