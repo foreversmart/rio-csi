@@ -32,13 +32,13 @@ func NewVolumeScheduler(vgPatternStr string) (s *VolumeScheduler, err error) {
 		CacheSnapshotMap: make(map[string]*SnapshotView),
 	}
 
+	if s.VgPattern, err = regexp.Compile(s.VgPatternStr); err != nil {
+		return nil, fmt.Errorf("invalid vgpattern format  %v: %v", s.VgPatternStr, err)
+	}
+
 	err = s.Sync()
 	if err != nil {
 		logger.StdLog.Error("sync error", err)
-	}
-
-	if s.VgPattern, err = regexp.Compile(s.VgPatternStr); err != nil {
-		return nil, fmt.Errorf("invalid vgpattern format  %v: %v", s.VgPatternStr, err)
 	}
 
 	client.DefaultInformer.Rio().V1().RioNodes().Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
