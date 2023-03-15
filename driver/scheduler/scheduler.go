@@ -107,9 +107,9 @@ func (s *VolumeScheduler) ScheduleVolume(req *csi.CreateVolumeRequest) (nodeName
 	defer s.Lock.Unlock()
 
 	sortNodes := s.NodeSort(req)
-	for _, node := range sortNodes {
 
-		if _, ok := filterNodesMap[node.NodeName]; !ok {
+	for _, node := range sortNodes {
+		if _, ok := filterNodesMap[node.NodeName]; filterNodesMap != nil && !ok {
 			continue
 		}
 
