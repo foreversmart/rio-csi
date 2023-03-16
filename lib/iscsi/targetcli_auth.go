@@ -1,11 +1,16 @@
 package iscsi
 
-import "strings"
+import (
+	"strings"
+)
 
 func SetDiscoveryAuth(username, password string) error {
 	cmd := NewExecCmd()
 	cmd.Add(openIscsiDir)
 	cmd.AddFormat(setDiscoveryAuth, username, password)
+
+	Lock.Lock()
+	defer Lock.Unlock()
 	_, err := cmd.Exec()
 	return err
 }
@@ -22,6 +27,10 @@ func SetUpTargetAcl(target, initiator, username, password string) (string, error
 	// set username and password
 	cmd.AddFormat(setUserIDCmd, username)
 	cmd.AddFormat(setPasswordCmd, password)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	res, err := cmd.Exec()
 	if err != nil {
 		if strings.Contains(err.Error(), "This NodeACL already exists") {
@@ -40,6 +49,10 @@ func ListTargetAcl(target string) (aclInitiator []string, err error) {
 	cmd.Add(openAclsDir)
 	// ls
 	cmd.Add(lsCmd)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	out, err := cmd.Exec()
 	if err != nil {
 		return nil, err

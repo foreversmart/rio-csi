@@ -19,6 +19,10 @@ func MountLun(target, disk string) (string, error) {
 	cmd.AddFormat(cdCmd, target)
 	cmd.Add(openLunsDir)
 	cmd.AddFormat(createCmd, disk)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	out, err := cmd.Exec()
 	if err != nil {
 		return "", err
@@ -44,9 +48,13 @@ func UnmountLun(target, lunId string) (string, error) {
 	cmd.AddFormat(cdCmd, target)
 	cmd.Add(openLunsDir)
 	cmd.AddFormat(deleteCmd, lunId)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	res, err := cmd.Exec()
 	if err != nil {
-		if strings.Contains(err.Error(), "Invalid LUN") {
+		if strings.Contains(err.Error(), "Invalid LUN") || strings.Contains(err.Error(), "No such path") {
 			return res, nil
 		}
 	}
@@ -60,6 +68,10 @@ func LunList(target string) ([]*LunDevice, error) {
 	cmd.AddFormat(cdCmd, target)
 	cmd.Add(openLunsDir)
 	cmd.Add(lsCmd)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	out, err := cmd.Exec()
 	if err != nil {
 		return nil, err

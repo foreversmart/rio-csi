@@ -1,5 +1,7 @@
 package iscsi
 
+import "sync"
+
 var (
 	openIscsiDir = "cd /iscsi"
 	openBlockDir = "cd /backstores/block"
@@ -20,4 +22,8 @@ var (
 	setDiscoveryAuth = "set discovery_auth enable=1 userid=%s password=%s"
 
 	exitCmd = "exit\n"
+)
+
+var (
+	Lock sync.Mutex
 )

@@ -13,6 +13,10 @@ func CreateTarget(target string) (string, error) {
 	cmd := NewExecCmd()
 	cmd.Add(openIscsiDir)
 	cmd.AddFormat(createCmd, target)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	_, err := cmd.Exec()
 	if err != nil {
 		if strings.Contains(err.Error(), "Target already exists") {
@@ -28,6 +32,10 @@ func DeleteTarget(target string) error {
 	cmd := NewExecCmd()
 	cmd.Add(openIscsiDir)
 	cmd.AddFormat(deleteCmd, target)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	_, err := cmd.Exec()
 	if err != nil {
 		// repeat delete
@@ -52,6 +60,10 @@ func ListTarget() ([]string, error) {
 	cmd := NewExecCmd()
 	cmd.Add(openIscsiDir)
 	cmd.Add(lsCmd)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	out, err := cmd.Exec()
 	if err != nil {
 		return nil, err

@@ -10,6 +10,10 @@ func PublicBlockDevice(disk, device string) (string, error) {
 	cmd := NewExecCmd()
 	cmd.Add(openBlockDir)
 	cmd.AddFormat(createBlockCmd, disk, device)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	res, err := cmd.Exec()
 	if err != nil {
 		alreadyExistErr := fmt.Sprintf("Storage object block/%s exists", disk)
@@ -26,6 +30,10 @@ func UnPublicBlockDevice(disk string) (string, error) {
 	cmd := NewExecCmd()
 	cmd.Add(openBlockDir)
 	cmd.AddFormat(deleteCmd, disk)
+
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	res, err := cmd.Exec()
 	if err != nil {
 		if strings.Contains(err.Error(), "No storage object") {
