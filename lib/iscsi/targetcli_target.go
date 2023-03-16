@@ -31,7 +31,7 @@ func DeleteTarget(target string) error {
 	_, err := cmd.Exec()
 	if err != nil {
 		// repeat delete
-		if strings.Contains(err.Error(), "No such Target") {
+		if strings.Contains(err.Error(), "No such Target") || strings.Contains(err.Error(), "No such path") {
 			return nil
 		}
 

@@ -44,7 +44,14 @@ func UnmountLun(target, lunId string) (string, error) {
 	cmd.AddFormat(cdCmd, target)
 	cmd.Add(openLunsDir)
 	cmd.AddFormat(deleteCmd, lunId)
-	return cmd.Exec()
+	res, err := cmd.Exec()
+	if err != nil {
+		if strings.Contains(err.Error(), "Invalid LUN") {
+			return res, nil
+		}
+	}
+
+	return res, err
 }
 
 func LunList(target string) ([]*LunDevice, error) {
