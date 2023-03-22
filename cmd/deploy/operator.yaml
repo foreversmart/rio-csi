@@ -748,7 +748,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: k8s.gcr.io/sig-storage/csi-provisioner:v2.2.2
+        image: ghcr.io/foreversmart/csi-provisioner:v2.2.2
         name: csi-provisioner
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/rio
@@ -760,7 +760,7 @@ spec:
         env:
         - name: CSI_ENDPOINT
           value: /var/lib/csi/sockets/rio/csi.sock
-        image: k8s.gcr.io/sig-storage/csi-snapshotter:v5.0.1
+        image: ghcr.io/foreversmart/csi-snapshotter:v5.0.1
         imagePullPolicy: IfNotPresent
         name: csi-snapshotter
         volumeMounts:
@@ -817,7 +817,7 @@ spec:
         env:
         - name: CSI_ENDPOINT
           value: /csi/csi.sock
-        image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
+        image: ghcr.io/foreversmart/csi-node-driver-registrar:v2.4.0
         name: csi-driver-registrar
         volumeMounts:
         - mountPath: /csi

@@ -22,7 +22,7 @@ spec:
       serviceAccountName: csi-provisioner
       containers:
         - name: csi-provisioner
-          image: k8s.gcr.io/sig-storage/csi-provisioner:v2.2.2
+          image: ghcr.io/foreversmart/csi-provisioner:v2.2.2
           args:
             - "--v=5"
             - "--csi-address=$(CSI_ENDPOINT)"
@@ -47,7 +47,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/rio
         - name: csi-snapshotter
-          image: k8s.gcr.io/sig-storage/csi-snapshotter:v5.0.1
+          image: ghcr.io/foreversmart/csi-snapshotter:v5.0.1
           args:
             - "--csi-address=$(CSI_ENDPOINT)"
             - "--v=5"
