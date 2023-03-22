@@ -3,7 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/rio.qiniu.io_volumes.yaml
-- bases/rio.qiniu.io_nodes.yaml
+- bases/rio.qiniu.io_rionodes.yaml
 - bases/rio.qiniu.io_snapshots.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
