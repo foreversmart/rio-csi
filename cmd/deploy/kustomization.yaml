@@ -1,0 +1,8 @@
+resources:
+  - namespace.yaml
+  - storageclass/storageclass.yaml
+  - driver/csi-driver.yaml
+  - driver/daemonset.yaml
+  - provisioner/deployment.yaml
+  - provisioner/rbac.yaml
+  - ../../config/crd

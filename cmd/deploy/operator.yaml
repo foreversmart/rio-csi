@@ -1,0 +1,946 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/created-by: rio-csi
+    app.kubernetes.io/instance: riocsi
+    app.kubernetes.io/name: namespace
+    app.kubernetes.io/part-of: rio-csi
+    control-plane: controller-manager
+  name: riocsi
+---
+allowVolumeExpansion: true
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: riocsi-sc
+parameters:
+  storage: lvm
+  volgroup: RioVolGroup
+provisioner: rio-csi
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: rionodes.rio.qiniu.io
+spec:
+  group: rio.qiniu.io
+  names:
+    kind: RioNode
+    listKind: RioNodeList
+    plural: rionodes
+    shortNames:
+    - rionode
+    singular: rionode
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: node portal info
+      jsonPath: .iscsi_info.portal
+      name: Portal
+      type: string
+    - description: node iscsi initiator name
+      jsonPath: .iscsi_info.initiator_name
+      name: InitiatorName
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: RioNode is the Schema for the nodes API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          iscsi_info:
+            description: ISCSIInfo specifies attributes of node iscsi server info
+            properties:
+              iface:
+                type: string
+              initiator_name:
+                minLength: 1
+                type: string
+              portal:
+                minLength: 1
+                type: string
+            required:
+            - iface
+            - initiator_name
+            - portal
+            type: object
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          volumeGroups:
+            items:
+              description: VolumeGroup specifies attributes of a given vg exists on
+                node.
+              properties:
+                allocationPolicy:
+                  description: 'AllocationPolicy indicates the volume group allocation
+                    policy. AllocationPolicy has the following mapping between int
+                    and string for its value: [-1: "", 0: "normal", 1: "contiguous",
+                    2: "cling", 3: "anywhere", 4: "inherited"]'
+                  type: integer
+                free:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  description: Free specifies the available capacity of volume group.
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                lvCount:
+                  description: LVCount denotes total number of logical volumes in
+                    volume group.
+                  format: int32
+                  minimum: 0
+                  type: integer
+                maxLv:
+                  description: MaxLV denotes maximum number of logical volumes allowed
+                    in volume group or 0 if unlimited.
+                  format: int32
+                  type: integer
+                maxPv:
+                  description: MaxPV denotes maximum number of physical volumes allowed
+                    in volume group or 0 if unlimited.
+                  format: int32
+                  type: integer
+                metadataCount:
+                  description: MetadataCount denotes number of metadata areas on the
+                    volume group.
+                  format: int32
+                  type: integer
+                metadataFree:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  description: MetadataFree specifies the available metadata area
+                    space for the volume group
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                metadataSize:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  description: MetadataSize specifies size of smallest metadata area
+                    for the volume group
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                metadataUsedCount:
+                  description: MetadataUsedCount denotes number of used metadata areas
+                    in volume group
+                  format: int32
+                  type: integer
+                missingPvCount:
+                  description: MissingPVCount denotes number of physical volumes in
+                    volume group which are missing.
+                  format: int32
+                  type: integer
+                name:
+                  description: Name of the lvm volume group.
+                  minLength: 1
+                  type: string
+                permissions:
+                  description: 'Permission indicates the volume group permission which
+                    can be writable or read-only. Permission has the following mapping
+                    between int and string for its value: [-1: "", 0: "writeable",
+                    1: "read-only"]'
+                  type: integer
+                pvCount:
+                  description: PVCount denotes total number of physical volumes constituting
+                    the volume group.
+                  format: int32
+                  minimum: 0
+                  type: integer
+                size:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  description: Size specifies the total size of volume group.
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                snapCount:
+                  description: SnapCount denotes number of snapshots in volume group.
+                  format: int32
+                  type: integer
+                uuid:
+                  description: UUID denotes a unique identity of a lvm volume group.
+                  minLength: 1
+                  type: string
+              required:
+              - allocationPolicy
+              - free
+              - lvCount
+              - maxLv
+              - maxPv
+              - metadataCount
+              - metadataFree
+              - metadataSize
+              - metadataUsedCount
+              - missingPvCount
+              - name
+              - permissions
+              - pvCount
+              - size
+              - snapCount
+              - uuid
+              type: object
+            type: array
+        required:
+        - iscsi_info
+        - volumeGroups
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: snapshots.rio.qiniu.io
+spec:
+  group: rio.qiniu.io
+  names:
+    kind: Snapshot
+    listKind: SnapshotList
+    plural: snapshots
+    singular: snapshot
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Snapshot is the Schema for the snapshots API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SnapshotSpec defines the desired state of Snapshot
+            properties:
+              ownerNodeID:
+                description: OwnerNodeID is the Node ID where the volume group is
+                  present which is where the snapshot has been provisioned. OwnerNodeID
+                  can not be edited after the snapshot has been provisioned.
+                minLength: 1
+                type: string
+              snapSize:
+                description: SnapSize specifies the space reserved for the snapshot
+                type: string
+              vgPattern:
+                description: VgPattern specifies the regex volume VgPattern is needs
+                  to be created.
+                type: string
+              volGroup:
+                description: VolGroup specifies the name of the volume group where
+                  the snapshot has been created.
+                type: string
+            required:
+            - ownerNodeID
+            - vgPattern
+            - volGroup
+            type: object
+          status:
+            description: SnapshotStatus defines the observed state of Snapshot
+            properties:
+              state:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: volumes.rio.qiniu.io
+spec:
+  group: rio.qiniu.io
+  names:
+    kind: Volume
+    listKind: VolumeList
+    plural: volumes
+    shortNames:
+    - vol
+    singular: volume
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: volume group where the volume is created
+      jsonPath: .spec.volGroup
+      name: VolGroup
+      type: string
+    - description: Node where the volume is created
+      jsonPath: .spec.ownerNodeID
+      name: Node
+      type: string
+    - description: Size of the volume
+      jsonPath: .spec.capacity
+      name: Size
+      type: string
+    - description: Status of the volume
+      jsonPath: .status.state
+      name: Status
+      type: string
+    - description: Age of the volume
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Volume is the Schema for the volumes API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: VolumeSpec defines the desired state of Volume
+            properties:
+              capacity:
+                description: Capacity of the volume
+                minLength: 1
+                type: string
+              data_source:
+                type: string
+              data_source_type:
+                type: string
+              iscsi_acl_is_set:
+                type: boolean
+              iscsi_block:
+                type: string
+              iscsi_lun:
+                format: int32
+                type: integer
+              iscsi_portal:
+                type: string
+              iscsi_target:
+                type: string
+              ownerNodeID:
+                description: OwnerNodeID is the Node ID where the volume group is
+                  present which is where the volume has been provisioned. OwnerNodeID
+                  can not be edited after the volume has been provisioned.
+                minLength: 1
+                type: string
+              shared:
+                description: Shared specifies whether the volume can be shared among
+                  multiple pods. If it is not set to "yes", then the LVM LocalPV Driver
+                  will not allow the volumes to be mounted by more than one pods.
+                enum:
+                - "yes"
+                - "no"
+                type: string
+              thinProvision:
+                description: ThinProvision specifies whether logical volumes can be
+                  thinly provisioned. If it is set to "yes", then the LVM LocalPV
+                  Driver will create thinProvision i.e. logical volumes that are larger
+                  than the available extents.
+                enum:
+                - "yes"
+                - "no"
+                type: string
+              vgPattern:
+                description: VgPattern specifies the regex to choose volume groups
+                  where volume needs to be created.
+                type: string
+              volGroup:
+                description: VolGroup specifies the name of the volume group where
+                  the volume has been created.
+                type: string
+            required:
+            - capacity
+            - data_source
+            - data_source_type
+            - iscsi_acl_is_set
+            - iscsi_block
+            - iscsi_lun
+            - iscsi_portal
+            - iscsi_target
+            - ownerNodeID
+            - vgPattern
+            - volGroup
+            type: object
+          status:
+            description: VolumeStatus defines the observed state of Volume
+            properties:
+              error:
+                description: Error denotes the error occurred during provisioning/expanding
+                  a volume. Error field should only be set when State becomes Failed.
+                properties:
+                  code:
+                    description: VolumeErrorCode represents the error code to represent
+                      specific class of errors.
+                    type: string
+                  message:
+                    type: string
+                type: object
+              state:
+                description: State specifies the current state of the volume provisioning
+                  request. The state "Pending" means that the volume creation request
+                  has not processed yet. The state "Ready" means that the volume has
+                  been created and it is ready for the use. "Failed" means that volume
+                  provisioning has been failed and will not be retried by node agent
+                  controller.
+                enum:
+                - Pending
+                - Created
+                - Ready
+                - Failed
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-provisioner
+  namespace: riocsi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: riocsi-node-sa
+  namespace: riocsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: riocsi-provisioner
+  namespace: riocsi
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - get
+  - watch
+  - list
+  - delete
+  - update
+  - create
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - watch
+  - list
+  - delete
+  - update
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: riocsi-driver-registrar-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  - nodes
+  - services
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - rio.qiniu.io
+  resources:
+  - volumes
+  - volumes/status
+  - snapshots
+  - snapshots/status
+  - rionodes
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: riocsi-provisioner
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims/status
+  verbs:
+  - update
+  - patch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  - csinodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - csistoragecapacities
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - list
+  - watch
+  - create
+  - update
+  - patch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - watch
+  - list
+  - delete
+  - update
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshots
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshots/status
+  verbs:
+  - get
+  - list
+  - patch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotcontents
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotcontents/status
+  verbs:
+  - update
+  - patch
+- apiGroups:
+  - rio.qiniu.io
+  resources:
+  - volumes
+  - volumes/status
+  - snapshots
+  - rionodes
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: csi-provisioner-binding
+  namespace: riocsi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: riocsi-provisioner
+subjects:
+- kind: ServiceAccount
+  name: csi-provisioner
+  namespace: riocsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: csi-provisioner-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: riocsi-provisioner
+subjects:
+- kind: ServiceAccount
+  name: csi-provisioner
+  namespace: riocsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: riocsi-driver-registrar-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: riocsi-driver-registrar-role
+subjects:
+- kind: ServiceAccount
+  name: riocsi-node-sa
+  namespace: riocsi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-provisioner
+  namespace: riocsi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      external-provisioner: csi-provisioner
+  template:
+    metadata:
+      labels:
+        external-provisioner: csi-provisioner
+    spec:
+      containers:
+      - args:
+        - --v=5
+        - --csi-address=$(CSI_ENDPOINT)
+        - --feature-gates=Topology=true
+        - --strict-topology
+        - --leader-election
+        - --extra-create-metadata=true
+        - --enable-capacity=true
+        - --default-fstype=ext4
+        env:
+        - name: CSI_ENDPOINT
+          value: /var/lib/csi/sockets/rio/csi.sock
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        image: k8s.gcr.io/sig-storage/csi-provisioner:v2.2.2
+        name: csi-provisioner
+        volumeMounts:
+        - mountPath: /var/lib/csi/sockets/rio
+          name: socket-dir
+      - args:
+        - --csi-address=$(CSI_ENDPOINT)
+        - --v=5
+        - --timeout=150s
+        env:
+        - name: CSI_ENDPOINT
+          value: /var/lib/csi/sockets/rio/csi.sock
+        image: k8s.gcr.io/sig-storage/csi-snapshotter:v5.0.1
+        imagePullPolicy: IfNotPresent
+        name: csi-snapshotter
+        volumeMounts:
+        - mountPath: /var/lib/csi/sockets/rio
+          name: socket-dir
+      - args:
+        - --nodeid=$(NODE_ID)
+        - --endpoint=$(CSI_ENDPOINT)
+        - --namespace=$(RIO_CSI_NAMESPACE)
+        - --driverType=control
+        env:
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: CSI_ENDPOINT
+          value: unix:///var/lib/csi/sockets/rio/csi.sock
+        - name: RIO_CSI_NAMESPACE
+          value: riocsi
+        image: ghcr.io/foreversmart/rio-csi:latest
+        name: rio-csi
+        securityContext:
+          capabilities:
+            add:
+            - SYS_ADMIN
+          privileged: true
+        volumeMounts:
+        - mountPath: /var/lib/csi/sockets/rio
+          name: socket-dir
+      serviceAccountName: csi-provisioner
+      volumes:
+      - emptyDir: {}
+        name: socket-dir
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: csi-driver-node
+  namespace: riocsi
+spec:
+  selector:
+    matchLabels:
+      app: csi-driver-node
+  template:
+    metadata:
+      labels:
+        app: csi-driver-node
+    spec:
+      containers:
+      - args:
+        - --v=5
+        - --csi-address=$(CSI_ENDPOINT)
+        - --kubelet-registration-path=/var/lib/kubelet/plugins/rio-csi/csi.sock
+        env:
+        - name: CSI_ENDPOINT
+          value: /csi/csi.sock
+        image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.4.0
+        name: csi-driver-registrar
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+        - mountPath: /registration
+          name: registration-dir
+      - args:
+        - --nodeid=$(NODE_ID)
+        - --name=rio-csi
+        - --namespace=$(RIO_CSI_NAMESPACE)
+        - --version=v1.0
+        - --endpoint=$(CSI_ENDPOINT)
+        - --driverType=node
+        - --iscsiUsername=rio-csi
+        - --iscsiPasswd=rio-123
+        env:
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: CSI_ENDPOINT
+          value: unix:///csi/csi.sock
+        - name: RIO_CSI_NAMESPACE
+          value: riocsi
+        image: ghcr.io/foreversmart/rio-csi:latest
+        imagePullPolicy: Always
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - bash
+              - -c
+              - rm -rf /registration/rio-csi /registration/rio-csi-reg.sock
+        name: rio-csi
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+          privileged: true
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+        - mountPath: /dev
+          name: device-dir
+        - mountPath: /registration
+          name: registration-dir
+        - mountPath: /var/lib/kubelet/pods
+          mountPropagation: Bidirectional
+          name: pods-mount-dir
+        - mountPath: /root/.targetcli
+          name: targetcli-dir
+        - mountPath: /lib/modules
+          name: lib-dir
+        - mountPath: /var/run/dbus
+          name: run-dir
+        - mountPath: /run/lvm
+          name: lvm-dir
+        - mountPath: /run/udev
+          name: udev-dir
+        - mountPath: /usr/bin/iscsiadm
+          name: iscsi-cmd
+        - mountPath: /etc/iscsi
+          name: initiator-dir
+        - mountPath: /etc/systemd/system/sockets.target.wants/iscsid.socket
+          name: initiator-socket
+      hostIPC: true
+      hostNetwork: true
+      serviceAccount: riocsi-node-sa
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/plugins/rio-csi
+          type: DirectoryOrCreate
+        name: plugin-dir
+      - hostPath:
+          path: /dev
+          type: Directory
+        name: device-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins_registry
+          type: DirectoryOrCreate
+        name: registration-dir
+      - hostPath:
+          path: /var/lib/kubelet/pods
+          type: Directory
+        name: pods-mount-dir
+      - hostPath:
+          path: /root/.targetcli
+          type: DirectoryOrCreate
+        name: targetcli-dir
+      - hostPath:
+          path: /lib/modules
+          type: Directory
+        name: lib-dir
+      - hostPath:
+          path: /var/run/dbus
+          type: Directory
+        name: run-dir
+      - hostPath:
+          path: /run/lvm
+          type: Directory
+        name: lvm-dir
+      - hostPath:
+          path: /run/udev
+          type: Directory
+        name: udev-dir
+      - hostPath:
+          path: /usr/bin/iscsiadm
+          type: File
+        name: iscsi-cmd
+      - hostPath:
+          path: /etc/iscsi
+          type: Directory
+        name: initiator-dir
+      - hostPath:
+          path: /etc/systemd/system/sockets.target.wants/iscsid.socket
+          type: File
+        name: initiator-socket
+---
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: rio-csi
+spec:
+  attachRequired: false
+  podInfoOnMount: true

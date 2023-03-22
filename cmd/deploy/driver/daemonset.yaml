@@ -35,7 +35,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: rio-csi
-          image: docker.qiniu.io:32500/rio-csi:latest
+          image: ghcr.io/foreversmart/rio-csi:latest
           imagePullPolicy: Always
           securityContext:
             privileged: true

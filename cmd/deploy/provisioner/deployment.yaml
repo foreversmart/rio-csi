@@ -64,7 +64,7 @@ spec:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
-          image: docker.qiniu.io:32500/rio-csi:latest
+          image: ghcr.io/foreversmart/rio-csi:latest
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
