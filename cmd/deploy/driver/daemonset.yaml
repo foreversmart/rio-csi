@@ -22,6 +22,7 @@ spec:
       containers:
         - name: csi-driver-registrar
           image: ghcr.io/foreversmart/csi-node-driver-registrar:v2.4.0
+          imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--csi-address=$(CSI_ENDPOINT)"

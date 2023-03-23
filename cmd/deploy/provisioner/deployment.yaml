@@ -23,6 +23,7 @@ spec:
       containers:
         - name: csi-provisioner
           image: ghcr.io/foreversmart/csi-provisioner:v2.2.2
+          imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--csi-address=$(CSI_ENDPOINT)"
@@ -65,6 +66,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
           image: ghcr.io/foreversmart/rio-csi:latest
+          imagePullPolicy: Always
           args:
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
