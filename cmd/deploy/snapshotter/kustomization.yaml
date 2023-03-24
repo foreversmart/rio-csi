@@ -1,0 +1,6 @@
+resources:
+  - crd/volumesnapshotclasses.yaml
+  - crd/volumesnapshotcontents.yaml
+  - crd/volumesnapshots.yaml
+  - controller/rbac-snapshot-controller.yaml
+  - controller/setup-snapshot-controller.yaml
