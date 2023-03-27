@@ -500,13 +500,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: snapshot-controller
-  namespace: default
+  namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: snapshot-controller-leaderelection
-  namespace: default
+  namespace: kube-system
 rules:
 - apiGroups:
   - coordination.k8s.io
@@ -599,7 +599,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: snapshot-controller-leaderelection
-  namespace: default
+  namespace: kube-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -607,7 +607,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: snapshot-controller
-  namespace: default
+  namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -620,13 +620,13 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: snapshot-controller
-  namespace: default
+  namespace: kube-system
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: snapshot-controller
-  namespace: default
+  namespace: kube-system
 spec:
   replicas: 1
   selector:
@@ -642,7 +642,7 @@ spec:
       - args:
         - --v=5
         - --leader-election=false
-        image: k8s.gcr.io/sig-storage/snapshot-controller:v3.0.3
+        image: ghcr.io/foreversmart/snapshot-controller:v3.0.3
         imagePullPolicy: IfNotPresent
         name: snapshot-controller
       serviceAccount: snapshot-controller
