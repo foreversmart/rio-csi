@@ -646,3 +646,11 @@ spec:
         imagePullPolicy: IfNotPresent
         name: snapshot-controller
       serviceAccount: snapshot-controller
+---
+apiVersion: snapshot.storage.k8s.io/v1
+deletionPolicy: Delete
+driver: rio-csi
+kind: VolumeSnapshotClass
+metadata:
+  name: riocsi-vsc
+parameters: null

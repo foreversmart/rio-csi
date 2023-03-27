@@ -4,3 +4,4 @@ resources:
   - crd/volumesnapshots.yaml
   - controller/rbac-snapshot-controller.yaml
   - controller/setup-snapshot-controller.yaml
+  - volume_snapshot_class.yaml

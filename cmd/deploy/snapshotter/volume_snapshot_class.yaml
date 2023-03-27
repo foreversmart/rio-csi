@@ -1,0 +1,7 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: riocsi-vsc
+driver: rio-csi
+deletionPolicy: Delete
+parameters:
