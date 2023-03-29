@@ -89,7 +89,7 @@ func (r *SnapshotReconciler) syncSnapshot(ctx context.Context, snap *riov1.Snaps
 	// snapshot should be deleted. Check if deletion timestamp is set
 	if snap.ObjectMeta.DeletionTimestamp != nil {
 		err = lvm.DestroySnapshot(snap)
-		if err != nil {
+		if err == nil {
 			_, err = crd.RemoveSnapFinalizer(snap)
 		}
 
