@@ -2,8 +2,10 @@ package client
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"os/signal"
@@ -21,12 +23,14 @@ type KubeClient struct {
 var (
 	DefaultClient   *KubeClient
 	DefaultInformer externalversions.SharedInformerFactory
+	Codecs          serializer.CodecFactory
 )
 
-func init() {
+func SetupClusterConfig() {
 	c, err := NewDefault("", "")
 	if err != nil {
 		panic(err)
+
 	}
 
 	DefaultClient = c
@@ -35,7 +39,6 @@ func init() {
 
 func initInformer() {
 	DefaultInformer = externalversions.NewSharedInformerFactory(DefaultClient.InternalClientSet, 0)
-
 	stopCh := make(chan struct{})
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, []os.Signal{os.Interrupt, syscall.SIGTERM}...)
@@ -82,4 +85,18 @@ func NewDefault(masterUrl, kubeConfigPath string) (c *KubeClient, err error) {
 		DynamicClient:     dc,
 	}
 	return
+}
+func GetCsiClientFromRESTConfig(config *rest.Config) (CsiClient, error) {
+	config.NegotiatedSerializer = serializer.WithoutConversionCodecFactory{CodecFactory: Codecs}
+
+	cclient, err := clientset.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &csiclient{
+		config:  config,
+		storage: cclient,
+	}, nil
+
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/driver"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/manager"
@@ -102,6 +103,8 @@ func init() {
 var stopCh chan struct{}
 
 func main() {
+	client.SetupClusterConfig()
+
 	go func() {
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1, syscall.SIGUSR2)
