@@ -5,7 +5,6 @@ Rio-csi use LVM as it's persist storage implementation and iScsi to operate remo
 
 ## Features
 
----
 - [x] Access Modes
     - [x] ReadWriteOnce
     - [ ] ReadWriteMany
@@ -18,8 +17,9 @@ Rio-csi use LVM as it's persist storage implementation and iScsi to operate remo
 - [x] Topology
 - [x] Snapshot
 - [ ] Clone
-  - [x]from snapshot
-  - [ ]from pvc
+    - [x] from snapshot
+    - [ ] from pvc
+- [ ] Set IOLimit
 - [ ] Volume Resize
 - [ ] Thin Provision
 - [x] Backup/Restore
@@ -62,7 +62,6 @@ pvcreate /dev/test
 # create volume group
 vgcreate riovg /dev/test
 ```
-#### Install Operator
 * install open-iscsi on every node and make sure none of the node's InitiatorName are the same
 ```bash
 # install iscsi 
@@ -71,6 +70,7 @@ apt -y install open-iscsi
 vi /etc/iscsi/initiatorname.iscsi
 InitiatorName=iqn.2018-05.world.srv:www.initiator01
 ```
+#### Install Operator
 * Install CSI Custom Resources and CSI Operator
 ```sh
 kubectl apply -f operator.yaml
@@ -78,6 +78,7 @@ kubectl apply -f operator.yaml
 the default driver namespace is riocsi, all the RBAC resource and Operator is in riocsi
 
 Verify that the rio-csi driver operator are installed and running using below command :
+
 ```
 $ kubectl get pods -n rio-csi
 NAME                               READY   STATUS    RESTARTS   AGE
@@ -85,7 +86,7 @@ csi-driver-node-ffgvv              2/2     Running   0          19s
 csi-driver-node-hztjq              2/2     Running   0          19s
 csi-driver-node-wsrtf              2/2     Running   0          19s
 csi-provisioner-65b68bbcc8-b46rj   3/3     Running   0          19s
-``
+```
 you cant find csi-driver-node daemonset running on every node in the cluster and one csi-provisioner
 
 #### Snapshot feature
@@ -135,6 +136,7 @@ spec:
       storage: 2G
 ```
 * Check Volume is created
+
 ```shell
 kubectl get volume -n riocsi
 ```
