@@ -22,6 +22,7 @@ import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/driver/config"
 	iolimit2 "qiniu.io/rio-csi/lib/mount/device/iolimit"
+	"qiniu.io/rio-csi/lib/mount/device/iolimit/cgroup_v2"
 	"qiniu.io/rio-csi/logger"
 	"strconv"
 	"strings"
@@ -59,7 +60,7 @@ func setIOLimits(vol *apis.Volume, podLVInfo *PodInfo, devicePath string) error 
 	logger.StdLog.Infof("Setting iolimits for podUId %s, device %s: riops=%v, wiops=%v, rbps=%v, wbps=%v",
 		podLVInfo.UID, devicePath, riops, wiops, rbps, wbps,
 	)
-	err = iolimit2.SetIOLimits(&iolimit2.Request{
+	err = cgroup_v2.SetIOLimits(&iolimit2.Request{
 		DeviceName:       devicePath,
 		PodUid:           podLVInfo.UID,
 		ContainerRuntime: getContainerRuntime(),

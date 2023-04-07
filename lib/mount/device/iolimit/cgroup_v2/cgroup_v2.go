@@ -14,39 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package iolimit
+package cgroup_v2
 
 import (
 	"io/ioutil"
 	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/lib/lvm/common/helpers"
+	"qiniu.io/rio-csi/lib/mount/device/iolimit"
 	"strconv"
 	"strings"
 	"syscall"
 )
 
-const (
-	baseCgroupPath = "/sys/fs/cgroup"
-)
-
-// SetIOLimits sets iops, bps limits for a pod with uid podUid for accessing a device named deviceName
-// provided that the underlying cgroup used for pod namespacing is cgroup2 (cgroup v2)
-func SetIOLimits(request *Request) error {
-	if !helpers.DirExists(baseCgroupPath) {
-		return errors.New(baseCgroupPath + " does not exist")
-	}
-	if err := checkCgroupV2(); err != nil {
-		return err
-	}
-	validRequest, err := validate(request)
-	if err != nil {
-		return err
-	}
-	err = setIOLimits(validRequest)
-	return err
-}
-
-func validate(request *Request) (*ValidRequest, error) {
+func validate(request *iolimit.Request) (*iolimit.ValidRequest, error) {
 	if !helpers.IsValidUUID(request.PodUid) {
 		return nil, errors.New("Expected PodUid in UUID format, Got " + request.PodUid)
 	}
@@ -62,7 +42,7 @@ func validate(request *Request) (*ValidRequest, error) {
 	if err != nil {
 		return nil, errors.New("Device Major:Minor numbers could not be obtained")
 	}
-	return &ValidRequest{
+	return &iolimit.ValidRequest{
 		FilePath:     ioMaxFile,
 		DeviceNumber: deviceNumber,
 		IOMax:        request.IOLimit,
@@ -81,13 +61,6 @@ func getPodCGroupPath(podUid string, cruntime string) (string, error) {
 		return "", errors.New(cruntime + " runtime support is not present")
 	}
 
-}
-
-func checkCgroupV2() error {
-	if !helpers.FileExists(baseCgroupPath + "/cgroup.controllers") {
-		return errors.New("CGroupV2 not enabled")
-	}
-	return nil
 }
 
 func getContainerdPodCGSuffix(podUid string) string {
@@ -112,18 +85,18 @@ func getContainerdCGPath(podUid string) (string, error) {
 	return "", errors.New("CGroup Path not found for pod with Uid: " + podUid)
 }
 
-func getDeviceNumber(deviceName string) (*DeviceNumber, error) {
+func getDeviceNumber(deviceName string) (*iolimit.DeviceNumber, error) {
 	stat := syscall.Stat_t{}
 	if err := syscall.Stat(deviceName, &stat); err != nil {
 		return nil, err
 	}
-	return &DeviceNumber{
+	return &iolimit.DeviceNumber{
 		Major: uint64(stat.Rdev / 256),
 		Minor: uint64(stat.Rdev % 256),
 	}, nil
 }
 
-func getIOLimitsStr(deviceNumber *DeviceNumber, ioMax *IOMax) string {
+func getIOLimitsStr(deviceNumber *iolimit.DeviceNumber, ioMax *iolimit.IOMax) string {
 	line := strconv.FormatUint(deviceNumber.Major, 10) + ":" + strconv.FormatUint(deviceNumber.Minor, 10)
 	if ioMax.Riops != 0 {
 		line += " riops=" + strconv.FormatUint(ioMax.Riops, 10)
@@ -140,7 +113,7 @@ func getIOLimitsStr(deviceNumber *DeviceNumber, ioMax *IOMax) string {
 	return line
 }
 
-func setIOLimits(request *ValidRequest) error {
+func setIOLimits(request *iolimit.ValidRequest) error {
 	line := getIOLimitsStr(request.DeviceNumber, request.IOMax)
 	err := ioutil.WriteFile(request.FilePath, []byte(line), 0600)
 	return err

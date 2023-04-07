@@ -92,19 +92,18 @@ you cant find csi-driver-node daemonset running on every node in the cluster and
 #### Snapshot feature
 
 * Open K8s Snapshot feature
+
 As snapshot is a beata feature of K8s we should open K8s snapshot feature config to use this feature
 ``` bash
 kubectl --feature-gates VolumeSnapshotDataSource=true
 ```
 * Install Snapshot Controller
+
 K8s Cluster have no Snapshot Controller as default. Apply snapshotoperator.yaml to install snapshot controller
 and snapshot CRDs
 ```bash
 kubectl apply -f snapshotoperator.yaml
 ```
-
-
-* Build and push your image to the location specified by `IMG`:
 
 ### How To Use
 * Create a Storage Class to use this driver
