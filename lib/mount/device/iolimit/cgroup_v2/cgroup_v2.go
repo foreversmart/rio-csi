@@ -18,85 +18,65 @@ package cgroup_v2
 
 import (
 	"io/ioutil"
+	"os"
 	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/lib/lvm/common/helpers"
-	"qiniu.io/rio-csi/lib/mount/device/iolimit"
+	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
 	"strconv"
-	"strings"
-	"syscall"
 )
 
-func validate(request *iolimit.Request) (*iolimit.ValidRequest, error) {
-	if !helpers.IsValidUUID(request.PodUid) {
-		return nil, errors.New("Expected PodUid in UUID format, Got " + request.PodUid)
+type Limit struct {
+	DeviceName       string
+	PodUid           string
+	ContainerRuntime string
+	IOLimit          *params.IOMax
+}
+
+func NewLimit(device, podUid, containerRuntime string, ioLimit *params.IOMax) *Limit {
+	return &Limit{
+		DeviceName:       device,
+		PodUid:           podUid,
+		ContainerRuntime: containerRuntime,
+		IOLimit:          ioLimit,
 	}
-	podCGPath, err := getPodCGroupPath(request.PodUid, request.ContainerRuntime)
+}
+
+func (l *Limit) SetIOLimits() error {
+	cgroupPath, err := l.getIoMaxCGroupPath()
 	if err != nil {
-		return nil, err
+		return err
 	}
+
+	deviceNumber, err := getDeviceNumber(l.DeviceName)
+	if err != nil {
+		return errors.New("Device Major:Minor numbers could not be obtained")
+	}
+
+	line := getIOLimitsStr(deviceNumber, l.IOLimit)
+
+	err = os.WriteFile(cgroupPath, []byte(line), 0600)
+	return err
+}
+
+func (l *Limit) getIoMaxCGroupPath() (string, error) {
+	if !helpers.IsValidUUID(l.PodUid) {
+		return "", errors.New("Expected PodUid in UUID format, Got " + l.PodUid)
+	}
+
+	podCGPath, err := getPodCGroupPath(l.PodUid, l.ContainerRuntime)
+	if err != nil {
+		return "", err
+	}
+
 	ioMaxFile := podCGPath + "/io.max"
 	if !helpers.FileExists(ioMaxFile) {
-		return nil, errors.New("io.max file is not present in pod CGroup")
+		return "", errors.New("io.max file is not present in pod CGroup")
 	}
-	deviceNumber, err := getDeviceNumber(request.DeviceName)
-	if err != nil {
-		return nil, errors.New("Device Major:Minor numbers could not be obtained")
-	}
-	return &iolimit.ValidRequest{
-		FilePath:     ioMaxFile,
-		DeviceNumber: deviceNumber,
-		IOMax:        request.IOLimit,
-	}, nil
+
+	return ioMaxFile, nil
 }
 
-func getPodCGroupPath(podUid string, cruntime string) (string, error) {
-	switch cruntime {
-	case "containerd":
-		path, err := getContainerdCGPath(podUid)
-		if err != nil {
-			return "", err
-		}
-		return path, nil
-	default:
-		return "", errors.New(cruntime + " runtime support is not present")
-	}
-
-}
-
-func getContainerdPodCGSuffix(podUid string) string {
-	return "pod" + strings.ReplaceAll(podUid, "-", "_")
-}
-
-func getContainerdCGPath(podUid string) (string, error) {
-	kubepodsCGPath := baseCgroupPath + "/kubepods.slice"
-	podSuffix := getContainerdPodCGSuffix(podUid)
-	podCGPath := kubepodsCGPath + "/kubepods-" + podSuffix + ".slice"
-	if helpers.DirExists(podCGPath) {
-		return podCGPath, nil
-	}
-	podCGPath = kubepodsCGPath + "/kubepods-besteffort.slice/kubepods-besteffort-" + podSuffix + ".slice"
-	if helpers.DirExists(podCGPath) {
-		return podCGPath, nil
-	}
-	podCGPath = kubepodsCGPath + "/kubepods-burstable.slice/kubepods-burstable-" + podSuffix + ".slice"
-	if helpers.DirExists(podCGPath) {
-		return podCGPath, nil
-	}
-	return "", errors.New("CGroup Path not found for pod with Uid: " + podUid)
-}
-
-func getDeviceNumber(deviceName string) (*iolimit.DeviceNumber, error) {
-	stat := syscall.Stat_t{}
-	if err := syscall.Stat(deviceName, &stat); err != nil {
-		return nil, err
-	}
-	return &iolimit.DeviceNumber{
-		Major: uint64(stat.Rdev / 256),
-		Minor: uint64(stat.Rdev % 256),
-	}, nil
-}
-
-func getIOLimitsStr(deviceNumber *iolimit.DeviceNumber, ioMax *iolimit.IOMax) string {
+func getIOLimitsStr(deviceNumber *params.DeviceNumber, ioMax *params.IOMax) string {
 	line := strconv.FormatUint(deviceNumber.Major, 10) + ":" + strconv.FormatUint(deviceNumber.Minor, 10)
 	if ioMax.Riops != 0 {
 		line += " riops=" + strconv.FormatUint(ioMax.Riops, 10)
@@ -113,7 +93,7 @@ func getIOLimitsStr(deviceNumber *iolimit.DeviceNumber, ioMax *iolimit.IOMax) st
 	return line
 }
 
-func setIOLimits(request *iolimit.ValidRequest) error {
+func setIOLimits(request *params.ValidRequest) error {
 	line := getIOLimitsStr(request.DeviceNumber, request.IOMax)
 	err := ioutil.WriteFile(request.FilePath, []byte(line), 0600)
 	return err
