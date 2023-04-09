@@ -17,12 +17,12 @@ limitations under the License.
 package cgroup_v2
 
 import (
-	"io/ioutil"
 	"os"
 	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/lib/lvm/common/helpers"
 	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
 	"strconv"
+	"syscall"
 )
 
 type Limit struct {
@@ -47,15 +47,26 @@ func (l *Limit) SetIOLimits() error {
 		return err
 	}
 
-	deviceNumber, err := getDeviceNumber(l.DeviceName)
+	deviceNumber, err := l.GetDeviceNumber()
 	if err != nil {
 		return errors.New("Device Major:Minor numbers could not be obtained")
 	}
 
-	line := getIOLimitsStr(deviceNumber, l.IOLimit)
+	line := l.GetIOLimitsStr(deviceNumber)
 
 	err = os.WriteFile(cgroupPath, []byte(line), 0600)
 	return err
+}
+
+func (l *Limit) GetDeviceNumber() (*params.DeviceNumber, error) {
+	stat := syscall.Stat_t{}
+	if err := syscall.Stat(l.DeviceName, &stat); err != nil {
+		return nil, err
+	}
+	return &params.DeviceNumber{
+		Major: uint64(stat.Rdev / 256),
+		Minor: uint64(stat.Rdev % 256),
+	}, nil
 }
 
 func (l *Limit) getIoMaxCGroupPath() (string, error) {
@@ -76,25 +87,19 @@ func (l *Limit) getIoMaxCGroupPath() (string, error) {
 	return ioMaxFile, nil
 }
 
-func getIOLimitsStr(deviceNumber *params.DeviceNumber, ioMax *params.IOMax) string {
+func (l *Limit) GetIOLimitsStr(deviceNumber *params.DeviceNumber) string {
 	line := strconv.FormatUint(deviceNumber.Major, 10) + ":" + strconv.FormatUint(deviceNumber.Minor, 10)
-	if ioMax.Riops != 0 {
-		line += " riops=" + strconv.FormatUint(ioMax.Riops, 10)
+	if l.IOLimit.Riops != 0 {
+		line += " riops=" + strconv.FormatUint(l.IOLimit.Riops, 10)
 	}
-	if ioMax.Wiops != 0 {
-		line += " wiops=" + strconv.FormatUint(ioMax.Wiops, 10)
+	if l.IOLimit.Wiops != 0 {
+		line += " wiops=" + strconv.FormatUint(l.IOLimit.Wiops, 10)
 	}
-	if ioMax.Rbps != 0 {
-		line += " rbps=" + strconv.FormatUint(ioMax.Rbps, 10)
+	if l.IOLimit.Rbps != 0 {
+		line += " rbps=" + strconv.FormatUint(l.IOLimit.Rbps, 10)
 	}
-	if ioMax.Wbps != 0 {
-		line += " wbps=" + strconv.FormatUint(ioMax.Wbps, 10)
+	if l.IOLimit.Wbps != 0 {
+		line += " wbps=" + strconv.FormatUint(l.IOLimit.Wbps, 10)
 	}
 	return line
-}
-
-func setIOLimits(request *params.ValidRequest) error {
-	line := getIOLimitsStr(request.DeviceNumber, request.IOMax)
-	err := ioutil.WriteFile(request.FilePath, []byte(line), 0600)
-	return err
 }
