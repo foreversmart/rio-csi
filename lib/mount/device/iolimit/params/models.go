@@ -16,18 +16,9 @@ limitations under the License.
 
 package params
 
-type Request struct {
-	DeviceName       string
-	PodUid           string
-	ContainerRuntime string
-	IOLimit          *IOMax
-}
-
-type ValidRequest struct {
-	FilePath     string
-	DeviceNumber *DeviceNumber
-	IOMax        *IOMax
-}
+const (
+	BaseCgroupPath = "/sys/fs/cgroup"
+)
 
 type IOMax struct {
 	Riops uint64

@@ -3,31 +3,36 @@ package iolimit
 import (
 	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/lib/lvm/common/helpers"
+	"qiniu.io/rio-csi/lib/mount/device/iolimit/cgroup_v2"
 	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
 )
 
-const (
-	baseCgroupPath = "/sys/fs/cgroup"
-)
-
 type IOLimiter interface {
-	SetIOLimits(req *params.Request) error
+	SetIOLimits() error
+}
+
+type Request struct {
+	DeviceName       string
+	PodUid           string
+	ContainerRuntime string
+	IOLimit          *params.IOMax
 }
 
 // SetIOLimits sets iops, bps limits for a pod with uid podUid for accessing a device named deviceName
 // provided that the underlying cgroup used for pod namespacing is cgroup2 (cgroup v2)
-func SetIOLimits(request *params.Request) error {
-	if !helpers.DirExists(baseCgroupPath) {
-		return errors.New(baseCgroupPath + " does not exist")
+func SetIOLimits(request *Request) error {
+	if !helpers.DirExists(params.BaseCgroupPath) {
+		return errors.New(params.BaseCgroupPath + " does not exist")
 	}
-	if err := checkCgroupV2(); err != nil {
-		return err
+
+	err := checkCgroupV2()
+	if err == nil {
+		limit := cgroup_v2.NewLimit(request.DeviceName, request.PodUid, request.ContainerRuntime, request.IOLimit)
+		return limit.SetIOLimits()
 	}
-	validRequest, err := validate(request)
-	if err != nil {
-		return err
-	}
-	err = setIOLimits(validRequest)
+
+	err = checkCgroupV1()
+
 	return err
 }
 
@@ -36,7 +41,7 @@ func checkCgroupV1() error {
 }
 
 func checkCgroupV2() error {
-	if !helpers.FileExists(baseCgroupPath + "/cgroup.controllers") {
+	if !helpers.FileExists(params.BaseCgroupPath + "/cgroup.controllers") {
 		return errors.New("CGroupV2 not enabled")
 	}
 	return nil
