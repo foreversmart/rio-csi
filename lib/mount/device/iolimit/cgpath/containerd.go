@@ -3,7 +3,6 @@ package cgpath
 import (
 	"errors"
 	"qiniu.io/rio-csi/lib/lvm/common/helpers"
-	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
 	"strings"
 )
 
@@ -13,7 +12,7 @@ type ContainerdPath struct {
 
 // PodCGroupPath return pod cgroup abs path and relative path
 func (p *ContainerdPath) PodCGroupPath() (string, string, error) {
-	rootPath := params.BaseCgroupPath
+	rootPath := MountPoint
 	kubepodsPath := "/kubepods.slice"
 	podSuffix := p.PodSuffix()
 	relativePath := kubepodsPath + "/kubepods-" + podSuffix + ".slice"
