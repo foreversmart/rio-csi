@@ -5,10 +5,11 @@ import (
 )
 
 type CGPather interface {
-	CGroupPath() (string, error)
+	// PodCGroupPath will return pod cgroup abs path and relative path
+	PodCGroupPath() (string, string, error)
 }
 
-func PodCGroupPath(podUid string, cruntime string) (string, error) {
+func PodCGroupPath(podUid string, cruntime string) (string, string, error) {
 	var pather CGPather
 	switch cruntime {
 	case "containerd":
@@ -16,12 +17,12 @@ func PodCGroupPath(podUid string, cruntime string) (string, error) {
 			PodUid: podUid,
 		}
 	default:
-		return "", errors.New(cruntime + " runtime support is not present")
+		return "", "", errors.New(cruntime + " runtime support is not present")
 	}
 
-	path, err := pather.CGroupPath()
+	absPath, relativePath, err := pather.PodCGroupPath()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return path, nil
+	return absPath, relativePath, nil
 }

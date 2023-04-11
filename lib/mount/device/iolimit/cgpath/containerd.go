@@ -11,22 +11,27 @@ type ContainerdPath struct {
 	PodUid string
 }
 
-func (p *ContainerdPath) CGroupPath() (string, error) {
-	kubepodsCGPath := params.BaseCgroupPath + "/kubepods.slice"
+// PodCGroupPath return pod cgroup abs path and relative path
+func (p *ContainerdPath) PodCGroupPath() (string, string, error) {
+	rootPath := params.BaseCgroupPath
+	kubepodsPath := "/kubepods.slice"
 	podSuffix := p.PodSuffix()
-	podCGPath := kubepodsCGPath + "/kubepods-" + podSuffix + ".slice"
-	if helpers.DirExists(podCGPath) {
-		return podCGPath, nil
+	relativePath := kubepodsPath + "/kubepods-" + podSuffix + ".slice"
+	absPath := rootPath + relativePath
+	if helpers.DirExists(absPath) {
+		return absPath, relativePath, nil
 	}
-	podCGPath = kubepodsCGPath + "/kubepods-besteffort.slice/kubepods-besteffort-" + podSuffix + ".slice"
-	if helpers.DirExists(podCGPath) {
-		return podCGPath, nil
+	relativePath = kubepodsPath + "/kubepods-besteffort.slice/kubepods-besteffort-" + podSuffix + ".slice"
+	absPath = rootPath + relativePath
+	if helpers.DirExists(rootPath + relativePath) {
+		return absPath, relativePath, nil
 	}
-	podCGPath = kubepodsCGPath + "/kubepods-burstable.slice/kubepods-burstable-" + podSuffix + ".slice"
-	if helpers.DirExists(podCGPath) {
-		return podCGPath, nil
+	relativePath = kubepodsPath + "/kubepods-burstable.slice/kubepods-burstable-" + podSuffix + ".slice"
+	absPath = rootPath + relativePath
+	if helpers.DirExists(rootPath + relativePath) {
+		return absPath, relativePath, nil
 	}
-	return "", errors.New("CGroup Path not found for pod with Uid: " + p.PodUid)
+	return "", "", errors.New("CGroup Path not found for pod with Uid: " + p.PodUid)
 }
 
 func (p *ContainerdPath) PodSuffix() string {
