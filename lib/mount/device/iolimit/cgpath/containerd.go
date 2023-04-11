@@ -1,4 +1,4 @@
-package cgroup_v2
+package cgpath
 
 import (
 	"errors"

@@ -20,6 +20,7 @@ import (
 	"os"
 	"qiniu.io/rio-csi/lib/lvm/common/errors"
 	"qiniu.io/rio-csi/lib/lvm/common/helpers"
+	"qiniu.io/rio-csi/lib/mount/device/iolimit/cgpath"
 	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
 	"strconv"
 	"syscall"
@@ -74,7 +75,7 @@ func (l *Limit) getIoMaxCGroupPath() (string, error) {
 		return "", errors.New("Expected PodUid in UUID format, Got " + l.PodUid)
 	}
 
-	podCGPath, err := getPodCGroupPath(l.PodUid, l.ContainerRuntime)
+	podCGPath, err := cgpath.PodCGroupPath(l.PodUid, l.ContainerRuntime)
 	if err != nil {
 		return "", err
 	}

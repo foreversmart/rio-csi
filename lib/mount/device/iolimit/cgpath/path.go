@@ -1,4 +1,4 @@
-package cgroup_v2
+package cgpath
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ type CGPather interface {
 	CGroupPath() (string, error)
 }
 
-func getPodCGroupPath(podUid string, cruntime string) (string, error) {
+func PodCGroupPath(podUid string, cruntime string) (string, error) {
 	var pather CGPather
 	switch cruntime {
 	case "containerd":
