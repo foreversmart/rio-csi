@@ -7,7 +7,6 @@ import (
 	"qiniu.io/rio-csi/lib/mount/device/iolimit/cgpath"
 	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
 	"strconv"
-	"syscall"
 )
 
 type Limit struct {
@@ -32,7 +31,7 @@ func (l *Limit) SetIOLimits() error {
 		return err
 	}
 
-	deviceNumber, err := l.GetDeviceNumber()
+	deviceNumber, err := params.GetDeviceNumber(l.DeviceName)
 	if err != nil {
 		return errors.New("Device Major:Minor numbers could not be obtained")
 	}
@@ -41,17 +40,6 @@ func (l *Limit) SetIOLimits() error {
 
 	err = os.WriteFile(cgroupPath, []byte(line), 0600)
 	return err
-}
-
-func (l *Limit) GetDeviceNumber() (*params.DeviceNumber, error) {
-	stat := syscall.Stat_t{}
-	if err := syscall.Stat(l.DeviceName, &stat); err != nil {
-		return nil, err
-	}
-	return &params.DeviceNumber{
-		Major: uint64(stat.Rdev / 256),
-		Minor: uint64(stat.Rdev % 256),
-	}, nil
 }
 
 func (l *Limit) getIoMaxCGroupPath() (string, error) {

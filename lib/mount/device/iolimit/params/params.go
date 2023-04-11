@@ -16,9 +16,7 @@ limitations under the License.
 
 package params
 
-const (
-	BaseCgroupPath = "/sys/fs/cgroup"
-)
+import "syscall"
 
 type IOMax struct {
 	Riops uint64
@@ -30,4 +28,15 @@ type IOMax struct {
 type DeviceNumber struct {
 	Major uint64
 	Minor uint64
+}
+
+func GetDeviceNumber(deviceName string) (*DeviceNumber, error) {
+	stat := syscall.Stat_t{}
+	if err := syscall.Stat(deviceName, &stat); err != nil {
+		return nil, err
+	}
+	return &DeviceNumber{
+		Major: uint64(stat.Rdev / 256),
+		Minor: uint64(stat.Rdev % 256),
+	}, nil
 }
