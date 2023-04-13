@@ -13,10 +13,10 @@ type Limit struct {
 	DeviceName       string
 	PodUid           string
 	ContainerRuntime string
-	IOLimit          *params.IOMax
+	IOLimit          *params.IOThrottle
 }
 
-func NewLimit(device, podUid, containerRuntime string, ioLimit *params.IOMax) *Limit {
+func NewLimit(device, podUid, containerRuntime string, ioLimit *params.IOThrottle) *Limit {
 	return &Limit{
 		DeviceName:       device,
 		PodUid:           podUid,
@@ -62,17 +62,17 @@ func (l *Limit) getIoMaxCGroupPath() (string, error) {
 
 func (l *Limit) GetIOLimitsStr(deviceNumber *params.DeviceNumber) string {
 	line := strconv.FormatUint(deviceNumber.Major, 10) + ":" + strconv.FormatUint(deviceNumber.Minor, 10)
-	if l.IOLimit.Riops != 0 {
-		line += " riops=" + strconv.FormatUint(l.IOLimit.Riops, 10)
+	if l.IOLimit.ReadIOPS != 0 {
+		line += " riops=" + strconv.FormatUint(l.IOLimit.ReadIOPS, 10)
 	}
-	if l.IOLimit.Wiops != 0 {
-		line += " wiops=" + strconv.FormatUint(l.IOLimit.Wiops, 10)
+	if l.IOLimit.WriteIOPS != 0 {
+		line += " wiops=" + strconv.FormatUint(l.IOLimit.WriteIOPS, 10)
 	}
-	if l.IOLimit.Rbps != 0 {
-		line += " rbps=" + strconv.FormatUint(l.IOLimit.Rbps, 10)
+	if l.IOLimit.ReadBps != 0 {
+		line += " rbps=" + strconv.FormatUint(l.IOLimit.ReadBps, 10)
 	}
-	if l.IOLimit.Wbps != 0 {
-		line += " wbps=" + strconv.FormatUint(l.IOLimit.Wbps, 10)
+	if l.IOLimit.WriteBps != 0 {
+		line += " wbps=" + strconv.FormatUint(l.IOLimit.WriteBps, 10)
 	}
 	return line
 }

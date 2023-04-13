@@ -12,10 +12,10 @@ type Limit struct {
 	DeviceName       string
 	PodUid           string
 	ContainerRuntime string
-	IOLimit          *params.IOMax
+	IOLimit          *params.IOThrottle
 }
 
-func NewLimit(device, podUid, containerRuntime string, ioLimit *params.IOMax) *Limit {
+func NewLimit(device, podUid, containerRuntime string, ioLimit *params.IOThrottle) *Limit {
 	return &Limit{
 		DeviceName:       device,
 		PodUid:           podUid,
@@ -45,10 +45,10 @@ func (l *Limit) SetIOLimits() error {
 
 	return control.Update(&specs.LinuxResources{
 		BlockIO: &specs.LinuxBlockIO{
-			ThrottleReadBpsDevice:   []specs.LinuxThrottleDevice{getThrottleLimit(devNumber, l.IOLimit.Rbps)},
-			ThrottleWriteBpsDevice:  []specs.LinuxThrottleDevice{getThrottleLimit(devNumber, l.IOLimit.Wbps)},
-			ThrottleReadIOPSDevice:  []specs.LinuxThrottleDevice{getThrottleLimit(devNumber, l.IOLimit.Riops)},
-			ThrottleWriteIOPSDevice: []specs.LinuxThrottleDevice{getThrottleLimit(devNumber, l.IOLimit.Wiops)},
+			ThrottleReadBpsDevice:   []specs.LinuxThrottleDevice{getThrottleLimit(devNumber, l.IOLimit.ReadBps)},
+			ThrottleWriteBpsDevice:  []specs.LinuxThrottleDevice{getThrottleLimit(devNumber, l.IOLimit.WriteBps)},
+			ThrottleReadIOPSDevice:  []specs.LinuxThrottleDevice{getThrottleLimit(devNumber, l.IOLimit.ReadIOPS)},
+			ThrottleWriteIOPSDevice: []specs.LinuxThrottleDevice{getThrottleLimit(devNumber, l.IOLimit.WriteIOPS)},
 		},
 	})
 

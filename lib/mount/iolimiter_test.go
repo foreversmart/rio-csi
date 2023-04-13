@@ -43,7 +43,7 @@ func TestExtractingIoLimits(t *testing.T) {
 		vgNames  *[]string
 		expected map[string]expectedIoLimitRate
 	}{
-		"Riops and Wiops": {
+		"ReadIOPS and WriteIOPS": {
 			config: &config.Config{
 				SetIOLimits:     true,
 				RIopsLimitPerGB: &[]string{"lvmvg1:50", "lvmvg2:100"},

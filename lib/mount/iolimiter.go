@@ -64,11 +64,11 @@ func setIOLimits(vol *apis.Volume, podLVInfo *PodInfo, devicePath string) error 
 		DeviceName:       devicePath,
 		PodUid:           podLVInfo.UID,
 		ContainerRuntime: getContainerRuntime(),
-		IOLimit: &iolimit2.IOMax{
-			Riops: riops,
-			Wiops: wiops,
-			Rbps:  rbps,
-			Wbps:  wbps,
+		IOLimit: &iolimit2.IOThrottle{
+			ReadIOPS:  riops,
+			WriteIOPS: wiops,
+			ReadBps:   rbps,
+			WriteBps:  wbps,
 		},
 	})
 	if err != nil {
