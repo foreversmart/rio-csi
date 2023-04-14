@@ -21,8 +21,8 @@ import (
 	"math"
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/driver/config"
-	"qiniu.io/rio-csi/lib/mount/device/iolimit/cgroup_v2"
-	iolimit2 "qiniu.io/rio-csi/lib/mount/device/iolimit/params"
+	"qiniu.io/rio-csi/lib/mount/device/iolimit"
+	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
 	"qiniu.io/rio-csi/logger"
 	"strconv"
 	"strings"
@@ -60,11 +60,11 @@ func setIOLimits(vol *apis.Volume, podLVInfo *PodInfo, devicePath string) error 
 	logger.StdLog.Infof("Setting iolimits for podUId %s, device %s: riops=%v, wiops=%v, rbps=%v, wbps=%v",
 		podLVInfo.UID, devicePath, riops, wiops, rbps, wbps,
 	)
-	err = cgroup_v2.SetIOLimits(&iolimit2.Request{
+	err = iolimit.SetIOLimits(&iolimit.Request{
 		DeviceName:       devicePath,
 		PodUid:           podLVInfo.UID,
 		ContainerRuntime: getContainerRuntime(),
-		IOLimit: &iolimit2.IOThrottle{
+		IOThrottle: &params.IOThrottle{
 			ReadIOPS:  riops,
 			WriteIOPS: wiops,
 			ReadBps:   rbps,
@@ -72,6 +72,7 @@ func setIOLimits(vol *apis.Volume, podLVInfo *PodInfo, devicePath string) error 
 		},
 	})
 	if err != nil {
+		logger.StdLog.Errorf("setting iolimits pod %s  device %s with error %v ", podLVInfo.UID, devicePath, err)
 		return err
 	}
 	return nil
