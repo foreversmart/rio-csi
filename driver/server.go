@@ -12,15 +12,15 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 )
 
-// Defines Non blocking GRPC server interfaces
+// NonBlockingGRPCServer Defines Non blocking GRPC server interfaces
 type NonBlockingGRPCServer interface {
 	// Start services at the endpoint
 	Start(endpoint string, ids csi.IdentityServer, cs csi.ControllerServer, ns csi.NodeServer)
-	// Waits for the service to stop
+	// Wait for the service to stop
 	Wait()
-	// Stops the service gracefully
+	// Stop the service gracefully
 	Stop()
-	// Stops the service forcefully
+	// ForceStop the service forcefully
 	ForceStop()
 }
 

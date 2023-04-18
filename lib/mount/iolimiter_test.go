@@ -45,11 +45,11 @@ func TestExtractingIoLimits(t *testing.T) {
 	}{
 		"ReadIOPS and WriteIOPS": {
 			config: &config.Config{
-				SetIOLimits:     true,
-				RIopsLimitPerGB: &[]string{"lvmvg1:50", "lvmvg2:100"},
-				WIopsLimitPerGB: &[]string{"lvmvg1:70", "lvmvg2:120"},
-				RBpsLimitPerGB:  nil,
-				WBpsLimitPerGB:  nil,
+				SetIOLimits:    true,
+				ReadIopsLimit:  &[]string{"lvmvg1:50", "lvmvg2:100"},
+				WriteIopsLimit: &[]string{"lvmvg1:70", "lvmvg2:120"},
+				ReadBpsLimit:   nil,
+				WriteBpsLimit:  nil,
 			}, vgNames: &[]string{"lvmvg1-id1", "lvmvg2", "lvmvg3", "prfx-lvmvg2-sffx"},
 			expected: map[string]expectedIoLimitRate{
 				"lvmvg1-id1":       {riops: 50, wiops: 70, rbps: 0, wbps: 0},

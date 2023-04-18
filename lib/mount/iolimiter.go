@@ -103,10 +103,10 @@ func extractRateValues(rateVals *[]string) (map[string]uint64, error) {
 
 func setValues(config *config.Config) {
 	var err error
-	riopsVals := config.RIopsLimitPerGB
-	wiopsVals := config.WIopsLimitPerGB
-	rbpsVals := config.RBpsLimitPerGB
-	wbpsVals := config.WBpsLimitPerGB
+	riopsVals := config.ReadIopsLimit
+	wiopsVals := config.WriteIopsLimit
+	rbpsVals := config.ReadBpsLimit
+	wbpsVals := config.WriteBpsLimit
 
 	riopsPerGB, err = extractRateValues(riopsVals)
 	if err != nil {
