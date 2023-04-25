@@ -756,7 +756,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: ghcr.io/foreversmart/csi-provisioner:v2.2.2
+        image: ghcr.io/foreversmart/csi-provisioner:v3.4.0
         imagePullPolicy: IfNotPresent
         name: csi-provisioner
         volumeMounts:

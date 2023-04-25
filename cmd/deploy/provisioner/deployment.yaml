@@ -22,7 +22,7 @@ spec:
       serviceAccountName: csi-provisioner
       containers:
         - name: csi-provisioner
-          image: ghcr.io/foreversmart/csi-provisioner:v2.2.2
+          image: ghcr.io/foreversmart/csi-provisioner:v3.4.0
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
