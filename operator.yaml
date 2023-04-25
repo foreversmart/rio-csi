@@ -720,6 +720,27 @@ subjects:
   name: riocsi-node-sa
   namespace: riocsi
 ---
+apiVersion: v1
+data:
+  kubeconfig: |-
+    namespace: rio-csi
+    container_runtime: containerd
+    set_io_limits: true
+    read_iops_limit: ["vg1-prefix=100", "vg2-prefix=200"]
+    write_iops_limit:["vg1-prefix=100", "vg2-prefix=200"]
+    read_bps_limit: ["vg1-prefix=100", "vg2-prefix=200"]
+    write_bps_limit: ["vg1-prefix=100", "vg2-prefix=200"]
+    metrics_path: /metric
+    metrics_addr: 9099
+    probe_addr: 9098
+    disable_exporter_metrics: false
+    iscsi_username: rio-csi
+    iscsi_passwd: rio-123
+kind: ConfigMap
+metadata:
+  name: cluster-info
+  namespace: rio-csi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
