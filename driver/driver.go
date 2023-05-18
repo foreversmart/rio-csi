@@ -26,11 +26,6 @@ type RioCSI struct {
 func NewCSIDriver(name, version, nodeID, endpoint, iscsiUsername, iscsiPassword string, enableIdentityServer, enableControllerServer, enableNodeServer bool) *RioCSI {
 	logger.StdLog.Infof("Driver: %s version: %s", name, version)
 
-	// Add some check here
-	//if parameter1 == "" {
-	//	logger.StdLog.Fatal("parameter1 is empty")
-	//}
-
 	n := &RioCSI{
 		name:                   name,
 		nodeID:                 nodeID,

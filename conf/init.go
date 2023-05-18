@@ -9,21 +9,18 @@ import (
 	"qiniu.io/rio-csi/logger"
 )
 
-var (
-	DriverConfig *Config
-)
-
-func Setup(namespace string) (err error) {
+func LoadConfig(namespace string) (driverConfig *Config, err error) {
 	configmap, err := client.DefaultClient.ClientSet.CoreV1().ConfigMaps(namespace).Get(context.Background(), "", metav1.GetOptions{})
 	if err != nil {
 		logger.StdLog.Error(err)
-		return err
+		return nil, err
 	}
 
 	configStr, ok := configmap.Data["config.conf"]
 	if !ok {
-		return errors.New("cant find config key config.conf in configmap")
+		return nil, errors.New("cant find config key config.conf in configmap")
 	}
 
-	return yaml.Unmarshal([]byte(configStr), &DriverConfig)
+	err = yaml.Unmarshal([]byte(configStr), &driverConfig)
+	return
 }

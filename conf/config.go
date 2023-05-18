@@ -2,8 +2,6 @@ package conf
 
 // Config struct define how driver running
 type Config struct {
-	// Namespace string
-	Namespace string `yaml:"namespace"`
 	// ContainerRuntime informs the driver of the container runtime
 	// used on the node, so that the driver can make assumptions
 	// about the cgroup path for a pod requesting a volume mount

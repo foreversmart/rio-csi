@@ -2,10 +2,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cluster-info
-  namespace: rio-csi
+  namespace: riocsi
 data:
   kubeconfig: |
-    namespace: rio-csi
     container_runtime: containerd
     set_io_limits: true
     read_iops_limit: ["vg1-prefix=100", "vg2-prefix=200"]

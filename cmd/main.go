@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/signal"
 	"qiniu.io/rio-csi/client"
+	"qiniu.io/rio-csi/conf"
 	"qiniu.io/rio-csi/driver"
+	"qiniu.io/rio-csi/lib/mount"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/manager"
 	"syscall"
@@ -35,8 +37,8 @@ var (
 	metricsAddr string
 	probeAddr   string
 
-	iscsiUsername string
-	iscsiPasswd   string
+	//iscsiUsername string
+	//iscsiPasswd   string
 
 	driverType    DriverType
 	driverTypeStr string
@@ -55,19 +57,27 @@ var (
 		Short:   "CSI based rio csi driver",
 		Version: Version,
 		Run: func(cmd *cobra.Command, args []string) {
+			config, err := conf.LoadConfig(namespace)
+			if err != nil {
+				logger.StdLog.Error(err)
+				return
+			}
+			mount.SetIORateLimits(config)
+
 			driverType = DriverType(driverTypeStr)
-			logger.StdLog.Info("start ", driverType, nodeID, endpoint, iscsiUsername)
+			logger.StdLog.Info("start ", driverType, nodeID, endpoint, config.IscsiUsername)
 
 			switch driverType {
 			case DriverTypeNode:
+
 				go func() {
 					driver.NewCSIDriver(
 						name,
 						Version,
 						nodeID,
 						endpoint,
-						iscsiUsername,
-						iscsiPasswd,
+						config.IscsiUsername,
+						config.IscsiPasswd,
 						true,
 						false,
 						true,
@@ -75,7 +85,7 @@ var (
 				}()
 
 				manager.StartManager(nodeID, namespace, metricsAddr,
-					probeAddr, iscsiUsername, iscsiPasswd, stopCh)
+					probeAddr, config.IscsiUsername, config.IscsiPasswd, stopCh)
 
 			case DriverTypeControl:
 
@@ -84,8 +94,8 @@ var (
 					Version,
 					nodeID,
 					endpoint,
-					iscsiUsername,
-					iscsiPasswd,
+					config.IscsiUsername,
+					config.IscsiPasswd,
 					true,
 					true,
 					false,
@@ -151,10 +161,6 @@ func setRootCMD() {
 
 	rootCmd.PersistentFlags().StringVar(&driverTypeStr, "driverType", "node", "set driver type node or control")
 	_ = rootCmd.MarkPersistentFlagRequired("driverType")
-
-	rootCmd.PersistentFlags().StringVar(&iscsiUsername, "iscsiUsername", "", "set iscsi portal username")
-
-	rootCmd.PersistentFlags().StringVar(&iscsiPasswd, "iscsiPasswd", "", "set iscsi portal password")
 
 	rootCmd.PersistentFlags().StringVar(&metricsAddr, "metricsAddr", ":9180", "set metrics addr")
 	rootCmd.PersistentFlags().StringVar(&probeAddr, "probeAddr", ":9181", "set probe addr")
