@@ -15,7 +15,7 @@
 package mount
 
 import (
-	"qiniu.io/rio-csi/driver/config"
+	"qiniu.io/rio-csi/conf"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -39,12 +39,12 @@ func TestExtractingIoLimits(t *testing.T) {
 		wbps  uint64
 	}
 	testSuite := map[string]struct {
-		config   *config.Config
+		config   *conf.Config
 		vgNames  *[]string
 		expected map[string]expectedIoLimitRate
 	}{
 		"ReadIOPS and WriteIOPS": {
-			config: &config.Config{
+			config: &conf.Config{
 				SetIOLimits:    true,
 				ReadIopsLimit:  &[]string{"lvmvg1:50", "lvmvg2:100"},
 				WriteIopsLimit: &[]string{"lvmvg1:70", "lvmvg2:120"},

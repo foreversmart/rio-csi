@@ -20,7 +20,7 @@ import (
 	"errors"
 	"math"
 	apis "qiniu.io/rio-csi/api/rio/v1"
-	"qiniu.io/rio-csi/driver/config"
+	"qiniu.io/rio-csi/conf"
 	"qiniu.io/rio-csi/lib/mount/device/iolimit"
 	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
 	"qiniu.io/rio-csi/logger"
@@ -101,7 +101,7 @@ func extractRateValues(rateVals *[]string) (map[string]uint64, error) {
 	return rate, nil
 }
 
-func setValues(config *config.Config) {
+func setValues(config *conf.Config) {
 	var err error
 	riopsVals := config.ReadIopsLimit
 	wiopsVals := config.WriteIopsLimit
@@ -134,7 +134,7 @@ func setValues(config *config.Config) {
 }
 
 // SetIORateLimits sets io limit rates for the volume group (prefixes) provided in config
-func SetIORateLimits(config *config.Config) {
+func SetIORateLimits(config *conf.Config) {
 	if isSet() {
 		return
 	}
