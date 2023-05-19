@@ -133,6 +133,20 @@ func GetVolume(volumeID string) (*apis.Volume, error) {
 	return vol, err
 }
 
+// ListVolumes fetches the given Volume
+func ListVolumes(skip string, limit int64) (volumes []apis.Volume, conStr string, err error) {
+	listOptions := metav1.ListOptions{
+		Continue: skip,
+		Limit:    limit,
+	}
+	listResp, listErr := client.DefaultClient.InternalClientSet.RioV1().Volumes(RioNamespace).List(context.Background(), listOptions)
+	if err != nil {
+		return nil, "", listErr
+	}
+
+	return listResp.Items, listResp.Continue, nil
+}
+
 // WaitForVolumeProcessed waits till the lvm volume becomes
 // ready or failed (i.e reaches to terminal state).
 func WaitForVolumeProcessed(ctx context.Context, volumeID string) (*apis.Volume, error) {
