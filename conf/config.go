@@ -15,19 +15,37 @@ type Config struct {
 
 	// ReadIopsLimit provides read iops rate limits per GB in specific volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	// read iops limit formula: min{(BaseIopsLimit + ReadIopsLimit * GB), MaxIopsLimit}
 	ReadIopsLimit *[]string `yaml:"read_iops_limit"`
 
 	// WriteIopsLimit provides write iops rate limits per GB in specific volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
 	WriteIopsLimit *[]string `yaml:"write_iops_limit"`
 
+	// BaseIopsLimit provides write base iops rate limits per GB in specific volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	BaseIopsLimit *[]string `yaml:"base_iops_limit"`
+
+	// MaxIopsLimit provides write max iops rate limits per GB in specific volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	MaxIopsLimit *[]string `yaml:"max_iops_limit"`
+
 	// ReadBpsLimit provides read bps rate limits per GB in specific volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	// read bps limit formula: min{(BaseBpsLimit + ReadBpsLimit * GB), MaxBpsLimit}
 	ReadBpsLimit *[]string `yaml:"read_bps_limit"`
 
 	// WriteBpsLimit provides read bps rate limits per GB in specific volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
 	WriteBpsLimit *[]string `yaml:"write_bps_limit"`
+
+	// BaseBpsLimit provides write base bps rate limits per GB in specific volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	BaseBpsLimit *[]string `yaml:"base_iops_limit"`
+
+	// MaxBpsLimit provides write max bps rate limits per GB in specific volume group type
+	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
+	MaxBpsLimit *[]string `yaml:"max_iops_limit"`
 
 	// The HTTP path where prometheus metrics will be exposed. Default is `/metrics`.
 	MetricsPath string `yaml:"metrics_path"`
