@@ -9,8 +9,12 @@ import (
 	"qiniu.io/rio-csi/logger"
 )
 
+const (
+	ConfigName = "riocsi-config"
+)
+
 func LoadConfig(namespace string) (driverConfig *Config, err error) {
-	configmap, err := client.DefaultClient.ClientSet.CoreV1().ConfigMaps(namespace).Get(context.Background(), "", metav1.GetOptions{})
+	configmap, err := client.DefaultClient.ClientSet.CoreV1().ConfigMaps(namespace).Get(context.Background(), ConfigName, metav1.GetOptions{})
 	if err != nil {
 		logger.StdLog.Error(err)
 		return nil, err

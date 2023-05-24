@@ -737,7 +737,7 @@ data:
     iscsi_passwd: rio-123
 kind: ConfigMap
 metadata:
-  name: cluster-info
+  name: riocsi-config
   namespace: riocsi
 ---
 apiVersion: apps/v1
