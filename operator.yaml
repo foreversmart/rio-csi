@@ -723,7 +723,6 @@ subjects:
 apiVersion: v1
 data:
   kubeconfig: |-
-    namespace: rio-csi
     container_runtime: containerd
     set_io_limits: true
     read_iops_limit: ["vg1-prefix=100", "vg2-prefix=200"]
@@ -739,7 +738,7 @@ data:
 kind: ConfigMap
 metadata:
   name: cluster-info
-  namespace: rio-csi
+  namespace: riocsi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -863,8 +862,6 @@ spec:
         - --version=v1.0
         - --endpoint=$(CSI_ENDPOINT)
         - --driverType=node
-        - --iscsiUsername=rio-csi
-        - --iscsiPasswd=rio-123
         env:
         - name: NODE_ID
           valueFrom:
