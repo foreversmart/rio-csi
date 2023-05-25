@@ -506,6 +506,15 @@ rules:
   - update
   - patch
 - apiGroups:
+  - ""
+  resourceNames:
+  - riocsi-config
+  resources:
+  - configmap
+  verbs:
+  - update
+  - get
+- apiGroups:
   - rio.qiniu.io
   resources:
   - volumes
@@ -625,6 +634,12 @@ rules:
   - watch
   - update
   - patch
+- apiGroups:
+  - ""
+  resourceNames:
+  - riocsi-config
+  resources:
+  - configmap
 - apiGroups:
   - snapshot.storage.k8s.io
   resources:
