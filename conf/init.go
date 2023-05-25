@@ -3,8 +3,8 @@ package conf
 import (
 	"context"
 	"errors"
+	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/logger"
 )

@@ -62,6 +62,7 @@ var (
 				logger.StdLog.Error(err)
 				return
 			}
+
 			mount.SetIORateLimits(config)
 
 			driverType = DriverType(driverTypeStr)

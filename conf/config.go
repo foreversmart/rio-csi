@@ -41,11 +41,11 @@ type Config struct {
 
 	// BaseBpsLimit provides write base bps rate limits per GB in specific volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
-	BaseBpsLimit *[]string `yaml:"base_iops_limit"`
+	BaseBpsLimit *[]string `yaml:"base_bps_limit"`
 
 	// MaxBpsLimit provides write max bps rate limits per GB in specific volume group type
 	// as a string slice, in the form ["vg1-prefix=100", "vg2-prefix=200"]
-	MaxBpsLimit *[]string `yaml:"max_iops_limit"`
+	MaxBpsLimit *[]string `yaml:"max_bps_limit"`
 
 	// The HTTP path where prometheus metrics will be exposed. Default is `/metrics`.
 	MetricsPath string `yaml:"metrics_path"`
