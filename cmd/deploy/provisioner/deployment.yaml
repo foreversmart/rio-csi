@@ -22,7 +22,7 @@ spec:
       serviceAccountName: csi-provisioner
       containers:
         - name: csi-provisioner
-          image: ghcr.io/foreversmart/csi-provisioner:v3.4.0
+          image: registry.cn-beijing.aliyuncs.com/foreversmart/csi-provisioner:v3.4.0
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
@@ -48,7 +48,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/rio
         - name: csi-snapshotter
-          image: ghcr.io/foreversmart/csi-snapshotter:v5.0.1
+          image: registry.cn-beijing.aliyuncs.com/foreversmart/csi-snapshotter:v5.0.1
           args:
             - "--csi-address=$(CSI_ENDPOINT)"
             - "--v=5"
@@ -65,7 +65,7 @@ spec:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
-          image: ghcr.io/foreversmart/rio-csi:latest
+          image: registry.cn-beijing.aliyuncs.com/foreversmart/rio-csi:latest
           imagePullPolicy: Always
           args:
             - "--nodeid=$(NODE_ID)"

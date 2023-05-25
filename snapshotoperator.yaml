@@ -1162,7 +1162,7 @@ spec:
       - args:
         - --v=5
         - --leader-election=true
-        image: ghcr.io/foreversmart/snapshot-controller:v6.0.1
+        image: registry.cn-beijing.aliyuncs.com/foreversmart/snapshot-controller:v6.0.1
         imagePullPolicy: IfNotPresent
         name: snapshot-controller
       serviceAccountName: snapshot-controller

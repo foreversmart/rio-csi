@@ -21,7 +21,7 @@ spec:
       hostIPC: true
       containers:
         - name: csi-driver-registrar
-          image: ghcr.io/foreversmart/csi-node-driver-registrar:v2.4.0
+          image: registry.cn-beijing.aliyuncs.com/foreversmart/csi-node-driver-registrar:v2.4.0
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
@@ -36,7 +36,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: rio-csi
-          image: ghcr.io/foreversmart/rio-csi:latest
+          image: registry.cn-beijing.aliyuncs.com/foreversmart/rio-csi:latest
           imagePullPolicy: Always
           securityContext:
             privileged: true

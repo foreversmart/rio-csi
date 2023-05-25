@@ -725,14 +725,14 @@ data:
   kubeconfig: |-
     container_runtime: containerd
     set_io_limits: true
-    read_iops_limit: ["vg1-prefix=100", "vg2-prefix=200"]
-    write_iops_limit:["vg1-prefix=100", "vg2-prefix=200"]
-    base_iops_limit:["vg1-prefix=100", "vg2-prefix=200"]
-    max_iops_limit:["vg1-prefix=100", "vg2-prefix=200"]
-    read_bps_limit: ["vg1-prefix=100", "vg2-prefix=200"]
-    write_bps_limit: ["vg1-prefix=100", "vg2-prefix=200"]
-    base_bps_limit: ["vg1-prefix=100", "vg2-prefix=200"]
-    max_bps_limit: ["vg1-prefix=100", "vg2-prefix=200"]
+    read_iops_limit: ["RioVolGroup=30"]
+    write_iops_limit: ["RioVolGroup=20"]
+    base_iops_limit: ["RioVolGroup=2000"]
+    max_iops_limit: ["RioVolGroup=20000"]
+    read_bps_limit: ["RioVolGroup=524288"]
+    write_bps_limit: ["RioVolGroup=262144"]
+    base_bps_limit: ["RioVolGroup=104857600"]
+    max_bps_limit: ["RioVolGroup=314572800"]
     metrics_path: /metric
     metrics_addr: 9099
     probe_addr: 9098
@@ -780,7 +780,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: ghcr.io/foreversmart/csi-provisioner:v3.4.0
+        image: registry.cn-beijing.aliyuncs.com/foreversmart/csi-provisioner:v3.4.0
         imagePullPolicy: IfNotPresent
         name: csi-provisioner
         volumeMounts:
@@ -793,7 +793,7 @@ spec:
         env:
         - name: CSI_ENDPOINT
           value: /var/lib/csi/sockets/rio/csi.sock
-        image: ghcr.io/foreversmart/csi-snapshotter:v5.0.1
+        image: registry.cn-beijing.aliyuncs.com/foreversmart/csi-snapshotter:v5.0.1
         imagePullPolicy: IfNotPresent
         name: csi-snapshotter
         volumeMounts:
@@ -813,7 +813,7 @@ spec:
           value: unix:///var/lib/csi/sockets/rio/csi.sock
         - name: RIO_CSI_NAMESPACE
           value: riocsi
-        image: ghcr.io/foreversmart/rio-csi:latest
+        image: registry.cn-beijing.aliyuncs.com/foreversmart/rio-csi:latest
         imagePullPolicy: Always
         name: rio-csi
         securityContext:
@@ -851,7 +851,7 @@ spec:
         env:
         - name: CSI_ENDPOINT
           value: /csi/csi.sock
-        image: ghcr.io/foreversmart/csi-node-driver-registrar:v2.4.0
+        image: registry.cn-beijing.aliyuncs.com/foreversmart/csi-node-driver-registrar:v2.4.0
         imagePullPolicy: IfNotPresent
         name: csi-driver-registrar
         volumeMounts:
@@ -875,7 +875,7 @@ spec:
           value: unix:///csi/csi.sock
         - name: RIO_CSI_NAMESPACE
           value: riocsi
-        image: ghcr.io/foreversmart/rio-csi:latest
+        image: registry.cn-beijing.aliyuncs.com/foreversmart/rio-csi:latest
         imagePullPolicy: Always
         lifecycle:
           preStop:
