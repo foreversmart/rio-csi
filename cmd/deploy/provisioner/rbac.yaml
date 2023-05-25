@@ -57,6 +57,7 @@ rules:
   - apiGroups: [ "" ]
     resources: [ "configmap" ]
     resourceNames: [ "riocsi-config" ]
+    verbs: [ "update", "get" ]
   - apiGroups: [ "snapshot.storage.k8s.io" ]
     resources: [ "volumesnapshotclasses" ]
     verbs: [ "get", "list", "watch" ]

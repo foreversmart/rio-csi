@@ -640,6 +640,9 @@ rules:
   - riocsi-config
   resources:
   - configmap
+  verbs:
+  - update
+  - get
 - apiGroups:
   - snapshot.storage.k8s.io
   resources:
