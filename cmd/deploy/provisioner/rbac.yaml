@@ -55,7 +55,7 @@ rules:
     resources: ["pods"]
     verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: [ "" ]
-    resources: [ "configmap" ]
+    resources: [ "configmaps" ]
     resourceNames: [ "riocsi-config" ]
     verbs: [ "update", "get" ]
   - apiGroups: [ "snapshot.storage.k8s.io" ]

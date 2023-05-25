@@ -510,7 +510,7 @@ rules:
   resourceNames:
   - riocsi-config
   resources:
-  - configmap
+  - configmaps
   verbs:
   - update
   - get
@@ -639,7 +639,7 @@ rules:
   resourceNames:
   - riocsi-config
   resources:
-  - configmap
+  - configmaps
   verbs:
   - update
   - get
@@ -740,7 +740,7 @@ subjects:
 ---
 apiVersion: v1
 data:
-  kubeconfig: |-
+  config.conf: |-
     container_runtime: containerd
     set_io_limits: true
     read_iops_limit: ["RioVolGroup=30"]

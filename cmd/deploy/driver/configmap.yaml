@@ -4,7 +4,7 @@ metadata:
   name: riocsi-config
   namespace: riocsi
 data:
-  kubeconfig: |
+  config.conf: |
     container_runtime: containerd
     set_io_limits: true
     read_iops_limit: ["RioVolGroup=30"]
