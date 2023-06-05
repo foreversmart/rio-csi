@@ -7,6 +7,7 @@ import (
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/conf"
 	"qiniu.io/rio-csi/driver"
+	"qiniu.io/rio-csi/lib/iscsi"
 	"qiniu.io/rio-csi/lib/mount"
 	"qiniu.io/rio-csi/logger"
 	"qiniu.io/rio-csi/manager"
@@ -70,6 +71,12 @@ var (
 
 			switch driverType {
 			case DriverTypeNode:
+				// open iscsi discovery auth
+				err = iscsi.SetDiscoveryAuth(config.IscsiUsername, config.IscsiPasswd)
+				if err != nil {
+					logger.StdLog.Errorf("iscsi SetDiscoveryAuth error %v", err)
+					return
+				}
 
 				go func() {
 					driver.NewCSIDriver(
