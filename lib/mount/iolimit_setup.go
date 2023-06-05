@@ -100,7 +100,7 @@ func extractRateValues(rateVals *[]string) (map[string]uint64, error) {
 		return rate, nil
 	}
 	for _, kv := range *rateVals {
-		parts := strings.Split(kv, ":")
+		parts := strings.Split(kv, "=")
 		key := parts[0]
 		value, err := strconv.ParseUint(parts[1], 10, 64)
 		if err != nil {
