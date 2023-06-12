@@ -14,10 +14,12 @@ import (
 	iscsi2 "qiniu.io/rio-csi/lib/iscsi"
 	mount2 "qiniu.io/rio-csi/lib/mount"
 	"qiniu.io/rio-csi/logger"
+	"sync"
 )
 
 type NodeServer struct {
 	Driver *RioCSI
+	Lock   sync.Mutex
 	// Users add fields as needed.
 	//
 	// In the NFS CSI implementation, we need to mount the nfs server to the local,
@@ -60,6 +62,10 @@ func (ns *NodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, err)
 		return nil, getErr
 	}
+
+	// add lock to limit iscsi connector
+	ns.Lock.Lock()
+	defer ns.Lock.Unlock()
 
 	// mount on different nodes using iscsi
 	connector := iscsi2.Connector{
