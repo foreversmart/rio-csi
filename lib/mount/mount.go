@@ -36,7 +36,7 @@ func MountFilesystem(vol *apis.Volume, info *Info, podInfo *PodInfo) error {
 		return status.Errorf(codes.Internal, "Could not create dir {%q}, err: %v", info.MountPath, err)
 	}
 
-	mounted, err := verifyMountRequest(vol, info.MountPath)
+	mounted, err := verifyMountRequest(vol, devicePath, info.MountPath)
 	if err != nil {
 		return err
 	}
@@ -78,6 +78,16 @@ func MountBlock(vol *apis.Volume, info *Info, podLVInfo *PodInfo) error {
 	err := makeFile(target)
 	if err != nil {
 		return status.Errorf(codes.Internal, "Could not create target file %q: %v", target, err)
+	}
+
+	mounted, err := verifyMountRequest(vol, devicePath, info.MountPath)
+	if err != nil {
+		return err
+	}
+
+	if mounted {
+		logger.StdLog.Infof("lvm : already mounted %s => %s", vol, info.MountPath)
+		return nil
 	}
 
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}

@@ -7,8 +7,8 @@ import (
 	"qiniu.io/rio-csi/logger"
 )
 
-func verifyMountRequest(vol *apis.Volume, mountpath string) (bool, error) {
-	if len(mountpath) == 0 {
+func verifyMountRequest(vol *apis.Volume, devicePath, mountPath string) (bool, error) {
+	if len(mountPath) == 0 {
 		return false, status.Error(codes.InvalidArgument, "verifyMount: mount path missing in request")
 	}
 
@@ -16,12 +16,12 @@ func verifyMountRequest(vol *apis.Volume, mountpath string) (bool, error) {
 		return false, status.Error(codes.Internal, "verifyMount: volume is not ready to be mounted")
 	}
 
-	devicePath, err := GetVolumeDevPath(vol)
-	if err != nil {
-		logger.StdLog.Errorf("can not get device for volume:%s dev %s err: %v",
-			vol.Name, devicePath, err.Error())
-		return false, status.Errorf(codes.Internal, "verifyMount: GetVolumePath failed %s", err.Error())
-	}
+	//devicePath, err := GetLVMVolumeDevPath(vol)
+	//if err != nil {
+	//	logger.StdLog.Errorf("can not get device for volume:%s dev %s err: %v",
+	//		vol.Name, devicePath, err.Error())
+	//	return false, status.Errorf(codes.Internal, "verifyMount: GetVolumePath failed %s", err.Error())
+	//}
 
 	/*
 	 * This check is the famous *Wall Of North*
@@ -38,7 +38,7 @@ func verifyMountRequest(vol *apis.Volume, mountpath string) (bool, error) {
 	} else if len(currentMounts) >= 1 {
 		// if device is already mounted at the mount point, return successful
 		for _, mp := range currentMounts {
-			if mp == mountpath {
+			if mp == mountPath {
 				return true, nil
 			}
 		}

@@ -29,8 +29,8 @@ func GetVolumeDevicePath(vol *apis.Volume) string {
 	return devicePath
 }
 
-// GetVolumeDevPath returns devpath for the given volume
-func GetVolumeDevPath(vol *apis.Volume) (string, error) {
+// GetLVMVolumeDevPath returns devpath for the given volume
+func GetLVMVolumeDevPath(vol *apis.Volume) (string, error) {
 	// LVM doubles the hiphen for the mapper device name
 	// and uses single hiphen to separate volume group from volume
 	vg := strings.Replace(vol.Spec.VolGroup, "-", "--", -1)
