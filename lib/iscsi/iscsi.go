@@ -120,7 +120,7 @@ func parseSessions(lines string) []iscsiSession {
 
 // sessionExists checks if an iSCSI session exists
 func sessionExists(tgtPortal, tgtIQN string) (bool, error) {
-	sessions, err := getCurrentSessions()
+	sessions, err := GetCurrentSessions()
 	if err != nil {
 		return false, err
 	}
@@ -132,7 +132,7 @@ func sessionExists(tgtPortal, tgtIQN string) (bool, error) {
 	return false, nil
 }
 
-// extractTransportName returns a transport_name from getCurrentSessions output
+// extractTransportName returns a transport_name from GetCurrentSessions output
 func extractTransportName(output string) string {
 	res := regexp.MustCompile(`iface.transport_name = (.*)\n`).FindStringSubmatch(output)
 	if res == nil {
@@ -144,8 +144,8 @@ func extractTransportName(output string) string {
 	return res[1]
 }
 
-// getCurrentSessions list current iSCSI sessions
-func getCurrentSessions() ([]iscsiSession, error) {
+// GetCurrentSessions list current iSCSI sessions
+func GetCurrentSessions() ([]iscsiSession, error) {
 	out, err := GetSessions()
 	if err != nil {
 		exitErr, ok := err.(*exec.ExitError)
