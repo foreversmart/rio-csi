@@ -42,7 +42,7 @@ func StartManager(nodeID, namespace, metricsAddr, probeAddr, iscsiUsername, iscs
 	}
 
 	// start check disk status and recovery
-	controllers.CheckAndRecoveryDisk(iscsiUsername, iscsiPassword)
+	controllers.CheckAndRecoveryDisk(nodeID, iscsiUsername, iscsiPassword)
 
 	// start node manager
 	go nodeManager.Start()

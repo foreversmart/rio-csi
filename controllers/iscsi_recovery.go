@@ -9,7 +9,7 @@ import (
 )
 
 // CheckAndRecoveryDisk check all disk from csi cr disk and recovery disk status
-func CheckAndRecoveryDisk(iscsiUsername, iscsiPassword string) {
+func CheckAndRecoveryDisk(nodeID, iscsiUsername, iscsiPassword string) {
 	targets, err := iscsi.ListTarget()
 	if err != nil {
 		logger.StdLog.Error("List target error", err)
@@ -32,7 +32,9 @@ func CheckAndRecoveryDisk(iscsiUsername, iscsiPassword string) {
 		}
 
 		for _, vol := range resp {
-			CheckAndRecoveryDiskIscsi(vol, iscsiUsername, iscsiPassword, targetsMap)
+			if nodeID == vol.Spec.OwnerNodeID {
+				CheckAndRecoveryDiskIscsi(vol, iscsiUsername, iscsiPassword, targetsMap)
+			}
 		}
 
 		if conStr == "" {
