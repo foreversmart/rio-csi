@@ -95,7 +95,13 @@ func (ns *NodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 	}
 
 	mountInfo.DevicePath = devicePath
-	//}
+
+	vol.Spec.MountNodes = append(vol.Spec.MountNodes, node.Name)
+	vol, err = crd.UpdateVolume(vol)
+	if err != nil {
+		logger.StdLog.Errorf("update volume %s mount nodes error %v", vol.Name, err)
+		return nil, fmt.Errorf("update volume error %v", err)
+	}
 
 	logger.StdLog.Info("node publish volume", podLVinfo, mountInfo)
 
@@ -134,6 +140,25 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 		return nil, status.Errorf(codes.Internal,
 			"not able to get the LVMVolume %s err : %s",
 			volumeID, err.Error())
+	}
+
+	newMountNodes := make([]string, 0, 5)
+	isRemoved := false
+	for _, v := range vol.Spec.MountNodes {
+		if v == ns.Driver.nodeID && !isRemoved {
+			isRemoved = true
+			continue
+		}
+
+		newMountNodes = append(newMountNodes, v)
+	}
+
+	vol.Spec.MountNodes = newMountNodes
+
+	vol, err = crd.UpdateVolume(vol)
+	if err != nil {
+		logger.StdLog.Errorf("update volume %s mount nodes error %v", vol.Name, err)
+		return nil, fmt.Errorf("update volume error %v", err)
 	}
 
 	err = mount2.UmountVolume(vol, targetPath)

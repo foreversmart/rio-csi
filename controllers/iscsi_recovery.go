@@ -50,12 +50,18 @@ func CheckAndRecoveryDisk(nodeID, iscsiUsername, iscsiPassword string) {
 		for _, vol := range resp {
 			if nodeID == vol.Spec.OwnerNodeID {
 				CheckAndRecoveryDiskIscsi(vol, iscsiUsername, iscsiPassword, targetsMap)
+			}
 
-				// volume session not exist on this node do recovery
-				if _, ok := sessionMap[vol.Spec.IscsiTarget]; !ok {
-					RecoveryDiskIscsiSession(vol, iscsiUsername, iscsiPassword)
+			for _, no := range vol.Spec.MountNodes {
+				if no == nodeID {
+					// volume session not exist on this node do recovery
+					if _, ok := sessionMap[vol.Spec.IscsiTarget]; !ok {
+						RecoveryDiskIscsiSession(vol, iscsiUsername, iscsiPassword)
+					}
+
+					// recovery once then exist because one vol may mount many pod on the same node
+					break
 				}
-
 			}
 		}
 
