@@ -21,7 +21,7 @@ type Secrets struct {
 }
 
 func iscsiCmd(args ...string) (string, error) {
-	stdout, err := execWithTimeout("iscsiadm", args, time.Second*3)
+	stdout, err := execWithTimeout("iscsiadm", args, time.Second*30)
 
 	debug.Printf("Run iscsiadm command: %s", strings.Join(append([]string{"iscsiadm"}, args...), " "))
 	iscsiadmDebug(string(stdout), err)
