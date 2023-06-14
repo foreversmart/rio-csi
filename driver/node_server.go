@@ -96,7 +96,7 @@ func (ns *NodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 
 	mountInfo.DevicePath = devicePath
 
-	vol.Spec.MountNodes = append(vol.Spec.MountNodes, node.Name)
+	vol.Spec.MountNodes = append(vol.Spec.MountNodes, ns.Driver.nodeID)
 	vol, err = crd.UpdateVolume(vol)
 	if err != nil {
 		logger.StdLog.Errorf("update volume %s mount nodes error %v", vol.Name, err)
