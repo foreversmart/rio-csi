@@ -60,7 +60,7 @@ func (ns *NodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		mountInfo.MountType = mtypes.TypeBlock
 	case *csi.VolumeCapability_Mount:
 		// attempt filesystem mount operation on the requested path
-		mountInfo.MountType = mtypes.TypeBlock
+		mountInfo.MountType = mtypes.TypeFileSystem
 	}
 
 	err = mount.MountVolume(vol, mountInfo, ns.Driver.iscsiUsername, ns.Driver.iscsiPassword)

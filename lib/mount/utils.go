@@ -105,7 +105,9 @@ func makeFile(pathname string) error {
 	f, err := os.OpenFile(pathname, os.O_CREATE, os.FileMode(0644))
 	defer func(f *os.File) {
 		err = f.Close()
-		logger.StdLog.Errorf("failed to close file %s error: %v", f.Name(), err)
+		if err != nil {
+			logger.StdLog.Errorf("failed to close file %s error: %v", f.Name(), err)
+		}
 	}(f)
 	if err != nil {
 		if !os.IsExist(err) {
