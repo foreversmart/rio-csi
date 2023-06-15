@@ -121,7 +121,6 @@ spec:
             - iscsi_lun
             - iscsi_portal
             - iscsi_target
-            - mount_nodes
             - ownerNodeID
             - vgPattern
             - volGroup

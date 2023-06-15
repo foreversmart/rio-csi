@@ -64,6 +64,7 @@ type VolumeSpec struct {
 	DataSource     string               `json:"data_source"`
 	DataSourceType enums.DataSourceType `json:"data_source_type"`
 
+	// +optional
 	MountNodes []string `json:"mount_nodes"`
 	// +kubebuilder:validation:Required
 	IscsiLun int32 `json:"iscsi_lun"`
