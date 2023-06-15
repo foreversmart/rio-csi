@@ -7,12 +7,10 @@ import (
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apis "qiniu.io/rio-csi/api/rio/v1"
-	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/crd"
-	iscsi2 "qiniu.io/rio-csi/lib/iscsi"
-	mount2 "qiniu.io/rio-csi/lib/mount"
+	"qiniu.io/rio-csi/lib/mount"
+	"qiniu.io/rio-csi/lib/mount/mtypes"
 	"qiniu.io/rio-csi/logger"
 	"sync"
 )
@@ -39,80 +37,33 @@ func (ns *NodeServer) NodePublishVolume(_ context.Context, req *csi.NodePublishV
 		return nil, err
 	}
 
-	vol, mountInfo, err := GetVolAndMountInfo(req)
+	vol, volumeInfo, err := GetVolAndMountInfo(req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	podLVinfo, err := getPodLVInfo(req)
+	podInfo, err := getPodLVInfo(req)
 	if err != nil {
 		logger.StdLog.Errorf("PodInfo could not be obtained for volume_id: %s, err = %v", req.VolumeId, err)
 		logger.StdLog.Error(req.VolumeContext)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// TODO vol and pod on the same node to local mount
-	// check pod and vol on the same node
-	//if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
-	//	// if on same node go directly lvm mount
-	//	mountInfo.DevicePath = mount.GetVolumeDevicePath(vol)
-	//} else {
-	node, getErr := client.DefaultClient.InternalClientSet.RioV1().RioNodes(vol.Namespace).Get(context.TODO(), vol.Spec.OwnerNodeID, metav1.GetOptions{})
-	if getErr != nil {
-		logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, getErr)
-		return nil, getErr
+	mountInfo := &mtypes.Info{
+		VolumeInfo: volumeInfo,
+		PodInfo:    podInfo,
 	}
-
-	// add lock to limit iscsi connector
-	ns.Lock.Lock()
-	defer ns.Lock.Unlock()
-
-	// mount on different nodes using iscsi
-	connector := iscsi2.Connector{
-		AuthType:      "chap",
-		VolumeName:    vol.Name,
-		TargetIqn:     vol.Spec.IscsiTarget,
-		TargetPortals: []string{node.ISCSIInfo.Portal},
-		Lun:           vol.Spec.IscsiLun,
-		DiscoverySecrets: iscsi2.Secrets{
-			SecretsType: "chap",
-			UserName:    ns.Driver.iscsiUsername,
-			Password:    ns.Driver.iscsiPassword,
-		},
-		DoDiscovery:     true,
-		DoCHAPDiscovery: true,
-	}
-
-	devicePath, connectErr := connector.Connect()
-	if connectErr != nil {
-		logger.StdLog.Error(connectErr)
-		return nil, connectErr
-	}
-
-	if devicePath == "" {
-		logger.StdLog.Error("connect reported success, but no path returned")
-		return nil, fmt.Errorf("connect reported success, but no path returned")
-	}
-
-	mountInfo.DevicePath = devicePath
-
-	vol.Spec.MountNodes = append(vol.Spec.MountNodes, ns.Driver.nodeID)
-	vol, err = crd.UpdateVolume(vol)
-	if err != nil {
-		logger.StdLog.Errorf("update volume %s mount nodes error %v", vol.Name, err)
-		return nil, fmt.Errorf("update volume error %v", err)
-	}
-
-	logger.StdLog.Info("node publish volume", podLVinfo, mountInfo)
 
 	switch req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
 		// attempt block mount operation on the requested path
-		err = mount2.MountBlock(vol, mountInfo, podLVinfo)
+		mountInfo.MountType = mtypes.TypeBlock
 	case *csi.VolumeCapability_Mount:
 		// attempt filesystem mount operation on the requested path
-		err = mount2.MountFilesystem(vol, mountInfo, podLVinfo)
+		mountInfo.MountType = mtypes.TypeBlock
 	}
+
+	err = mount.MountVolume(vol, mountInfo, ns.Driver.iscsiUsername, ns.Driver.iscsiPassword)
 
 	if err != nil {
 		logger.StdLog.Error(err)
@@ -142,10 +93,10 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 			volumeID, err.Error())
 	}
 
-	newMountNodes := make([]string, 0, 5)
+	newMountNodes := make([]*mtypes.Info, 0, 5)
 	isRemoved := false
 	for _, v := range vol.Spec.MountNodes {
-		if v == ns.Driver.nodeID && !isRemoved {
+		if v.PodInfo.NodeId == ns.Driver.nodeID && !isRemoved {
 			isRemoved = true
 			continue
 		}
@@ -161,7 +112,7 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 		return nil, fmt.Errorf("update volume error %v", err)
 	}
 
-	err = mount2.UmountVolume(vol, targetPath)
+	err = mount.UmountVolume(vol, targetPath)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
@@ -187,7 +138,7 @@ func (ns *NodeServer) NodeGetVolumeStats(_ context.Context, req *csi.NodeGetVolu
 		return nil, status.Error(codes.InvalidArgument, "path is not provided")
 	}
 
-	if !mount2.IsMountPath(path) {
+	if !mount.IsMountPath(path) {
 		return nil, status.Error(codes.NotFound, "path is not a mount path")
 	}
 

@@ -2,12 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apis "qiniu.io/rio-csi/api/rio/v1"
-	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/lib/iscsi"
+	"qiniu.io/rio-csi/lib/mount"
+	"qiniu.io/rio-csi/lib/mount/mtypes"
 	"qiniu.io/rio-csi/logger"
 )
 
@@ -53,10 +52,10 @@ func CheckAndRecoveryDisk(nodeID, iscsiUsername, iscsiPassword string) {
 			}
 
 			for _, no := range vol.Spec.MountNodes {
-				if no == nodeID {
+				if no.PodInfo.NodeId == nodeID {
 					// volume session not exist on this node do recovery
 					if _, ok := sessionMap[vol.Spec.IscsiTarget]; !ok {
-						RecoveryDiskIscsiSession(vol, iscsiUsername, iscsiPassword)
+						RecoveryDiskIscsiSession(vol, no, iscsiUsername, iscsiPassword)
 					}
 
 					// recovery once then exist because one vol may mount many pod on the same node
@@ -75,38 +74,18 @@ func CheckAndRecoveryDisk(nodeID, iscsiUsername, iscsiPassword string) {
 }
 
 // RecoveryDiskIscsiSession recovery iscsi session
-func RecoveryDiskIscsiSession(vol apis.Volume, iscsiUsername, iscsiPassword string) {
+func RecoveryDiskIscsiSession(vol apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPassword string) {
 	// check target abnormal return
 	if vol.Spec.IscsiTarget == "" {
 		return
 	}
 
-	node, getErr := client.DefaultClient.InternalClientSet.RioV1().RioNodes(vol.Namespace).Get(context.TODO(), vol.Spec.OwnerNodeID, metav1.GetOptions{})
-	if getErr != nil {
-		logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, getErr)
-		return
+	err := mount.MountVolume(&vol, info, iscsiUsername, iscsiPassword)
+	if err != nil {
+		logger.StdLog.Errorf("recovery disk %s iscsi session node %s pod %s with error %v",
+			vol.Name, info.PodInfo.NodeId, info.PodInfo.Name, err)
 	}
 
-	// mount on different nodes using iscsi
-	connector := iscsi.Connector{
-		AuthType:      "chap",
-		VolumeName:    vol.Name,
-		TargetIqn:     vol.Spec.IscsiTarget,
-		TargetPortals: []string{node.ISCSIInfo.Portal},
-		Lun:           vol.Spec.IscsiLun,
-		DiscoverySecrets: iscsi.Secrets{
-			SecretsType: "chap",
-			UserName:    iscsiUsername,
-			Password:    iscsiPassword,
-		},
-		DoDiscovery:     true,
-		DoCHAPDiscovery: true,
-	}
-
-	_, connectErr := connector.Connect()
-	if connectErr != nil {
-		logger.StdLog.Error(connectErr)
-	}
 }
 
 // CheckAndRecoveryDiskIscsi check disk status and do iscsi recovery

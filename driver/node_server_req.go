@@ -10,7 +10,7 @@ import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/crd"
-	"qiniu.io/rio-csi/lib/mount"
+	"qiniu.io/rio-csi/lib/mount/mtypes"
 	"strings"
 )
 
@@ -41,8 +41,8 @@ func (ns *NodeServer) validateNodeUnPublishReq(req *csi.NodeUnpublishVolumeReque
 }
 
 // GetVolAndMountInfo get volume and mount info from node csi volume request
-func GetVolAndMountInfo(req *csi.NodePublishVolumeRequest) (*apis.Volume, *mount.Info, error) {
-	var info mount.Info
+func GetVolAndMountInfo(req *csi.NodePublishVolumeRequest) (*apis.Volume, *mtypes.VolumeInfo, error) {
+	var info mtypes.VolumeInfo
 
 	info.FSType = req.GetVolumeCapability().GetMount().GetFsType()
 	info.MountPath = req.GetTargetPath()
@@ -64,8 +64,8 @@ func GetVolAndMountInfo(req *csi.NodePublishVolumeRequest) (*apis.Volume, *mount
 	return vol, &info, nil
 }
 
-func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*mount.PodInfo, error) {
-	var podLVInfo mount.PodInfo
+func getPodLVInfo(req *csi.NodePublishVolumeRequest) (*mtypes.PodInfo, error) {
+	var podLVInfo mtypes.PodInfo
 	var ok bool
 	if podLVInfo.Name, ok = req.VolumeContext["csi.storage.k8s.io/pod.name"]; !ok {
 		return nil, errors.New("csi.storage.k8s.io/pod.name key missing in VolumeContext")
