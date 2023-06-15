@@ -19,6 +19,7 @@ package v1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"qiniu.io/rio-csi/enums"
+	"qiniu.io/rio-csi/lib/mount/mtypes"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -64,8 +65,8 @@ type VolumeSpec struct {
 	DataSource     string               `json:"data_source"`
 	DataSourceType enums.DataSourceType `json:"data_source_type"`
 
-	// +optional
-	MountNodes []string `json:"mount_nodes"`
+	// +kubebuilder:validation:Optional
+	MountNodes []*mtypes.Info `json:"mount_nodes"`
 	// +kubebuilder:validation:Required
 	IscsiLun int32 `json:"iscsi_lun"`
 	// +kubebuilder:validation:Required

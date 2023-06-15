@@ -353,7 +353,54 @@ spec:
                 type: string
               mount_nodes:
                 items:
-                  type: string
+                  properties:
+                    mount_type:
+                      type: string
+                    pod_info:
+                      description: PodInfo contains the pod, LVGroup related info
+                      properties:
+                        name:
+                          description: Name is the Name of the pod
+                          type: string
+                        namespace:
+                          description: Namespace is the namespace of the pod
+                          type: string
+                        node_id:
+                          description: NodeId is the node id of the pod
+                          type: string
+                        uid:
+                          description: UID is the Uid of the pod
+                          type: string
+                      type: object
+                    volume_info:
+                      description: VolumeInfo contains the volume related info for
+                        all types of volumes in Volume
+                      properties:
+                        accessModes:
+                          description: AccessMode of a volume will hold the access
+                            mode of the volume
+                          items:
+                            type: string
+                          type: array
+                        device_path:
+                          description: DevicePath is device path in the host
+                          type: string
+                        fsType:
+                          description: FSType of a volume will specify the format
+                            type - ext4(default), xfs of PV
+                          type: string
+                        mountOptions:
+                          description: MountOptions specifies the options with which
+                            mount needs to be attempted
+                          items:
+                            type: string
+                          type: array
+                        mountPath:
+                          description: MountPath of the volume will hold the path
+                            on which the volume is mounted on that node
+                          type: string
+                      type: object
+                  type: object
                 type: array
               ownerNodeID:
                 description: OwnerNodeID is the Node ID where the volume group is
