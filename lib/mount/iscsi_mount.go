@@ -6,10 +6,11 @@ import (
 	"k8s.io/utils/mount"
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/lib/mount/mtypes"
 	"qiniu.io/rio-csi/logger"
 )
 
-func iscsiMount(vol *apis.Volume, mountInfo *Info, podLVInfo *PodInfo) error {
+func iscsiMount(vol *apis.Volume, mountInfo *mtypes.VolumeInfo, podLVInfo *mtypes.PodInfo) error {
 	devicePath := mountInfo.DevicePath
 	mntPath := mountInfo.MountPath
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: exec.New()}

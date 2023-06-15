@@ -5,6 +5,7 @@ import (
 	"k8s.io/utils/mount"
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/lib/mount/mtypes"
 	"qiniu.io/rio-csi/logger"
 	"strings"
 )
@@ -85,7 +86,7 @@ func IsMountPath(path string) bool {
 }
 
 // FormatAndMountVol formats and mounts the created volume to the desired mount path
-func FormatAndMountVol(devicePath string, mountInfo *Info) error {
+func FormatAndMountVol(devicePath string, mountInfo *mtypes.VolumeInfo) error {
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	err := mounter.FormatAndMount(devicePath, mountInfo.MountPath, mountInfo.FSType, mountInfo.MountOptions)

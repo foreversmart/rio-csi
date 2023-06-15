@@ -17,17 +17,99 @@ package mount
 
 import (
 	"fmt"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/client"
+	"qiniu.io/rio-csi/crd"
+	iscsi2 "qiniu.io/rio-csi/lib/iscsi"
+	"qiniu.io/rio-csi/lib/mount/mtypes"
 	"qiniu.io/rio-csi/logger"
+	"sync"
 )
 
+var (
+	Lock sync.Mutex
+)
+
+func MountVolume(vol *apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPassword string) error {
+	// TODO vol and pod on the same node to local mount
+	// check pod and vol on the same node
+	//if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
+	//	// if on same node go directly lvm mount
+	//	mountInfo.DevicePath = mount.GetVolumeDevicePath(vol)
+	//} else {
+	node, getErr := client.DefaultClient.InternalClientSet.RioV1().RioNodes(vol.Namespace).Get(context.TODO(), vol.Spec.OwnerNodeID, metav1.GetOptions{})
+	if getErr != nil {
+		logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, getErr)
+		return getErr
+	}
+
+	// add lock to limit iscsi connector
+	Lock.Lock()
+	defer Lock.Unlock()
+
+	// mount on different nodes using iscsi
+	connector := iscsi2.Connector{
+		AuthType:      "chap",
+		VolumeName:    vol.Name,
+		TargetIqn:     vol.Spec.IscsiTarget,
+		TargetPortals: []string{node.ISCSIInfo.Portal},
+		Lun:           vol.Spec.IscsiLun,
+		DiscoverySecrets: iscsi2.Secrets{
+			SecretsType: "chap",
+			UserName:    iscsiUsername,
+			Password:    iscsiPassword,
+		},
+		DoDiscovery:     true,
+		DoCHAPDiscovery: true,
+	}
+
+	devicePath, connectErr := connector.Connect()
+	if connectErr != nil {
+		logger.StdLog.Error(connectErr)
+		return connectErr
+	}
+
+	if devicePath == "" {
+		logger.StdLog.Error("connect reported success, but no path returned")
+		return fmt.Errorf("connect reported success, but no path returned")
+	}
+
+	info.VolumeInfo.DevicePath = devicePath
+
+	vol.Spec.MountNodes = append(vol.Spec.MountNodes, info)
+	vol, err := crd.UpdateVolume(vol)
+	if err != nil {
+		logger.StdLog.Errorf("update volume %s mount nodes error %v", vol.Name, err)
+		return fmt.Errorf("update volume error %v", err)
+	}
+
+	switch info.MountType {
+	case mtypes.TypeBlock:
+		// attempt block mount operation on the requested path
+		err = MountBlock(vol, info.VolumeInfo, info.PodInfo)
+	case mtypes.TypeFileSystem:
+		// attempt filesystem mount operation on the requested path
+		err = MountFilesystem(vol, info.VolumeInfo, info.PodInfo)
+	}
+
+	if err != nil {
+		logger.StdLog.Errorf("node publish volume fails %v %v with error %v", info.PodInfo, info.VolumeInfo, err)
+		return err
+	}
+
+	logger.StdLog.Info("node publish volume", info.PodInfo, info.VolumeInfo)
+	return nil
+}
+
 // MountFilesystem mounts the disk to the specified path
-func MountFilesystem(vol *apis.Volume, info *Info, podInfo *PodInfo) error {
+func MountFilesystem(vol *apis.Volume, info *mtypes.VolumeInfo, podInfo *mtypes.PodInfo) error {
 	target := info.MountPath
 	devicePath := info.DevicePath
 
@@ -69,7 +151,7 @@ func MountFilesystem(vol *apis.Volume, info *Info, podInfo *PodInfo) error {
 }
 
 // MountBlock mounts the block disk to the specified path
-func MountBlock(vol *apis.Volume, info *Info, podLVInfo *PodInfo) error {
+func MountBlock(vol *apis.Volume, info *mtypes.VolumeInfo, podLVInfo *mtypes.PodInfo) error {
 	target := info.MountPath
 	devicePath := info.DevicePath
 	mountOpt := []string{"bind"}

@@ -6,12 +6,13 @@ import (
 	apis "qiniu.io/rio-csi/api/rio/v1"
 	"qiniu.io/rio-csi/lib/mount/device/iolimit"
 	"qiniu.io/rio-csi/lib/mount/device/iolimit/params"
+	"qiniu.io/rio-csi/lib/mount/mtypes"
 	"qiniu.io/rio-csi/logger"
 	"strconv"
 	"strings"
 )
 
-func setIOLimits(vol *apis.Volume, podLVInfo *PodInfo, devicePath string) error {
+func setIOLimits(vol *apis.Volume, podLVInfo *mtypes.PodInfo, devicePath string) error {
 	if podLVInfo == nil {
 		return errors.New("PodInfo is missing. Skipping setting IOLimits")
 	}
