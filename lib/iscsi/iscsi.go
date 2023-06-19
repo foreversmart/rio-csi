@@ -288,30 +288,26 @@ func (c *Connector) Connect() (string, error) {
 		return "", fmt.Errorf("failed to find device path: %s, last error seen: %v", devicePaths, lastErr)
 	}
 
-	// use symlink format eg:/dev/disk/by-path/ip-xxxx to mount volume
-	return devicePaths[0], nil
+	mountTargetDevice, err := c.getMountTargetDevice()
+	c.MountTargetDevice = mountTargetDevice
+	if err != nil {
+		debug.Printf("Connect failed: %v", err)
+		err := RemoveSCSIDevices(c.Devices...)
+		if err != nil {
+			return "", err
+		}
+		c.MountTargetDevice = nil
+		c.Devices = []Device{}
+		return "", err
+	}
 
-	// TODO support multi path
-	//mountTargetDevice, err := c.getMountTargetDevice()
-	//c.MountTargetDevice = mountTargetDevice
-	//if err != nil {
-	//	debug.Printf("Connect failed: %v", err)
-	//	err := RemoveSCSIDevices(c.Devices...)
-	//	if err != nil {
-	//		return "", err
-	//	}
-	//	c.MountTargetDevice = nil
-	//	c.Devices = []Device{}
-	//	return "", err
-	//}
-	//
-	//if c.IsMultipathEnabled() {
-	//	if err := c.IsMultipathConsistent(); err != nil {
-	//		return "", fmt.Errorf("multipath is inconsistent: %v", err)
-	//	}
-	//}
-	//
-	//return c.MountTargetDevice.GetPath(), nil
+	if c.IsMultipathEnabled() {
+		if err := c.IsMultipathConsistent(); err != nil {
+			return "", fmt.Errorf("multipath is inconsistent: %v", err)
+		}
+	}
+
+	return c.MountTargetDevice.GetPath(), nil
 }
 
 func (c *Connector) connectTarget(targetIqn string, target string, iFace string, iscsiTransport string) (string, error) {
