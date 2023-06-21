@@ -83,13 +83,24 @@ func MountVolume(vol *apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPasswo
 
 	info.VolumeInfo.DevicePath = devicePath
 
-	vol.Spec.MountNodes = append(vol.Spec.MountNodes, info)
-	vol, err := crd.UpdateVolume(vol)
-	if err != nil {
-		logger.StdLog.Errorf("update volume %s mount nodes error %v", vol.Name, err)
-		return fmt.Errorf("update volume error %v", err)
+	// check mount node info has added or append to
+	hasAddMountNode := false
+	for _, mountNode := range vol.Spec.MountNodes {
+		if mountNode.PodInfo.UID == info.PodInfo.UID {
+			hasAddMountNode = true
+		}
 	}
 
+	if !hasAddMountNode {
+		vol.Spec.MountNodes = append(vol.Spec.MountNodes, info)
+		vol, err := crd.UpdateVolume(vol)
+		if err != nil {
+			logger.StdLog.Errorf("update volume %s mount nodes error %v", vol.Name, err)
+			return fmt.Errorf("update volume error %v", err)
+		}
+	}
+
+	var err error
 	switch info.MountType {
 	case mtypes.TypeBlock:
 		// attempt block mount operation on the requested path
