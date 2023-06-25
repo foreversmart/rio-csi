@@ -17,17 +17,13 @@ package mount
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 	"os"
 	apis "qiniu.io/rio-csi/api/rio/v1"
-	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/crd"
-	iscsi2 "qiniu.io/rio-csi/lib/iscsi"
 	"qiniu.io/rio-csi/lib/mount/mtypes"
 	"qiniu.io/rio-csi/logger"
 	"sync"
@@ -39,36 +35,14 @@ var (
 
 func MountVolume(vol *apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPassword string) error {
 	// TODO vol and pod on the same node to local mount
-	// check pod and vol on the same node
-	//if podLVinfo.NodeId == vol.Spec.OwnerNodeID {
-	//	// if on same node go directly lvm mount
-	//	mountInfo.DevicePath = mount.GetVolumeDevicePath(vol)
-	//} else {
-	node, getErr := client.DefaultClient.InternalClientSet.RioV1().RioNodes(vol.Namespace).Get(context.TODO(), vol.Spec.OwnerNodeID, metav1.GetOptions{})
-	if getErr != nil {
-		logger.StdLog.Errorf("get %s rio node %s info error %v", vol.Namespace, vol.Spec.OwnerNodeID, getErr)
-		return getErr
+	connector, err := NewIscsiConnector(vol, iscsiUsername, iscsiPassword)
+	if err != nil {
+		return err
 	}
 
 	// add lock to limit iscsi connector
 	Lock.Lock()
 	defer Lock.Unlock()
-
-	// mount on different nodes using iscsi
-	connector := iscsi2.Connector{
-		AuthType:      "chap",
-		VolumeName:    vol.Name,
-		TargetIqn:     vol.Spec.IscsiTarget,
-		TargetPortals: []string{node.ISCSIInfo.Portal},
-		Lun:           vol.Spec.IscsiLun,
-		DiscoverySecrets: iscsi2.Secrets{
-			SecretsType: "chap",
-			UserName:    iscsiUsername,
-			Password:    iscsiPassword,
-		},
-		DoDiscovery:     true,
-		DoCHAPDiscovery: true,
-	}
 
 	devicePath, connectErr := connector.Connect()
 	if connectErr != nil {
@@ -100,7 +74,6 @@ func MountVolume(vol *apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPasswo
 		}
 	}
 
-	var err error
 	switch info.MountType {
 	case mtypes.TypeBlock:
 		// attempt block mount operation on the requested path
@@ -205,7 +178,7 @@ func MountBlock(vol *apis.Volume, info *mtypes.VolumeInfo, podLVInfo *mtypes.Pod
 }
 
 // UmountVolume unmounts the volume and the corresponding mount path is removed
-func UmountVolume(vol *apis.Volume, targetPath string) error {
+func UmountVolume(vol *apis.Volume, targetPath, iscsiUsername, iscsiPassword string) error {
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	dev, ref, err := mount.GetDeviceNameFromMount(mounter, targetPath)
@@ -248,7 +221,27 @@ func UmountVolume(vol *apis.Volume, targetPath string) error {
 		logger.StdLog.Errorf("lvm: failed to remove mount path vol %s err : %v", vol.Name, err)
 	}
 
-	logger.StdLog.Infof("umount done %s path %v", vol.Name, targetPath)
+	ref--
+	if ref != 0 {
+		logger.StdLog.Infof("umount done  %s path %v", vol.Name, targetPath)
+		return nil
+	}
+
+	connector, err := NewIscsiConnector(vol, iscsiUsername, iscsiPassword)
+	if err != nil {
+		return err
+	}
+
+	// disconnect volume device
+	err = connector.DisconnectVolume()
+	if err != nil {
+
+	}
+
+	// disconnect iscsi session
+	connector.Disconnect()
+
+	logger.StdLog.Infof("umount done with disconnect iscsi %s path %v", vol.Name, targetPath)
 
 	return nil
 }

@@ -112,7 +112,7 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 		return nil, fmt.Errorf("update volume error %v", err)
 	}
 
-	err = mount.UmountVolume(vol, targetPath)
+	err = mount.UmountVolume(vol, targetPath, ns.Driver.iscsiUsername, ns.Driver.iscsiPassword)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
