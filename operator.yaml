@@ -399,6 +399,12 @@ spec:
                           description: MountPath of the volume will hold the path
                             on which the volume is mounted on that node
                           type: string
+                        raw_device_paths:
+                          description: RawDevicePaths is all device path in the host
+                            device
+                          items:
+                            type: string
+                          type: array
                       type: object
                   type: object
                 type: array

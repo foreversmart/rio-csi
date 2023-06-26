@@ -39,6 +39,10 @@ type VolumeInfo struct {
 	// +kubebuilder:validation:Optional
 	DevicePath string `json:"device_path"`
 
+	// RawDevicePaths is all device path in the host device
+	// +kubebuilder:validation:Optional
+	RawDevicePaths []string `json:"raw_device_paths"`
+
 	// MountOptions specifies the options with
 	// which mount needs to be attempted
 	// +kubebuilder:validation:Optional
