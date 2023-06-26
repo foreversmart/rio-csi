@@ -95,8 +95,10 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 
 	newMountNodes := make([]*mtypes.Info, 0, 5)
 	isRemoved := false
+	var rawDevicePaths []string
 	for _, v := range vol.Spec.MountNodes {
-		if v.PodInfo.NodeId == ns.Driver.nodeID && !isRemoved {
+		if v.PodInfo.NodeId == ns.Driver.nodeID && v.VolumeInfo.MountPath == targetPath && !isRemoved {
+			rawDevicePaths = v.VolumeInfo.RawDevicePaths
 			isRemoved = true
 			continue
 		}
@@ -112,7 +114,7 @@ func (ns *NodeServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpubl
 		return nil, fmt.Errorf("update volume error %v", err)
 	}
 
-	err = mount.UmountVolume(vol, targetPath, ns.Driver.iscsiUsername, ns.Driver.iscsiPassword)
+	err = mount.UmountVolume(vol, targetPath, ns.Driver.iscsiUsername, ns.Driver.iscsiPassword, rawDevicePaths)
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,

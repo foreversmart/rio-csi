@@ -239,12 +239,12 @@ func getMultipathDevice(devices []Device) (*Device, error) {
 }
 
 // Connect is for backward-compatibility with c.Connect()
-func Connect(c Connector) (string, error) {
+func Connect(c Connector) (string, []string, error) {
 	return c.Connect()
 }
 
 // Connect attempts to connect a volume to this node using the provided Connector info
-func (c *Connector) Connect() (string, error) {
+func (c *Connector) Connect() (string, []string, error) {
 	if c.RetryCount == 0 {
 		c.RetryCount = 10
 	}
@@ -260,7 +260,7 @@ func (c *Connector) Connect() (string, error) {
 	// make sure our iface exists and extract the transport type
 	out, err := ShowInterface(iFace)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	iscsiTransport := extractTransportName(out)
 
@@ -280,12 +280,12 @@ func (c *Connector) Connect() (string, error) {
 	if len(devicePaths) < 1 {
 		c.Devices = []Device{}
 	} else if c.Devices, err = GetISCSIDevices(devicePaths, true); err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	if len(c.Devices) < 1 {
 		iscsiCmd([]string{"-m", "iface", "-I", iFace, "-o", "delete"}...)
-		return "", fmt.Errorf("failed to find device path: %s, last error seen: %v", devicePaths, lastErr)
+		return "", nil, fmt.Errorf("failed to find device path: %s, last error seen: %v", devicePaths, lastErr)
 	}
 
 	mountTargetDevice, err := c.getMountTargetDevice()
@@ -294,20 +294,20 @@ func (c *Connector) Connect() (string, error) {
 		debug.Printf("Connect failed: %v", err)
 		err := RemoveSCSIDevices(c.Devices...)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		c.MountTargetDevice = nil
 		c.Devices = []Device{}
-		return "", err
+		return "", nil, err
 	}
 
 	if c.IsMultipathEnabled() {
 		if err := c.IsMultipathConsistent(); err != nil {
-			return "", fmt.Errorf("multipath is inconsistent: %v", err)
+			return "", nil, fmt.Errorf("multipath is inconsistent: %v", err)
 		}
 	}
 
-	return c.MountTargetDevice.GetPath(), nil
+	return c.MountTargetDevice.GetPath(), devicePaths, nil
 }
 
 func (c *Connector) connectTarget(targetIqn string, target string, iFace string, iscsiTransport string) (string, error) {
@@ -418,7 +418,7 @@ func (c *Connector) Disconnect() {
 }
 
 // DisconnectVolume removes a volume from a Linux host.
-func (c *Connector) DisconnectVolume() error {
+func (c *Connector) DisconnectVolume(rawDevicePaths []string) error {
 	// Steps to safely remove an iSCSI storage volume from a Linux host are as following:
 	// 1. Unmount the disk from a filesystem on the system.
 	// 2. Flush the multipath map for the disk we’re removing (if multipath is enabled).
@@ -428,6 +428,32 @@ func (c *Connector) DisconnectVolume() error {
 	//
 	// DisconnectVolume focuses on step 2 and 3.
 	// Note: make sure the volume is already unmounted before calling this method.
+
+	// Note: IF raw device paths is empty for old volume data
+	if len(rawDevicePaths) == 0 {
+		return nil
+	}
+
+	// GetISCSIDevices returns all devices if no paths are given
+	var err error
+	if len(rawDevicePaths) < 1 {
+		c.Devices = []Device{}
+	} else if c.Devices, err = GetISCSIDevices(rawDevicePaths, true); err != nil {
+		return err
+	}
+
+	mountTargetDevice, err := c.getMountTargetDevice()
+	c.MountTargetDevice = mountTargetDevice
+	if err != nil {
+		debug.Printf("Connect failed: %v", err)
+		err := RemoveSCSIDevices(c.Devices...)
+		if err != nil {
+			return err
+		}
+		c.MountTargetDevice = nil
+		c.Devices = []Device{}
+		return err
+	}
 
 	if c.IsMultipathEnabled() {
 		if err := c.IsMultipathConsistent(); err != nil {

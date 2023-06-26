@@ -44,7 +44,7 @@ func MountVolume(vol *apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPasswo
 	Lock.Lock()
 	defer Lock.Unlock()
 
-	devicePath, connectErr := connector.Connect()
+	devicePath, rawDevicePaths, connectErr := connector.Connect()
 	if connectErr != nil {
 		logger.StdLog.Error(connectErr)
 		return connectErr
@@ -56,6 +56,7 @@ func MountVolume(vol *apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPasswo
 	}
 
 	info.VolumeInfo.DevicePath = devicePath
+	info.VolumeInfo.RawDevicePaths = rawDevicePaths
 
 	// check mount node info has added or append to
 	hasAddMountNode := false
@@ -178,7 +179,7 @@ func MountBlock(vol *apis.Volume, info *mtypes.VolumeInfo, podLVInfo *mtypes.Pod
 }
 
 // UmountVolume unmounts the volume and the corresponding mount path is removed
-func UmountVolume(vol *apis.Volume, targetPath, iscsiUsername, iscsiPassword string) error {
+func UmountVolume(vol *apis.Volume, targetPath, iscsiUsername, iscsiPassword string, rawDevicePaths []string) error {
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	dev, ref, err := mount.GetDeviceNameFromMount(mounter, targetPath)
@@ -233,7 +234,7 @@ func UmountVolume(vol *apis.Volume, targetPath, iscsiUsername, iscsiPassword str
 	}
 
 	// disconnect volume device
-	err = connector.DisconnectVolume()
+	err = connector.DisconnectVolume(rawDevicePaths)
 	if err != nil {
 
 	}
