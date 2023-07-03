@@ -179,7 +179,7 @@ func MountBlock(vol *apis.Volume, info *mtypes.VolumeInfo, podLVInfo *mtypes.Pod
 }
 
 // UmountVolume unmounts the volume and the corresponding mount path is removed
-func UmountVolume(vol *apis.Volume, targetPath, iscsiUsername, iscsiPassword string, rawDevicePaths []string) error {
+func UmountVolume(vol *apis.Volume, targetPath, iscsiUsername, iscsiPassword string, rawDevicePaths []string, isDisconnect bool) error {
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
 
 	dev, ref, err := mount.GetDeviceNameFromMount(mounter, targetPath)
@@ -223,7 +223,7 @@ func UmountVolume(vol *apis.Volume, targetPath, iscsiUsername, iscsiPassword str
 	}
 
 	ref--
-	if ref != 0 {
+	if ref != 0 || !isDisconnect {
 		logger.StdLog.Infof("umount done  %s path %v", vol.Name, targetPath)
 		return nil
 	}

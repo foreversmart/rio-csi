@@ -80,7 +80,12 @@ func RecoveryDiskIscsiSession(vol apis.Volume, info *mtypes.Info, iscsiUsername,
 		return
 	}
 
-	err := mount.MountVolume(&vol, info, iscsiUsername, iscsiPassword)
+	err := mount.UmountVolume(&vol, info.VolumeInfo.MountPath, iscsiUsername, iscsiPassword, nil, false)
+	if err != nil {
+		logger.StdLog.Errorf("recovery disk %s unmount volume with error %v", vol.Name, err)
+	}
+
+	err = mount.MountVolume(&vol, info, iscsiUsername, iscsiPassword)
 	if err != nil {
 		logger.StdLog.Errorf("recovery disk %s iscsi session node %s pod %s with error %v",
 			vol.Name, info.PodInfo.NodeId, info.PodInfo.Name, err)
