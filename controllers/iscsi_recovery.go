@@ -1,8 +1,12 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
+	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apis "qiniu.io/rio-csi/api/rio/v1"
+	"qiniu.io/rio-csi/client"
 	"qiniu.io/rio-csi/crd"
 	"qiniu.io/rio-csi/lib/iscsi"
 	"qiniu.io/rio-csi/lib/mount"
@@ -55,7 +59,7 @@ func CheckAndRecoveryDisk(nodeID, iscsiUsername, iscsiPassword string) {
 				if no.PodInfo.NodeId == nodeID {
 					// volume session not exist on this node do recovery
 					if _, ok := sessionMap[vol.Spec.IscsiTarget]; !ok {
-						RecoveryDiskIscsiSession(vol, no, iscsiUsername, iscsiPassword)
+						RecoveryDiskIscsiSession(&vol, no, iscsiUsername, iscsiPassword)
 					}
 
 					// recovery once then exist because one vol may mount many pod on the same node
@@ -74,18 +78,48 @@ func CheckAndRecoveryDisk(nodeID, iscsiUsername, iscsiPassword string) {
 }
 
 // RecoveryDiskIscsiSession recovery iscsi session
-func RecoveryDiskIscsiSession(vol apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPassword string) {
+func RecoveryDiskIscsiSession(vol *apis.Volume, info *mtypes.Info, iscsiUsername, iscsiPassword string) {
 	// check target abnormal return
 	if vol.Spec.IscsiTarget == "" {
 		return
 	}
 
-	err := mount.UmountVolume(&vol, info.VolumeInfo.MountPath, iscsiUsername, iscsiPassword, nil, false)
+	// checkout pods exist if pod not exist do not recovery and remove old mount info
+	_, err := client.DefaultClient.ClientSet.CoreV1().Pods(info.PodInfo.Namespace).Get(context.Background(), info.PodInfo.Name, metav1.GetOptions{})
+	if err != nil && k8serror.IsNotFound(err) {
+		// if pod is not exist
+		newMountNodes := make([]*mtypes.Info, 0, 5)
+		isRemoved := false
+		for _, v := range vol.Spec.MountNodes {
+			if v.PodInfo.NodeId == info.PodInfo.NodeId && v.VolumeInfo.MountPath == info.VolumeInfo.MountPath && !isRemoved {
+				isRemoved = true
+				continue
+			}
+
+			newMountNodes = append(newMountNodes, v)
+		}
+
+		vol.Spec.MountNodes = newMountNodes
+
+		vol, err = crd.UpdateVolume(vol)
+		if err != nil {
+			logger.StdLog.Errorf("update volume %s mount nodes error %v", vol.Name, err)
+		}
+
+		return
+	}
+
+	if err != nil {
+		logger.StdLog.Errorf("recovery disk %s check volume pod %s with error %v", info.PodInfo.Name, vol.Name, err)
+		return
+	}
+
+	err = mount.UmountVolume(vol, info.VolumeInfo.MountPath, iscsiUsername, iscsiPassword, nil, false)
 	if err != nil {
 		logger.StdLog.Errorf("recovery disk %s unmount volume with error %v", vol.Name, err)
 	}
 
-	err = mount.MountVolume(&vol, info, iscsiUsername, iscsiPassword)
+	err = mount.MountVolume(vol, info, iscsiUsername, iscsiPassword)
 	if err != nil {
 		logger.StdLog.Errorf("recovery disk %s iscsi session node %s pod %s with error %v",
 			vol.Name, info.PodInfo.NodeId, info.PodInfo.Name, err)
