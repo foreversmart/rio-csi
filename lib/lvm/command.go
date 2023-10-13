@@ -1,20 +1,42 @@
-/*
-Copyright 2017 The Kubernetes Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package lvm
+
+var (
+	Enums = map[string][]string{
+		LVPermissions:      {"unknown", "writeable", "read-only", "read-only-override"},
+		LVWhenFull:         {"error", "queue"},
+		RaidSyncAction:     {"idle", "frozen", "resync", "recover", "check", "repair"},
+		LVHealthStatus:     {"", "partial", "refresh needed", "mismatches exist"},
+		VGAllocationPolicy: {"normal", "contiguous", "cling", "anywhere", "inherited"},
+		VGPermissions:      {"writeable", "read-only"},
+	}
+)
+
+const (
+	// MinExtentRoundOffSize represents minimum size (256Mi) to roundoff the volume
+	// group size in case of thin pool provisioning
+	MinExtentRoundOffSize = 268435456
+
+	// BlockCleanerCommand is the command used to clean filesystem on the device
+	BlockCleanerCommand = "wipefs"
+
+	// YES is ThinProvision true
+	YES        = "yes"
+	LVThinPool = "thin-pool"
+)
+
+// lvm command related constants
+const (
+	VGCreate = "vgcreate"
+	VGList   = "vgs"
+
+	LVCreate = "lvcreate"
+	LVRemove = "lvremove"
+	LVExtend = "lvextend"
+	LVList   = "lvs"
+
+	PVList = "pvs"
+	PVScan = "pvscan"
+)
 
 // lvm vg, lv & pv fields related constants
 const (
